@@ -2,6 +2,7 @@ import { GannSquareChart } from "@/components/charts/GannSquareChart";
 import { GannWheelChart } from "@/components/charts/GannWheelChart";
 import { CandlestickChart } from "@/components/charts/CandlestickChart";
 import { GannCalculator } from "@/components/calculators/GannCalculator";
+import { GannFanChart } from "@/components/charts/GannFanChart";
 
 // Mock data for candlestick chart
 const mockCandleData = Array.from({ length: 30 }, (_, i) => {
@@ -33,6 +34,8 @@ const GannTools = () => {
             <GannSquareChart centerValue={currentPrice} />
             <GannWheelChart currentPrice={currentPrice} />
           </div>
+
+          <GannFanChart />
         </div>
 
         <div>
