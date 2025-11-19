@@ -16,6 +16,7 @@ import Options from "./pages/Options";
 import Risk from "./pages/Risk";
 import Backtest from "./pages/Backtest";
 import Settings from "./pages/Settings";
+import GannTools from "./pages/GannTools";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -41,6 +42,7 @@ const App = () => (
               <Route path="/options" element={<Options />} />
               <Route path="/risk" element={<Risk />} />
               <Route path="/backtest" element={<Backtest />} />
+              <Route path="/gann-tools" element={<GannTools />} />
               <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

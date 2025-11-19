@@ -26,6 +26,7 @@ const navItems = [
   { icon: Target, label: "Options", path: "/options" },
   { icon: Shield, label: "Risk Manager", path: "/risk" },
   { icon: BarChart3, label: "Backtest", path: "/backtest" },
+  { icon: Target, label: "Gann Tools", path: "/gann-tools" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
