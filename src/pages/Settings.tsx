@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { Badge } from "@/components/ui/badge";
 import { Settings as SettingsIcon, Save } from "lucide-react";
 
 const Settings = () => {
@@ -85,7 +86,181 @@ const Settings = () => {
       </Card>
 
       <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Broker Configuration</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-4">Trading Platform Configuration</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Configure connections to MetaTrader 5, Binance Spot, and Binance Futures
+        </p>
+        
+        <div className="space-y-6">
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              MetaTrader 5 Configuration
+              <Switch defaultChecked />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mt5-server" className="text-foreground">Server Address</Label>
+                <Input id="mt5-server" placeholder="broker.server.com:443" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-login" className="text-foreground">Login ID</Label>
+                <Input id="mt5-login" type="number" placeholder="12345678" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-password" className="text-foreground">Password</Label>
+                <Input id="mt5-password" type="password" placeholder="••••••••" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-account" className="text-foreground">Account Type</Label>
+                <Input id="mt5-account" placeholder="Real / Demo" defaultValue="Demo" />
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Binance Spot Configuration
+              <Switch defaultChecked />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="binance-spot-key" className="text-foreground">API Key</Label>
+                <Input id="binance-spot-key" type="password" placeholder="Enter Binance Spot API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="binance-spot-secret" className="text-foreground">API Secret</Label>
+                <Input id="binance-spot-secret" type="password" placeholder="Enter Binance Spot Secret Key" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="binance-spot-endpoint" className="text-foreground">API Endpoint</Label>
+                <Input id="binance-spot-endpoint" defaultValue="https://api.binance.com" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="binance-spot-testnet" className="text-foreground">Test Mode</Label>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Switch id="binance-spot-testnet" />
+                  <Label htmlFor="binance-spot-testnet" className="text-sm text-muted-foreground">
+                    Use Testnet
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Binance Futures Configuration
+              <Switch defaultChecked />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="binance-futures-key" className="text-foreground">API Key</Label>
+                <Input id="binance-futures-key" type="password" placeholder="Enter Binance Futures API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="binance-futures-secret" className="text-foreground">API Secret</Label>
+                <Input id="binance-futures-secret" type="password" placeholder="Enter Binance Futures Secret Key" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="binance-futures-endpoint" className="text-foreground">API Endpoint</Label>
+                <Input id="binance-futures-endpoint" defaultValue="https://fapi.binance.com" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="binance-futures-testnet" className="text-foreground">Test Mode</Label>
+                <div className="flex items-center space-x-2 pt-2">
+                  <Switch id="binance-futures-testnet" />
+                  <Label htmlFor="binance-futures-testnet" className="text-sm text-muted-foreground">
+                    Use Testnet
+                  </Label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3">Algorithm Configuration (YAML)</h3>
+            <div className="space-y-2">
+              <Label htmlFor="yaml-config" className="text-foreground">Trading Algorithm Architecture</Label>
+              <textarea
+                id="yaml-config"
+                className="w-full h-32 p-3 rounded-md bg-background border border-border text-foreground font-mono text-sm"
+                placeholder={`# Trading Algorithm Configuration
+algorithm:
+  type: gann_navigator
+  version: 1.0
+  
+platforms:
+  - name: mt5
+    enabled: true
+  - name: binance_spot
+    enabled: true
+  - name: binance_futures
+    enabled: true
+
+strategies:
+  - gann_angles
+  - square_of_nine
+  - fibonacci_levels`}
+              />
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">FIX Protocol Connector</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="fix-host" className="text-foreground">FIX Gateway Host</Label>
+            <Input id="fix-host" placeholder="fix.broker.com" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fix-port" className="text-foreground">Port</Label>
+            <Input id="fix-port" type="number" placeholder="9876" defaultValue="9876" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fix-sender" className="text-foreground">Sender Comp ID</Label>
+            <Input id="fix-sender" placeholder="SENDER_ID" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="fix-target" className="text-foreground">Target Comp ID</Label>
+            <Input id="fix-target" placeholder="TARGET_ID" />
+          </div>
+        </div>
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+          <Label htmlFor="fix-enabled" className="text-foreground">Enable FIX Connector</Label>
+          <Switch id="fix-enabled" />
+        </div>
+      </Card>
+
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Connection Status</h2>
+        <div className="space-y-3">
+          {[
+            { name: "MetaTrader 5", status: "Connected", color: "success" },
+            { name: "Binance Spot", status: "Connected", color: "success" },
+            { name: "Binance Futures", status: "Connected", color: "success" },
+            { name: "FIX Connector", status: "Disconnected", color: "muted" },
+          ].map((conn, idx) => (
+            <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
+              <span className="text-foreground font-medium">{conn.name}</span>
+              <Badge 
+                variant="outline"
+                className={
+                  conn.color === "success" 
+                    ? "border-success text-success bg-success/10" 
+                    : "border-muted-foreground text-muted-foreground"
+                }
+              >
+                {conn.status}
+              </Badge>
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Legacy Configuration</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label htmlFor="broker" className="text-foreground">Broker</Label>
