@@ -9,6 +9,7 @@ const mockResults = [
   {
     symbol: "EURUSD",
     asset: "Forex",
+    timeframe: "M15",
     signal: "BUY",
     strength: "STRONG",
     price: 1.0875,
@@ -21,6 +22,7 @@ const mockResults = [
   {
     symbol: "BTCUSDT",
     asset: "Crypto",
+    timeframe: "H1",
     signal: "BUY",
     strength: "STRONG",
     price: 43250,
@@ -33,6 +35,7 @@ const mockResults = [
   {
     symbol: "XAUUSD",
     asset: "Commodity",
+    timeframe: "H4",
     signal: "SELL",
     strength: "MEDIUM",
     price: 2045.30,
@@ -45,6 +48,7 @@ const mockResults = [
   {
     symbol: "GBPJPY",
     asset: "Forex",
+    timeframe: "M5",
     signal: "BUY",
     strength: "MEDIUM",
     price: 184.52,
@@ -57,6 +61,7 @@ const mockResults = [
   {
     symbol: "US500",
     asset: "Index",
+    timeframe: "D1",
     signal: "BUY",
     strength: "WEAK",
     price: 4782.50,
@@ -65,6 +70,45 @@ const mockResults = [
     ehlers: 58,
     ml: 62,
     confluence: 2,
+  },
+  {
+    symbol: "EURUSD",
+    asset: "Forex",
+    timeframe: "M1",
+    signal: "SELL",
+    strength: "MEDIUM",
+    price: 1.0872,
+    gann: 42,
+    astro: 55,
+    ehlers: 48,
+    ml: 52,
+    confluence: 2,
+  },
+  {
+    symbol: "GBPUSD",
+    asset: "Forex",
+    timeframe: "M30",
+    signal: "BUY",
+    strength: "STRONG",
+    price: 1.2654,
+    gann: 78,
+    astro: 82,
+    ehlers: 75,
+    ml: 80,
+    confluence: 4,
+  },
+  {
+    symbol: "BTCUSDT",
+    asset: "Crypto",
+    timeframe: "W1",
+    signal: "BUY",
+    strength: "STRONG",
+    price: 43500,
+    gann: 92,
+    astro: 88,
+    ehlers: 85,
+    ml: 90,
+    confluence: 5,
   },
 ];
 
@@ -111,10 +155,15 @@ const Scanner = () => {
           </select>
           <select className="px-4 py-2 bg-input border border-border rounded-md text-foreground">
             <option>All Timeframes</option>
-            <option>M15</option>
-            <option>H1</option>
-            <option>H4</option>
-            <option>D1</option>
+            <option>M1 (1 Minute)</option>
+            <option>M5 (5 Minutes)</option>
+            <option>M15 (15 Minutes)</option>
+            <option>M30 (30 Minutes)</option>
+            <option>H1 (1 Hour)</option>
+            <option>H4 (4 Hours)</option>
+            <option>D1 (Daily)</option>
+            <option>W1 (Weekly)</option>
+            <option>MN (Monthly)</option>
           </select>
           <Button className="w-full">
             <Filter className="w-4 h-4 mr-2" />
@@ -143,6 +192,9 @@ const Scanner = () => {
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
                   Asset
+                </th>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
+                  Timeframe
                 </th>
                 <th className="text-left py-3 px-4 text-sm font-semibold text-muted-foreground">
                   Signal
@@ -181,6 +233,11 @@ const Scanner = () => {
                   </td>
                   <td className="py-4 px-4">
                     <Badge variant="outline">{result.asset}</Badge>
+                  </td>
+                  <td className="py-4 px-4">
+                    <Badge variant="secondary" className="font-mono text-xs">
+                      {result.timeframe}
+                    </Badge>
                   </td>
                   <td className="py-4 px-4">
                     <Badge
