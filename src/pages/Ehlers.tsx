@@ -8,6 +8,7 @@ const Ehlers = () => {
     { name: "Smoothed RSI", value: "67.2", signal: "Bullish", strength: 87, trend: "bullish" },
     { name: "Super Smoother", value: "+0.024", signal: "Trend Up", strength: 85, trend: "bullish" },
     { name: "MAMA (MESA Adaptive)", value: "104,400", signal: "Bullish", strength: 90, trend: "bullish" },
+    { name: "FAMA (Following Adaptive)", value: "104,350", signal: "Following", strength: 88, trend: "bullish" },
     { name: "Instantaneous Trendline", value: "104,100", signal: "Uptrend", strength: 89, trend: "bullish" },
     { name: "Cyber Cycle", value: "+0.026", signal: "Rising", strength: 86, trend: "bullish" },
     { name: "Dominant Cycle", value: "24.0 hari", signal: "Strong", strength: 96, trend: "bullish" },
