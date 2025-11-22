@@ -212,18 +212,49 @@ const Index = () => {
               </h4>
               <div className="space-y-4">
                 <div>
-                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Gann Angles</h5>
+                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Hexagon Geometry</h5>
                   <div className="space-y-2">
                     {[
-                      { angle: "8x1", price: "$90000.00" },
-                      { angle: "4x1", price: "$70000.00" },
-                      { angle: "3x1", price: "$65000.00" },
-                      { angle: "2x1", price: "$60000.00" },
-                      { angle: "1x1", price: "$55000.00" },
+                      { angle: "60°", price: "103.800", type: "support harmonic" },
+                      { angle: "120°", price: "104.500", type: "resistance harmonic" },
+                      { angle: "180°", price: "105.100", type: "full hexagon pivot" },
                     ].map((item, idx) => (
                       <div key={idx} className="flex justify-between items-center p-2 bg-secondary/50 rounded">
-                        <span className="text-sm font-mono text-foreground">{item.angle}</span>
-                        <span className="text-sm font-bold text-success">{item.price}</span>
+                        <span className="text-sm font-bold text-accent">{item.angle}</span>
+                        <span className="text-sm font-mono text-foreground">{item.price}</span>
+                        <Badge variant="outline" className={item.type.includes("support") ? "text-xs border-success text-success" : "text-xs border-destructive text-destructive"}>
+                          {item.type.split(' ')[0]}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Gann Fan Angles (Full Module)</h5>
+                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
+                    {[
+                      { ratio: "8x1", price: "104.000", slope: "82° slope", type: "support" },
+                      { ratio: "4x1", price: "104.100", slope: "76° slope", type: "support" },
+                      { ratio: "1x1", price: "104.200", slope: "45° slope", type: "support" },
+                      { ratio: "2x1", price: "104.300", slope: "26.5° slope", type: "support" },
+                      { ratio: "1x2", price: "104.700", slope: "63.5° slope", type: "resistance" },
+                      { ratio: "3x1", price: "105.200", slope: "18° slope", type: "resistance" },
+                      { ratio: "1x3", price: "104.000", slope: "18.4° slope", type: "support" },
+                      { ratio: "1x4", price: "104.150", slope: "14° slope", type: "resistance" },
+                      { ratio: "1x8", price: "104.050", slope: "7° slope", type: "resistance" },
+                    ].map((item, idx) => (
+                      <div key={idx} className="p-2 bg-secondary/50 rounded">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-sm font-bold text-foreground">{item.ratio}</span>
+                          <Badge variant="outline" className={item.type === "support" ? "text-xs border-success text-success" : "text-xs border-destructive text-destructive"}>
+                            {item.type}
+                          </Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm font-mono text-foreground">{item.price}</span>
+                          <span className="text-xs text-muted-foreground">{item.slope}</span>
+                        </div>
                       </div>
                     ))}
                   </div>
