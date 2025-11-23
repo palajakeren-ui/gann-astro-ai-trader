@@ -55,6 +55,14 @@ const Settings = () => {
               <Label htmlFor="kelly-fraction" className="text-foreground">Kelly Fraction</Label>
               <Input id="kelly-fraction" type="number" defaultValue="0.5" step="0.1" />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="risk-reward-manual" className="text-foreground">Risk-to-Reward Manual</Label>
+              <Input id="risk-reward-manual" type="number" defaultValue="2.0" step="0.1" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="position-lot-manual" className="text-foreground">Open Position Lot Manual</Label>
+              <Input id="position-lot-manual" type="number" defaultValue="0.01" step="0.01" />
+            </div>
             <div className="flex items-center justify-between py-2">
               <Label htmlFor="adaptive-sizing" className="text-foreground">Adaptive Position Sizing</Label>
               <Switch id="adaptive-sizing" defaultChecked />
