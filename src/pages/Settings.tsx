@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings as SettingsIcon, Save } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
@@ -39,20 +39,23 @@ type TimeframeWeights = {
   [key: string]: { name: string; weight: number }[];
 };
 
-const initialWeights: TimeframeWeights = timeframes.reduce((acc, tf) => {
-  acc[tf.value] = defaultStrategies.map(s => ({ ...s }));
-  return acc;
-}, {} as TimeframeWeights);
+const createInitialWeights = (): TimeframeWeights => {
+  return timeframes.reduce((acc, tf) => {
+    acc[tf.value] = defaultStrategies.map(s => ({ ...s }));
+    return acc;
+  }, {} as TimeframeWeights);
+};
+
 const Settings = () => {
-  const [tfWeights, setTfWeights] = useState<TimeframeWeights>(initialWeights);
+  const [tfWeights, setTfWeights] = useState<TimeframeWeights>(() => createInitialWeights());
   const [activeTf, setActiveTf] = useState("H1");
 
   const handleWeightChange = (tf: string, strategyIdx: number, newWeight: number) => {
     setTfWeights(prev => ({
       ...prev,
-      [tf]: prev[tf].map((s, idx) => 
+      [tf]: prev[tf]?.map((s, idx) => 
         idx === strategyIdx ? { ...s, weight: newWeight } : s
-      )
+      ) || []
     }));
   };
 
@@ -110,11 +113,11 @@ const Settings = () => {
                   <div className="flex items-center justify-between text-sm">
                     <span className="text-muted-foreground">Total Weight:</span>
                     <span className={`font-mono font-semibold ${
-                      Math.abs(tfWeights[tf.value]?.reduce((sum, s) => sum + s.weight, 0) - 1) < 0.01 
+                      Math.abs((tfWeights[tf.value]?.reduce((sum, s) => sum + s.weight, 0) ?? 0) - 1) < 0.01 
                         ? 'text-success' 
                         : 'text-destructive'
                     }`}>
-                      {tfWeights[tf.value]?.reduce((sum, s) => sum + s.weight, 0).toFixed(2)}
+                      {(tfWeights[tf.value]?.reduce((sum, s) => sum + s.weight, 0) ?? 0).toFixed(2)}
                     </span>
                   </div>
                 </div>
