@@ -38,6 +38,61 @@ const Settings = () => {
               </div>
             ))}
           </div>
+          
+          <div className="mt-6 pt-4 border-t border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Multi-Timeframe Configuration</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {[
+                { label: "1 Minute", value: "M1", defaultChecked: true },
+                { label: "5 Minutes", value: "M5", defaultChecked: true },
+                { label: "15 Minutes", value: "M15", defaultChecked: true },
+                { label: "30 Minutes", value: "M30", defaultChecked: false },
+                { label: "1 Hour", value: "H1", defaultChecked: true },
+                { label: "4 Hours", value: "H4", defaultChecked: true },
+                { label: "1 Day", value: "D1", defaultChecked: true },
+                { label: "1 Week", value: "W1", defaultChecked: false },
+                { label: "1 Month", value: "MN", defaultChecked: false },
+              ].map((tf, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 rounded bg-secondary/50">
+                  <div className="flex flex-col">
+                    <span className="text-sm text-foreground">{tf.label}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{tf.value}</span>
+                  </div>
+                  <Switch defaultChecked={tf.defaultChecked} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="primary-tf" className="text-foreground">Primary Timeframe</Label>
+                <select id="primary-tf" className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground">
+                  <option value="M1">1 Minute</option>
+                  <option value="M5">5 Minutes</option>
+                  <option value="M15">15 Minutes</option>
+                  <option value="M30">30 Minutes</option>
+                  <option value="H1" selected>1 Hour</option>
+                  <option value="H4">4 Hours</option>
+                  <option value="D1">1 Day</option>
+                  <option value="W1">1 Week</option>
+                  <option value="MN">1 Month</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="confirmation-tf" className="text-foreground">Confirmation Timeframe</Label>
+                <select id="confirmation-tf" className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground">
+                  <option value="M1">1 Minute</option>
+                  <option value="M5">5 Minutes</option>
+                  <option value="M15">15 Minutes</option>
+                  <option value="M30">30 Minutes</option>
+                  <option value="H1">1 Hour</option>
+                  <option value="H4" selected>4 Hours</option>
+                  <option value="D1">1 Day</option>
+                  <option value="W1">1 Week</option>
+                  <option value="MN">1 Month</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </Card>
 
         <Card className="p-6 border-border bg-card">
