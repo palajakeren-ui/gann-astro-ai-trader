@@ -4,9 +4,52 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings as SettingsIcon, Save } from "lucide-react";
+import { useState } from "react";
 
+const timeframes = [
+  { label: "1M", value: "M1", name: "1 Minute" },
+  { label: "5M", value: "M5", name: "5 Minutes" },
+  { label: "15M", value: "M15", name: "15 Minutes" },
+  { label: "30M", value: "M30", name: "30 Minutes" },
+  { label: "1H", value: "H1", name: "1 Hour" },
+  { label: "4H", value: "H4", name: "4 Hours" },
+  { label: "1D", value: "D1", name: "1 Day" },
+  { label: "1W", value: "W1", name: "1 Week" },
+  { label: "1MO", value: "MN", name: "1 Month" },
+];
+
+const defaultStrategies = [
+  { name: "Gann Geometry", weight: 0.25 },
+  { name: "Astro Cycles", weight: 0.15 },
+  { name: "Ehlers DSP", weight: 0.20 },
+  { name: "ML Models", weight: 0.25 },
+  { name: "Pattern Recognition", weight: 0.10 },
+  { name: "Options Flow", weight: 0.05 },
+];
+
+type TimeframeWeights = {
+  [key: string]: { name: string; weight: number }[];
+};
+
+const initialWeights: TimeframeWeights = timeframes.reduce((acc, tf) => {
+  acc[tf.value] = defaultStrategies.map(s => ({ ...s }));
+  return acc;
+}, {} as TimeframeWeights);
 const Settings = () => {
+  const [tfWeights, setTfWeights] = useState<TimeframeWeights>(initialWeights);
+  const [activeTf, setActiveTf] = useState("H1");
+
+  const handleWeightChange = (tf: string, strategyIdx: number, newWeight: number) => {
+    setTfWeights(prev => ({
+      ...prev,
+      [tf]: prev[tf].map((s, idx) => 
+        idx === strategyIdx ? { ...s, weight: newWeight } : s
+      )
+    }));
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -19,76 +62,77 @@ const Settings = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6 border-border bg-card">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Strategy Weights</h2>
-          <div className="space-y-4">
-            {[
-              { name: "Gann Geometry", weight: 0.25 },
-              { name: "Astro Cycles", weight: 0.15 },
-              { name: "Ehlers DSP", weight: 0.20 },
-              { name: "ML Models", weight: 0.25 },
-              { name: "Pattern Recognition", weight: 0.10 },
-              { name: "Options Flow", weight: 0.05 },
-            ].map((strategy, idx) => (
-              <div key={idx} className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground">{strategy.name}</Label>
-                  <span className="text-sm font-mono text-foreground">{strategy.weight}</span>
+          <h2 className="text-xl font-semibold text-foreground mb-4">Strategy Weights by Timeframe</h2>
+          
+          <Tabs value={activeTf} onValueChange={setActiveTf} className="w-full">
+            <TabsList className="grid grid-cols-9 w-full mb-4">
+              {timeframes.map((tf) => (
+                <TabsTrigger key={tf.value} value={tf.value} className="text-xs px-1">
+                  {tf.label}
+                </TabsTrigger>
+              ))}
+            </TabsList>
+            
+            {timeframes.map((tf) => (
+              <TabsContent key={tf.value} value={tf.value} className="space-y-4">
+                <div className="p-3 rounded bg-primary/10 border border-primary/20 mb-4">
+                  <span className="text-sm font-semibold text-primary">{tf.name}</span>
+                  <span className="text-xs text-muted-foreground ml-2">({tf.value})</span>
                 </div>
-                <Input type="range" min="0" max="1" step="0.05" defaultValue={strategy.weight} />
-              </div>
+                
+                {tfWeights[tf.value]?.map((strategy, idx) => (
+                  <div key={idx} className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground">{strategy.name}</Label>
+                      <span className="text-sm font-mono text-foreground bg-secondary px-2 py-0.5 rounded">
+                        {strategy.weight.toFixed(2)}
+                      </span>
+                    </div>
+                    <Input 
+                      type="range" 
+                      min="0" 
+                      max="1" 
+                      step="0.05" 
+                      value={strategy.weight}
+                      onChange={(e) => handleWeightChange(tf.value, idx, parseFloat(e.target.value))}
+                      className="cursor-pointer"
+                    />
+                  </div>
+                ))}
+                
+                <div className="mt-4 pt-4 border-t border-border">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Total Weight:</span>
+                    <span className={`font-mono font-semibold ${
+                      Math.abs(tfWeights[tf.value]?.reduce((sum, s) => sum + s.weight, 0) - 1) < 0.01 
+                        ? 'text-success' 
+                        : 'text-destructive'
+                    }`}>
+                      {tfWeights[tf.value]?.reduce((sum, s) => sum + s.weight, 0).toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              </TabsContent>
             ))}
-          </div>
+          </Tabs>
           
           <div className="mt-6 pt-4 border-t border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Multi-Timeframe Configuration</h3>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {[
-                { label: "1 Minute", value: "M1", defaultChecked: true },
-                { label: "5 Minutes", value: "M5", defaultChecked: true },
-                { label: "15 Minutes", value: "M15", defaultChecked: true },
-                { label: "30 Minutes", value: "M30", defaultChecked: false },
-                { label: "1 Hour", value: "H1", defaultChecked: true },
-                { label: "4 Hours", value: "H4", defaultChecked: true },
-                { label: "1 Day", value: "D1", defaultChecked: true },
-                { label: "1 Week", value: "W1", defaultChecked: false },
-                { label: "1 Month", value: "MN", defaultChecked: false },
-              ].map((tf, idx) => (
-                <div key={idx} className="flex items-center justify-between p-3 rounded bg-secondary/50">
-                  <div className="flex flex-col">
-                    <span className="text-sm text-foreground">{tf.label}</span>
-                    <span className="text-xs text-muted-foreground font-mono">{tf.value}</span>
-                  </div>
-                  <Switch defaultChecked={tf.defaultChecked} />
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h3 className="text-lg font-semibold text-foreground mb-4">Primary/Confirmation Timeframe</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="primary-tf" className="text-foreground">Primary Timeframe</Label>
                 <select id="primary-tf" className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground">
-                  <option value="M1">1 Minute</option>
-                  <option value="M5">5 Minutes</option>
-                  <option value="M15">15 Minutes</option>
-                  <option value="M30">30 Minutes</option>
-                  <option value="H1" selected>1 Hour</option>
-                  <option value="H4">4 Hours</option>
-                  <option value="D1">1 Day</option>
-                  <option value="W1">1 Week</option>
-                  <option value="MN">1 Month</option>
+                  {timeframes.map((tf) => (
+                    <option key={tf.value} value={tf.value} selected={tf.value === "H1"}>{tf.name}</option>
+                  ))}
                 </select>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="confirmation-tf" className="text-foreground">Confirmation Timeframe</Label>
                 <select id="confirmation-tf" className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground">
-                  <option value="M1">1 Minute</option>
-                  <option value="M5">5 Minutes</option>
-                  <option value="M15">15 Minutes</option>
-                  <option value="M30">30 Minutes</option>
-                  <option value="H1">1 Hour</option>
-                  <option value="H4" selected>4 Hours</option>
-                  <option value="D1">1 Day</option>
-                  <option value="W1">1 Week</option>
-                  <option value="MN">1 Month</option>
+                  {timeframes.map((tf) => (
+                    <option key={tf.value} value={tf.value} selected={tf.value === "H4"}>{tf.name}</option>
+                  ))}
                 </select>
               </div>
             </div>
