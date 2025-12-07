@@ -10,11 +10,16 @@ import { useState } from "react";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
+  { label: "2M", value: "M2", name: "2 Minutes" },
   { label: "3M", value: "M3", name: "3 Minutes" },
   { label: "5M", value: "M5", name: "5 Minutes" },
+  { label: "10M", value: "M10", name: "10 Minutes" },
   { label: "15M", value: "M15", name: "15 Minutes" },
   { label: "30M", value: "M30", name: "30 Minutes" },
+  { label: "45M", value: "M45", name: "45 Minutes" },
   { label: "1H", value: "H1", name: "1 Hour" },
+  { label: "2H", value: "H2", name: "2 Hours" },
+  { label: "3H", value: "H3", name: "3 Hours" },
   { label: "4H", value: "H4", name: "4 Hours" },
   { label: "1D", value: "D1", name: "1 Day" },
   { label: "1W", value: "W1", name: "1 Week" },
@@ -66,9 +71,9 @@ const Settings = () => {
           <h2 className="text-xl font-semibold text-foreground mb-4">Strategy Weights by Timeframe</h2>
           
           <Tabs value={activeTf} onValueChange={setActiveTf} className="w-full">
-            <TabsList className="grid grid-cols-10 w-full mb-4">
+            <TabsList className="flex flex-wrap gap-1 h-auto p-2 mb-4">
               {timeframes.map((tf) => (
-                <TabsTrigger key={tf.value} value={tf.value} className="text-xs px-1">
+                <TabsTrigger key={tf.value} value={tf.value} className="text-xs px-2 py-1">
                   {tf.label}
                 </TabsTrigger>
               ))}
