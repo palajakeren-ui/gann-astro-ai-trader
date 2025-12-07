@@ -10,6 +10,7 @@ import { useState } from "react";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
+  { label: "3M", value: "M3", name: "3 Minutes" },
   { label: "5M", value: "M5", name: "5 Minutes" },
   { label: "15M", value: "M15", name: "15 Minutes" },
   { label: "30M", value: "M30", name: "30 Minutes" },
@@ -65,7 +66,7 @@ const Settings = () => {
           <h2 className="text-xl font-semibold text-foreground mb-4">Strategy Weights by Timeframe</h2>
           
           <Tabs value={activeTf} onValueChange={setActiveTf} className="w-full">
-            <TabsList className="grid grid-cols-9 w-full mb-4">
+            <TabsList className="grid grid-cols-10 w-full mb-4">
               {timeframes.map((tf) => (
                 <TabsTrigger key={tf.value} value={tf.value} className="text-xs px-1">
                   {tf.label}
