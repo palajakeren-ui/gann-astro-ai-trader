@@ -76,52 +76,68 @@ const Index = () => {
 
         <Tabs defaultValue="1d" className="w-full">
           <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <TabsList>
+            <TabsList className="flex flex-wrap gap-1 h-auto p-2">
+              <TabsTrigger value="m1">1M</TabsTrigger>
+              <TabsTrigger value="m2">2M</TabsTrigger>
+              <TabsTrigger value="m3">3M</TabsTrigger>
+              <TabsTrigger value="m5">5M</TabsTrigger>
+              <TabsTrigger value="m10">10M</TabsTrigger>
+              <TabsTrigger value="m15">15M</TabsTrigger>
+              <TabsTrigger value="m30">30M</TabsTrigger>
+              <TabsTrigger value="m45">45M</TabsTrigger>
               <TabsTrigger value="1h">1H</TabsTrigger>
+              <TabsTrigger value="2h">2H</TabsTrigger>
+              <TabsTrigger value="3h">3H</TabsTrigger>
               <TabsTrigger value="4h">4H</TabsTrigger>
               <TabsTrigger value="1d">1D</TabsTrigger>
               <TabsTrigger value="1w">1W</TabsTrigger>
-              <TabsTrigger value="1m">1M</TabsTrigger>
+              <TabsTrigger value="1mo">1MO</TabsTrigger>
             </TabsList>
           </div>
 
-          <TabsContent value="1h" className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={mockPriceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                <YAxis yAxisId="price" stroke="hsl(var(--muted-foreground))" />
-                <YAxis yAxisId="volume" orientation="right" stroke="hsl(var(--muted-foreground))" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Line yAxisId="price" type="monotone" dataKey="price" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
-                <Bar yAxisId="volume" dataKey="volume" fill="hsl(var(--accent))" opacity={0.3} />
-              </ComposedChart>
-            </ResponsiveContainer>
-          </TabsContent>
+          {/* Minute timeframes */}
+          {["m1", "m2", "m3", "m5", "m10", "m15", "m30", "m45"].map((tf) => (
+            <TabsContent key={tf} value={tf} className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={mockPriceData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis yAxisId="price" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis yAxisId="volume" orientation="right" stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Line yAxisId="price" type="monotone" dataKey="price" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
+                  <Bar yAxisId="volume" dataKey="volume" fill="hsl(var(--accent))" opacity={0.3} />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </TabsContent>
+          ))}
 
-          <TabsContent value="4h" className="h-[400px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={mockPriceData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
-                <Tooltip
-                  contentStyle={{
-                    backgroundColor: "hsl(var(--card))",
-                    border: "1px solid hsl(var(--border))",
-                    borderRadius: "8px",
-                  }}
-                />
-                <Line type="monotone" dataKey="price" stroke="hsl(var(--accent))" strokeWidth={2} />
-              </LineChart>
-            </ResponsiveContainer>
-          </TabsContent>
+          {/* Hourly timeframes */}
+          {["1h", "2h", "3h", "4h"].map((tf) => (
+            <TabsContent key={tf} value={tf} className="h-[400px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={mockPriceData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
+                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: "hsl(var(--card))",
+                      border: "1px solid hsl(var(--border))",
+                      borderRadius: "8px",
+                    }}
+                  />
+                  <Line type="monotone" dataKey="price" stroke="hsl(var(--accent))" strokeWidth={2} />
+                </LineChart>
+              </ResponsiveContainer>
+            </TabsContent>
+          ))}
 
           <TabsContent value="1d" className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -165,7 +181,7 @@ const Index = () => {
             </ResponsiveContainer>
           </TabsContent>
 
-          <TabsContent value="1m" className="h-[400px]">
+          <TabsContent value="1mo" className="h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={mockPriceData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
