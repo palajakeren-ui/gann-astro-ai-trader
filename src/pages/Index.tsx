@@ -20,54 +20,54 @@ const Index = () => {
   const priceChangePercent = 2.11;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
       <div>
-        <h1 className="text-3xl font-bold text-foreground">Gann Navigator</h1>
-        <p className="text-muted-foreground">BTCUSD - Binance Futures, MetaTrader 5</p>
+        <h1 className="text-xl md:text-3xl font-bold text-foreground">Gann Navigator</h1>
+        <p className="text-xs md:text-base text-muted-foreground">BTCUSD - Binance Futures, MetaTrader 5</p>
       </div>
 
-      <Card className="p-6 border-border bg-card">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Live Analysis</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <Card className="p-3 md:p-6 border-border bg-card">
+        <h2 className="text-base md:text-lg font-semibold text-foreground mb-3 md:mb-4">Live Analysis</h2>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 md:gap-4">
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Account Balance</p>
-            <p className="text-2xl font-bold text-foreground flex items-center">
-              <DollarSign className="w-5 h-5 mr-1" />
+            <p className="text-xs md:text-sm text-muted-foreground">Account Balance</p>
+            <p className="text-lg md:text-2xl font-bold text-foreground flex items-center">
+              <DollarSign className="w-4 h-4 md:w-5 md:h-5 mr-1" />
               100,000
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Risk/Trade</p>
-            <p className="text-2xl font-bold text-foreground flex items-center">
-              <Percent className="w-5 h-5 mr-1" />
+            <p className="text-xs md:text-sm text-muted-foreground">Risk/Trade</p>
+            <p className="text-lg md:text-2xl font-bold text-foreground flex items-center">
+              <Percent className="w-4 h-4 md:w-5 md:h-5 mr-1" />
               2%
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Leverage</p>
-            <p className="text-2xl font-bold text-foreground flex items-center">
-              <Layers className="w-5 h-5 mr-1" />
+            <p className="text-xs md:text-sm text-muted-foreground">Leverage</p>
+            <p className="text-lg md:text-2xl font-bold text-foreground flex items-center">
+              <Layers className="w-4 h-4 md:w-5 md:h-5 mr-1" />
               5x
             </p>
           </div>
           <div className="space-y-1">
-            <p className="text-sm text-muted-foreground">Lot Size</p>
-            <p className="text-2xl font-bold text-foreground">0.19</p>
+            <p className="text-xs md:text-sm text-muted-foreground">Lot Size</p>
+            <p className="text-lg md:text-2xl font-bold text-foreground">0.19</p>
           </div>
         </div>
-        <p className="text-xs text-muted-foreground mt-4">
+        <p className="text-[10px] md:text-xs text-muted-foreground mt-3 md:mt-4">
           Last Update: {new Date().toISOString().replace('T', ' ').split('.')[0]} UTC
         </p>
       </Card>
 
-      <Card className="p-6 border-border bg-card">
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-2xl font-bold text-foreground">Advanced Trading Charts</h2>
-            <div className="text-right">
-              <p className="text-3xl font-bold text-foreground">${currentPrice.toLocaleString()}</p>
-              <p className="text-lg text-success flex items-center justify-end">
-                <TrendingUp className="w-4 h-4 mr-1" />
+      <Card className="p-3 md:p-6 border-border bg-card">
+        <div className="mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-2">
+            <h2 className="text-lg md:text-2xl font-bold text-foreground">Advanced Trading Charts</h2>
+            <div className="text-left sm:text-right">
+              <p className="text-xl md:text-3xl font-bold text-foreground">${currentPrice.toLocaleString()}</p>
+              <p className="text-sm md:text-lg text-success flex items-center sm:justify-end">
+                <TrendingUp className="w-3 h-3 md:w-4 md:h-4 mr-1" />
                 +{priceChange.toLocaleString()} ({priceChangePercent}%)
               </p>
             </div>
@@ -75,40 +75,41 @@ const Index = () => {
         </div>
 
         <Tabs defaultValue="1d" className="w-full">
-          <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-            <TabsList className="flex flex-wrap gap-1 h-auto p-2">
-              <TabsTrigger value="m1">1M</TabsTrigger>
-              <TabsTrigger value="m2">2M</TabsTrigger>
-              <TabsTrigger value="m3">3M</TabsTrigger>
-              <TabsTrigger value="m5">5M</TabsTrigger>
-              <TabsTrigger value="m10">10M</TabsTrigger>
-              <TabsTrigger value="m15">15M</TabsTrigger>
-              <TabsTrigger value="m30">30M</TabsTrigger>
-              <TabsTrigger value="m45">45M</TabsTrigger>
-              <TabsTrigger value="1h">1H</TabsTrigger>
-              <TabsTrigger value="2h">2H</TabsTrigger>
-              <TabsTrigger value="3h">3H</TabsTrigger>
-              <TabsTrigger value="4h">4H</TabsTrigger>
-              <TabsTrigger value="1d">1D</TabsTrigger>
-              <TabsTrigger value="1w">1W</TabsTrigger>
-              <TabsTrigger value="1mo">1MO</TabsTrigger>
+          <div className="mb-3 md:mb-4 overflow-x-auto">
+            <TabsList className="inline-flex flex-wrap gap-1 h-auto p-1 md:p-2 min-w-max">
+              <TabsTrigger value="m1" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">1M</TabsTrigger>
+              <TabsTrigger value="m2" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">2M</TabsTrigger>
+              <TabsTrigger value="m3" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">3M</TabsTrigger>
+              <TabsTrigger value="m5" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">5M</TabsTrigger>
+              <TabsTrigger value="m10" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">10M</TabsTrigger>
+              <TabsTrigger value="m15" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">15M</TabsTrigger>
+              <TabsTrigger value="m30" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">30M</TabsTrigger>
+              <TabsTrigger value="m45" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">45M</TabsTrigger>
+              <TabsTrigger value="1h" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">1H</TabsTrigger>
+              <TabsTrigger value="2h" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">2H</TabsTrigger>
+              <TabsTrigger value="3h" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">3H</TabsTrigger>
+              <TabsTrigger value="4h" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">4H</TabsTrigger>
+              <TabsTrigger value="1d" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">1D</TabsTrigger>
+              <TabsTrigger value="1w" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">1W</TabsTrigger>
+              <TabsTrigger value="1mo" className="text-xs md:text-sm px-2 md:px-3 py-1 md:py-2">1MO</TabsTrigger>
             </TabsList>
           </div>
 
           {/* Minute timeframes */}
           {["m1", "m2", "m3", "m5", "m10", "m15", "m30", "m45"].map((tf) => (
-            <TabsContent key={tf} value={tf} className="h-[400px]">
+            <TabsContent key={tf} value={tf} className="h-[250px] md:h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart data={mockPriceData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis yAxisId="price" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis yAxisId="volume" orientation="right" stroke="hsl(var(--muted-foreground))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                  <YAxis yAxisId="price" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} width={50} />
+                  <YAxis yAxisId="volume" orientation="right" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} width={50} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      fontSize: "12px",
                     }}
                   />
                   <Line yAxisId="price" type="monotone" dataKey="price" stroke="hsl(var(--success))" strokeWidth={2} dot={false} />
@@ -120,17 +121,18 @@ const Index = () => {
 
           {/* Hourly timeframes */}
           {["1h", "2h", "3h", "4h"].map((tf) => (
-            <TabsContent key={tf} value={tf} className="h-[400px]">
+            <TabsContent key={tf} value={tf} className="h-[250px] md:h-[400px]">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={mockPriceData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                  <YAxis stroke="hsl(var(--muted-foreground))" />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} width={50} />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "hsl(var(--card))",
                       border: "1px solid hsl(var(--border))",
                       borderRadius: "8px",
+                      fontSize: "12px",
                     }}
                   />
                   <Line type="monotone" dataKey="price" stroke="hsl(var(--accent))" strokeWidth={2} />
@@ -139,7 +141,7 @@ const Index = () => {
             </TabsContent>
           ))}
 
-          <TabsContent value="1d" className="h-[400px]">
+          <TabsContent value="1d" className="h-[250px] md:h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={mockPriceData}>
                 <defs>
@@ -149,13 +151,14 @@ const Index = () => {
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} width={50} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
+                    fontSize: "12px",
                   }}
                 />
                 <Area type="monotone" dataKey="price" stroke="hsl(var(--success))" fillOpacity={1} fill="url(#colorPrice)" />
@@ -163,17 +166,18 @@ const Index = () => {
             </ResponsiveContainer>
           </TabsContent>
 
-          <TabsContent value="1w" className="h-[400px]">
+          <TabsContent value="1w" className="h-[250px] md:h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={mockPriceData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} width={50} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
+                    fontSize: "12px",
                   }}
                 />
                 <Line type="monotone" dataKey="price" stroke="hsl(var(--primary))" strokeWidth={2} />
@@ -181,17 +185,18 @@ const Index = () => {
             </ResponsiveContainer>
           </TabsContent>
 
-          <TabsContent value="1mo" className="h-[400px]">
+          <TabsContent value="1mo" className="h-[250px] md:h-[400px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={mockPriceData}>
                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" />
-                <YAxis stroke="hsl(var(--muted-foreground))" />
+                <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} width={50} />
                 <Tooltip
                   contentStyle={{
                     backgroundColor: "hsl(var(--card))",
                     border: "1px solid hsl(var(--border))",
                     borderRadius: "8px",
+                    fontSize: "12px",
                   }}
                 />
                 <Bar dataKey="volume" fill="hsl(var(--chart-2))" />
@@ -202,13 +207,15 @@ const Index = () => {
       </Card>
 
       <Tabs defaultValue="calculations" className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="calculations">Calculations</TabsTrigger>
-          <TabsTrigger value="analysis">Advanced Analysis</TabsTrigger>
-          <TabsTrigger value="forecasting">Forecasting</TabsTrigger>
-          <TabsTrigger value="risk">Risk & Position</TabsTrigger>
-        </TabsList>
+        <div className="overflow-x-auto">
+          <TabsList className="inline-flex w-auto min-w-full md:grid md:w-full md:grid-cols-5 gap-1">
+            <TabsTrigger value="overview" className="text-xs md:text-sm whitespace-nowrap">Overview</TabsTrigger>
+            <TabsTrigger value="calculations" className="text-xs md:text-sm whitespace-nowrap">Calculations</TabsTrigger>
+            <TabsTrigger value="analysis" className="text-xs md:text-sm whitespace-nowrap">Analysis</TabsTrigger>
+            <TabsTrigger value="forecasting" className="text-xs md:text-sm whitespace-nowrap">Forecast</TabsTrigger>
+            <TabsTrigger value="risk" className="text-xs md:text-sm whitespace-nowrap">Risk</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="overview" className="space-y-4 mt-4">
           <Card className="p-6 border-border bg-card">
@@ -218,10 +225,10 @@ const Index = () => {
         </TabsContent>
 
         <TabsContent value="calculations" className="space-y-4 mt-4">
-          <h3 className="text-xl font-semibold text-foreground mb-4">Live Calculation Engines</h3>
+          <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 md:mb-4">Live Calculation Engines</h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="p-6 border-border bg-card">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+            <Card className="p-4 md:p-6 border-border bg-card">
               <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-success" />
                 Gann Analysis
@@ -297,7 +304,7 @@ const Index = () => {
               </div>
             </Card>
 
-            <Card className="p-6 border-border bg-card">
+            <Card className="p-4 md:p-6 border-border bg-card">
               <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-accent" />
                 Planetary
@@ -325,7 +332,7 @@ const Index = () => {
               </div>
             </Card>
 
-            <Card className="p-6 border-border bg-card">
+            <Card className="p-4 md:p-6 border-border bg-card">
               <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-chart-3" />
                 Technical
