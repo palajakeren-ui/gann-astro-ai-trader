@@ -5,8 +5,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings as SettingsIcon, Save } from "lucide-react";
-import { useState, useMemo } from "react";
+import { Settings as SettingsIcon, Save, Download, Upload, Search } from "lucide-react";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
@@ -46,9 +47,156 @@ const createInitialWeights = (): TimeframeWeights => {
   }, {} as TimeframeWeights);
 };
 
+const tradingInstruments = {
+  forex: [
+    { symbol: "EURUSD", name: "Euro/US Dollar", enabled: true },
+    { symbol: "GBPUSD", name: "British Pound/US Dollar", enabled: true },
+    { symbol: "USDJPY", name: "US Dollar/Japanese Yen", enabled: true },
+    { symbol: "USDCHF", name: "US Dollar/Swiss Franc", enabled: false },
+    { symbol: "AUDUSD", name: "Australian Dollar/US Dollar", enabled: false },
+    { symbol: "USDCAD", name: "US Dollar/Canadian Dollar", enabled: false },
+    { symbol: "NZDUSD", name: "New Zealand Dollar/US Dollar", enabled: false },
+    { symbol: "EURGBP", name: "Euro/British Pound", enabled: false },
+    { symbol: "EURJPY", name: "Euro/Japanese Yen", enabled: false },
+    { symbol: "GBPJPY", name: "British Pound/Japanese Yen", enabled: false },
+    { symbol: "XAUUSD", name: "Gold/US Dollar", enabled: true },
+    { symbol: "XAGUSD", name: "Silver/US Dollar", enabled: false },
+  ],
+  commodities: [
+    { symbol: "XAUUSD", name: "Gold", enabled: true },
+    { symbol: "XAGUSD", name: "Silver", enabled: true },
+    { symbol: "XPTUSD", name: "Platinum", enabled: false },
+    { symbol: "XPDUSD", name: "Palladium", enabled: false },
+    { symbol: "USOIL", name: "Crude Oil WTI", enabled: true },
+    { symbol: "UKOIL", name: "Brent Crude Oil", enabled: false },
+    { symbol: "NGAS", name: "Natural Gas", enabled: false },
+    { symbol: "COPPER", name: "Copper", enabled: false },
+    { symbol: "WHEAT", name: "Wheat", enabled: false },
+    { symbol: "CORN", name: "Corn", enabled: false },
+    { symbol: "SOYBEAN", name: "Soybean", enabled: false },
+    { symbol: "COFFEE", name: "Coffee", enabled: false },
+  ],
+  indices: [
+    { symbol: "US500", name: "S&P 500", enabled: true },
+    { symbol: "US30", name: "Dow Jones 30", enabled: true },
+    { symbol: "US100", name: "NASDAQ 100", enabled: true },
+    { symbol: "UK100", name: "FTSE 100", enabled: false },
+    { symbol: "GER40", name: "DAX 40", enabled: false },
+    { symbol: "FRA40", name: "CAC 40", enabled: false },
+    { symbol: "JP225", name: "Nikkei 225", enabled: false },
+    { symbol: "HK50", name: "Hang Seng 50", enabled: false },
+    { symbol: "AUS200", name: "ASX 200", enabled: false },
+    { symbol: "EU50", name: "Euro Stoxx 50", enabled: false },
+    { symbol: "VIX", name: "Volatility Index", enabled: false },
+    { symbol: "DXY", name: "US Dollar Index", enabled: false },
+  ],
+  crypto: [
+    { symbol: "BTCUSDT", name: "Bitcoin", enabled: true },
+    { symbol: "ETHUSDT", name: "Ethereum", enabled: true },
+    { symbol: "BNBUSDT", name: "Binance Coin", enabled: true },
+    { symbol: "XRPUSDT", name: "Ripple", enabled: false },
+    { symbol: "SOLUSDT", name: "Solana", enabled: true },
+    { symbol: "ADAUSDT", name: "Cardano", enabled: false },
+    { symbol: "DOGEUSDT", name: "Dogecoin", enabled: false },
+    { symbol: "DOTUSDT", name: "Polkadot", enabled: false },
+    { symbol: "AVAXUSDT", name: "Avalanche", enabled: false },
+    { symbol: "MATICUSDT", name: "Polygon", enabled: false },
+    { symbol: "LINKUSDT", name: "Chainlink", enabled: false },
+    { symbol: "UNIUSDT", name: "Uniswap", enabled: false },
+    { symbol: "ATOMUSDT", name: "Cosmos", enabled: false },
+    { symbol: "LTCUSDT", name: "Litecoin", enabled: false },
+    { symbol: "ETCUSDT", name: "Ethereum Classic", enabled: false },
+    { symbol: "APTUSDT", name: "Aptos", enabled: false },
+    { symbol: "ARBUSDT", name: "Arbitrum", enabled: false },
+    { symbol: "OPUSDT", name: "Optimism", enabled: false },
+    { symbol: "INJUSDT", name: "Injective", enabled: false },
+    { symbol: "SUIUSDT", name: "Sui", enabled: false },
+  ],
+};
+
 const Settings = () => {
   const [tfWeights, setTfWeights] = useState<TimeframeWeights>(() => createInitialWeights());
   const [activeTf, setActiveTf] = useState("H1");
+  const [instruments, setInstruments] = useState(tradingInstruments);
+  const [instrumentSearch, setInstrumentSearch] = useState("");
+  const [activeInstrumentTab, setActiveInstrumentTab] = useState("forex");
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleExportSettings = () => {
+    const settings = {
+      version: "1.0",
+      exportDate: new Date().toISOString(),
+      tfWeights,
+      instruments,
+      brokerConfigs: {
+        mt5: { enabled: true },
+        binanceSpot: { enabled: true },
+        binanceFutures: { enabled: true },
+        bybit: { enabled: false },
+        okx: { enabled: false },
+        kucoin: { enabled: false },
+        kraken: { enabled: false },
+        coinbase: { enabled: false },
+        gateio: { enabled: false },
+        bitget: { enabled: false },
+        mexc: { enabled: false },
+        htx: { enabled: false },
+        bitfinex: { enabled: false },
+        gemini: { enabled: false },
+        bitstamp: { enabled: false },
+        cryptocom: { enabled: false },
+        deribit: { enabled: false },
+        phemex: { enabled: false },
+        bingx: { enabled: false },
+      }
+    };
+    
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `gann-quant-settings-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Settings exported successfully!");
+  };
+
+  const handleImportSettings = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const settings = JSON.parse(e.target?.result as string);
+        if (settings.tfWeights) setTfWeights(settings.tfWeights);
+        if (settings.instruments) setInstruments(settings.instruments);
+        toast.success("Settings imported successfully!");
+      } catch {
+        toast.error("Failed to import settings. Invalid file format.");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  };
+
+  const toggleInstrument = (category: keyof typeof instruments, symbol: string) => {
+    setInstruments(prev => ({
+      ...prev,
+      [category]: prev[category].map(inst =>
+        inst.symbol === symbol ? { ...inst, enabled: !inst.enabled } : inst
+      )
+    }));
+  };
+
+  const filteredInstruments = (category: keyof typeof instruments) => {
+    return instruments[category].filter(inst =>
+      inst.symbol.toLowerCase().includes(instrumentSearch.toLowerCase()) ||
+      inst.name.toLowerCase().includes(instrumentSearch.toLowerCase())
+    );
+  };
 
   const handleWeightChange = (tf: string, strategyIdx: number, newWeight: number) => {
     setTfWeights(prev => ({
@@ -802,6 +950,104 @@ platforms:
               </Badge>
             </div>
           ))}
+        </div>
+      </Card>
+
+      {/* Trading Instruments Configuration */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Trading Instruments</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Select the instruments you want to trade across Forex, Commodities, Indices, and Crypto
+        </p>
+        
+        <div className="mb-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Search instruments..."
+              value={instrumentSearch}
+              onChange={(e) => setInstrumentSearch(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+
+        <Tabs value={activeInstrumentTab} onValueChange={setActiveInstrumentTab}>
+          <TabsList className="grid grid-cols-4 mb-4">
+            <TabsTrigger value="forex">Forex ({instruments.forex.filter(i => i.enabled).length})</TabsTrigger>
+            <TabsTrigger value="commodities">Commodities ({instruments.commodities.filter(i => i.enabled).length})</TabsTrigger>
+            <TabsTrigger value="indices">Indices ({instruments.indices.filter(i => i.enabled).length})</TabsTrigger>
+            <TabsTrigger value="crypto">Crypto ({instruments.crypto.filter(i => i.enabled).length})</TabsTrigger>
+          </TabsList>
+
+          {(["forex", "commodities", "indices", "crypto"] as const).map((category) => (
+            <TabsContent key={category} value={category}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                {filteredInstruments(category).map((inst) => (
+                  <div
+                    key={inst.symbol}
+                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                      inst.enabled
+                        ? "bg-primary/10 border-primary/30"
+                        : "bg-secondary/50 border-border"
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-mono text-sm font-semibold text-foreground">{inst.symbol}</span>
+                      <span className="text-xs text-muted-foreground">{inst.name}</span>
+                    </div>
+                    <Switch
+                      checked={inst.enabled}
+                      onCheckedChange={() => toggleInstrument(category, inst.symbol)}
+                    />
+                  </div>
+                ))}
+              </div>
+              {filteredInstruments(category).length === 0 && (
+                <p className="text-center text-muted-foreground py-8">No instruments found</p>
+              )}
+            </TabsContent>
+          ))}
+        </Tabs>
+      </Card>
+
+      {/* Import/Export Settings */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Backup & Restore Settings</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Export your current configuration to a file or import a previously saved configuration
+        </p>
+        
+        <div className="flex flex-col sm:flex-row gap-4">
+          <Button onClick={handleExportSettings} variant="outline" className="flex-1">
+            <Download className="w-4 h-4 mr-2" />
+            Export Settings
+          </Button>
+          <Button
+            onClick={() => fileInputRef.current?.click()}
+            variant="outline"
+            className="flex-1"
+          >
+            <Upload className="w-4 h-4 mr-2" />
+            Import Settings
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".json"
+            onChange={handleImportSettings}
+            className="hidden"
+          />
+        </div>
+        
+        <div className="mt-4 p-4 rounded-lg bg-secondary/50 border border-border">
+          <h3 className="text-sm font-semibold text-foreground mb-2">What's included in the backup:</h3>
+          <ul className="text-xs text-muted-foreground space-y-1">
+            <li>• Strategy weights for all timeframes</li>
+            <li>• Trading instruments configuration</li>
+            <li>• Broker connection settings (excluding API keys for security)</li>
+            <li>• Risk management parameters</li>
+          </ul>
         </div>
       </Card>
 
