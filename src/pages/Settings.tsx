@@ -204,7 +204,7 @@ const Settings = () => {
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Trading Platform Configuration</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Configure connections to MetaTrader 5, Binance Spot, and Binance Futures
+          Configure connections to MetaTrader 5 and all major crypto exchanges
         </p>
         
         <div className="space-y-6">
@@ -233,62 +233,469 @@ const Settings = () => {
             </div>
           </div>
 
+          {/* Binance */}
           <div className="p-4 rounded-lg bg-secondary/50 border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Binance Spot Configuration
+              Binance Spot
               <Switch defaultChecked />
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="binance-spot-key" className="text-foreground">API Key</Label>
-                <Input id="binance-spot-key" type="password" placeholder="Enter Binance Spot API Key" />
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="binance-spot-secret" className="text-foreground">API Secret</Label>
-                <Input id="binance-spot-secret" type="password" placeholder="Enter Binance Spot Secret Key" />
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="binance-spot-endpoint" className="text-foreground">API Endpoint</Label>
-                <Input id="binance-spot-endpoint" defaultValue="https://api.binance.com" />
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.binance.com" />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="binance-spot-testnet" className="text-foreground">Test Mode</Label>
-                <div className="flex items-center space-x-2 pt-2">
-                  <Switch id="binance-spot-testnet" />
-                  <Label htmlFor="binance-spot-testnet" className="text-sm text-muted-foreground">
-                    Use Testnet
-                  </Label>
-                </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="binance-spot-test" />
+                <Label htmlFor="binance-spot-test" className="text-sm text-muted-foreground">Testnet</Label>
               </div>
             </div>
           </div>
 
           <div className="p-4 rounded-lg bg-secondary/50 border border-border">
             <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Binance Futures Configuration
+              Binance Futures
               <Switch defaultChecked />
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="binance-futures-key" className="text-foreground">API Key</Label>
-                <Input id="binance-futures-key" type="password" placeholder="Enter Binance Futures API Key" />
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="binance-futures-secret" className="text-foreground">API Secret</Label>
-                <Input id="binance-futures-secret" type="password" placeholder="Enter Binance Futures Secret Key" />
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="binance-futures-endpoint" className="text-foreground">API Endpoint</Label>
-                <Input id="binance-futures-endpoint" defaultValue="https://fapi.binance.com" />
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://fapi.binance.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="binance-futures-test" />
+                <Label htmlFor="binance-futures-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Bybit */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Bybit
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="binance-futures-testnet" className="text-foreground">Test Mode</Label>
-                <div className="flex items-center space-x-2 pt-2">
-                  <Switch id="binance-futures-testnet" />
-                  <Label htmlFor="binance-futures-testnet" className="text-sm text-muted-foreground">
-                    Use Testnet
-                  </Label>
-                </div>
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.bybit.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="bybit-test" />
+                <Label htmlFor="bybit-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* OKX */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              OKX
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Passphrase</Label>
+                <Input type="password" placeholder="Enter Passphrase" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://www.okx.com" />
+              </div>
+            </div>
+          </div>
+
+          {/* KuCoin */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              KuCoin
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Passphrase</Label>
+                <Input type="password" placeholder="Enter Passphrase" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.kucoin.com" />
+              </div>
+            </div>
+          </div>
+
+          {/* Kraken */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Kraken
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.kraken.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="kraken-test" />
+                <Label htmlFor="kraken-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Coinbase */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Coinbase
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.coinbase.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="coinbase-sandbox" />
+                <Label htmlFor="coinbase-sandbox" className="text-sm text-muted-foreground">Sandbox</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Gate.io */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Gate.io
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.gateio.ws" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="gateio-test" />
+                <Label htmlFor="gateio-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Bitget */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Bitget
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Passphrase</Label>
+                <Input type="password" placeholder="Enter Passphrase" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.bitget.com" />
+              </div>
+            </div>
+          </div>
+
+          {/* MEXC */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              MEXC
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.mexc.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="mexc-test" />
+                <Label htmlFor="mexc-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Huobi */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              HTX (Huobi)
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.huobi.pro" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="huobi-test" />
+                <Label htmlFor="huobi-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Bitfinex */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Bitfinex
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.bitfinex.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="bitfinex-test" />
+                <Label htmlFor="bitfinex-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Gemini */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Gemini
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.gemini.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="gemini-sandbox" />
+                <Label htmlFor="gemini-sandbox" className="text-sm text-muted-foreground">Sandbox</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Bitstamp */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Bitstamp
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Customer ID</Label>
+                <Input placeholder="Enter Customer ID" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://www.bitstamp.net/api" />
+              </div>
+            </div>
+          </div>
+
+          {/* Crypto.com */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Crypto.com
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.crypto.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="cryptocom-sandbox" />
+                <Label htmlFor="cryptocom-sandbox" className="text-sm text-muted-foreground">Sandbox</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Deribit */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Deribit
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">Client ID</Label>
+                <Input type="password" placeholder="Enter Client ID" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Client Secret</Label>
+                <Input type="password" placeholder="Enter Client Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://www.deribit.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="deribit-test" />
+                <Label htmlFor="deribit-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* Phemex */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              Phemex
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://api.phemex.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="phemex-test" />
+                <Label htmlFor="phemex-test" className="text-sm text-muted-foreground">Testnet</Label>
+              </div>
+            </div>
+          </div>
+
+          {/* BingX */}
+          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
+            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
+              BingX
+              <Switch />
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground">API Key</Label>
+                <Input type="password" placeholder="Enter API Key" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">API Secret</Label>
+                <Input type="password" placeholder="Enter API Secret" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground">Endpoint</Label>
+                <Input defaultValue="https://open-api.bingx.com" />
+              </div>
+              <div className="flex items-center space-x-2 pt-6">
+                <Switch id="bingx-test" />
+                <Label htmlFor="bingx-test" className="text-sm text-muted-foreground">Demo</Label>
               </div>
             </div>
           </div>
@@ -306,17 +713,24 @@ algorithm:
   version: 1.0
   
 platforms:
-  - name: mt5
-    enabled: true
-  - name: binance_spot
-    enabled: true
-  - name: binance_futures
-    enabled: true
-
-strategies:
-  - gann_angles
-  - square_of_nine
-  - fibonacci_levels`}
+  - mt5
+  - binance
+  - bybit
+  - okx
+  - kucoin
+  - kraken
+  - coinbase
+  - gate_io
+  - bitget
+  - mexc
+  - htx
+  - bitfinex
+  - gemini
+  - bitstamp
+  - crypto_com
+  - deribit
+  - phemex
+  - bingx`}
               />
             </div>
           </div>
@@ -351,15 +765,31 @@ strategies:
 
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Connection Status</h2>
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {[
             { name: "MetaTrader 5", status: "Connected", color: "success" },
             { name: "Binance Spot", status: "Connected", color: "success" },
             { name: "Binance Futures", status: "Connected", color: "success" },
+            { name: "Bybit", status: "Disconnected", color: "muted" },
+            { name: "OKX", status: "Disconnected", color: "muted" },
+            { name: "KuCoin", status: "Disconnected", color: "muted" },
+            { name: "Kraken", status: "Disconnected", color: "muted" },
+            { name: "Coinbase", status: "Disconnected", color: "muted" },
+            { name: "Gate.io", status: "Disconnected", color: "muted" },
+            { name: "Bitget", status: "Disconnected", color: "muted" },
+            { name: "MEXC", status: "Disconnected", color: "muted" },
+            { name: "HTX (Huobi)", status: "Disconnected", color: "muted" },
+            { name: "Bitfinex", status: "Disconnected", color: "muted" },
+            { name: "Gemini", status: "Disconnected", color: "muted" },
+            { name: "Bitstamp", status: "Disconnected", color: "muted" },
+            { name: "Crypto.com", status: "Disconnected", color: "muted" },
+            { name: "Deribit", status: "Disconnected", color: "muted" },
+            { name: "Phemex", status: "Disconnected", color: "muted" },
+            { name: "BingX", status: "Disconnected", color: "muted" },
             { name: "FIX Connector", status: "Disconnected", color: "muted" },
           ].map((conn, idx) => (
             <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-              <span className="text-foreground font-medium">{conn.name}</span>
+              <span className="text-foreground font-medium text-sm">{conn.name}</span>
               <Badge 
                 variant="outline"
                 className={
