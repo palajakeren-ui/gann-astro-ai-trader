@@ -5,9 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings as SettingsIcon, Save, Download, Upload, Search } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
+import { tradingInstruments as instrumentsData, InstrumentCategory } from "@/data/tradingInstruments";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
@@ -47,80 +49,27 @@ const createInitialWeights = (): TimeframeWeights => {
   }, {} as TimeframeWeights);
 };
 
-const tradingInstruments = {
-  forex: [
-    { symbol: "EURUSD", name: "Euro/US Dollar", enabled: true },
-    { symbol: "GBPUSD", name: "British Pound/US Dollar", enabled: true },
-    { symbol: "USDJPY", name: "US Dollar/Japanese Yen", enabled: true },
-    { symbol: "USDCHF", name: "US Dollar/Swiss Franc", enabled: false },
-    { symbol: "AUDUSD", name: "Australian Dollar/US Dollar", enabled: false },
-    { symbol: "USDCAD", name: "US Dollar/Canadian Dollar", enabled: false },
-    { symbol: "NZDUSD", name: "New Zealand Dollar/US Dollar", enabled: false },
-    { symbol: "EURGBP", name: "Euro/British Pound", enabled: false },
-    { symbol: "EURJPY", name: "Euro/Japanese Yen", enabled: false },
-    { symbol: "GBPJPY", name: "British Pound/Japanese Yen", enabled: false },
-    { symbol: "XAUUSD", name: "Gold/US Dollar", enabled: true },
-    { symbol: "XAGUSD", name: "Silver/US Dollar", enabled: false },
-  ],
-  commodities: [
-    { symbol: "XAUUSD", name: "Gold", enabled: true },
-    { symbol: "XAGUSD", name: "Silver", enabled: true },
-    { symbol: "XPTUSD", name: "Platinum", enabled: false },
-    { symbol: "XPDUSD", name: "Palladium", enabled: false },
-    { symbol: "USOIL", name: "Crude Oil WTI", enabled: true },
-    { symbol: "UKOIL", name: "Brent Crude Oil", enabled: false },
-    { symbol: "NGAS", name: "Natural Gas", enabled: false },
-    { symbol: "COPPER", name: "Copper", enabled: false },
-    { symbol: "WHEAT", name: "Wheat", enabled: false },
-    { symbol: "CORN", name: "Corn", enabled: false },
-    { symbol: "SOYBEAN", name: "Soybean", enabled: false },
-    { symbol: "COFFEE", name: "Coffee", enabled: false },
-  ],
-  indices: [
-    { symbol: "US500", name: "S&P 500", enabled: true },
-    { symbol: "US30", name: "Dow Jones 30", enabled: true },
-    { symbol: "US100", name: "NASDAQ 100", enabled: true },
-    { symbol: "UK100", name: "FTSE 100", enabled: false },
-    { symbol: "GER40", name: "DAX 40", enabled: false },
-    { symbol: "FRA40", name: "CAC 40", enabled: false },
-    { symbol: "JP225", name: "Nikkei 225", enabled: false },
-    { symbol: "HK50", name: "Hang Seng 50", enabled: false },
-    { symbol: "AUS200", name: "ASX 200", enabled: false },
-    { symbol: "EU50", name: "Euro Stoxx 50", enabled: false },
-    { symbol: "VIX", name: "Volatility Index", enabled: false },
-    { symbol: "DXY", name: "US Dollar Index", enabled: false },
-  ],
-  crypto: [
-    { symbol: "BTCUSDT", name: "Bitcoin", enabled: true },
-    { symbol: "ETHUSDT", name: "Ethereum", enabled: true },
-    { symbol: "BNBUSDT", name: "Binance Coin", enabled: true },
-    { symbol: "XRPUSDT", name: "Ripple", enabled: false },
-    { symbol: "SOLUSDT", name: "Solana", enabled: true },
-    { symbol: "ADAUSDT", name: "Cardano", enabled: false },
-    { symbol: "DOGEUSDT", name: "Dogecoin", enabled: false },
-    { symbol: "DOTUSDT", name: "Polkadot", enabled: false },
-    { symbol: "AVAXUSDT", name: "Avalanche", enabled: false },
-    { symbol: "MATICUSDT", name: "Polygon", enabled: false },
-    { symbol: "LINKUSDT", name: "Chainlink", enabled: false },
-    { symbol: "UNIUSDT", name: "Uniswap", enabled: false },
-    { symbol: "ATOMUSDT", name: "Cosmos", enabled: false },
-    { symbol: "LTCUSDT", name: "Litecoin", enabled: false },
-    { symbol: "ETCUSDT", name: "Ethereum Classic", enabled: false },
-    { symbol: "APTUSDT", name: "Aptos", enabled: false },
-    { symbol: "ARBUSDT", name: "Arbitrum", enabled: false },
-    { symbol: "OPUSDT", name: "Optimism", enabled: false },
-    { symbol: "INJUSDT", name: "Injective", enabled: false },
-    { symbol: "SUIUSDT", name: "Sui", enabled: false },
-  ],
-};
+// Instruments data is now imported from @/data/tradingInstruments
 
 const Settings = () => {
   const [tfWeights, setTfWeights] = useState<TimeframeWeights>(() => createInitialWeights());
   const [activeTf, setActiveTf] = useState("H1");
-  const [instruments, setInstruments] = useState(tradingInstruments);
+  const [instruments, setInstruments] = useState(instrumentsData);
   const [instrumentSearch, setInstrumentSearch] = useState("");
-  const [activeInstrumentTab, setActiveInstrumentTab] = useState("forex");
+  const [activeInstrumentTab, setActiveInstrumentTab] = useState<InstrumentCategory>("forex");
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    forex: true,
+    commodities: true,
+    indices: true,
+    crypto: true,
+    stocks: true,
+    bonds: true,
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const toggleCategory = (category: string) => {
+    setOpenCategories(prev => ({ ...prev, [category]: !prev[category] }));
+  };
 
   const handleExportSettings = () => {
     const settings = {
@@ -972,42 +921,74 @@ platforms:
           </div>
         </div>
 
-        <Tabs value={activeInstrumentTab} onValueChange={setActiveInstrumentTab}>
-          <TabsList className="grid grid-cols-4 mb-4">
+        <Tabs value={activeInstrumentTab} onValueChange={(v) => setActiveInstrumentTab(v as InstrumentCategory)}>
+          <TabsList className="grid grid-cols-6 mb-4">
             <TabsTrigger value="forex">Forex ({instruments.forex.filter(i => i.enabled).length})</TabsTrigger>
             <TabsTrigger value="commodities">Commodities ({instruments.commodities.filter(i => i.enabled).length})</TabsTrigger>
             <TabsTrigger value="indices">Indices ({instruments.indices.filter(i => i.enabled).length})</TabsTrigger>
             <TabsTrigger value="crypto">Crypto ({instruments.crypto.filter(i => i.enabled).length})</TabsTrigger>
+            <TabsTrigger value="stocks">Stocks ({instruments.stocks.filter(i => i.enabled).length})</TabsTrigger>
+            <TabsTrigger value="bonds">Bonds ({instruments.bonds.filter(i => i.enabled).length})</TabsTrigger>
           </TabsList>
 
-          {(["forex", "commodities", "indices", "crypto"] as const).map((category) => (
-            <TabsContent key={category} value={category}>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                {filteredInstruments(category).map((inst) => (
-                  <div
-                    key={inst.symbol}
-                    className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                      inst.enabled
-                        ? "bg-primary/10 border-primary/30"
-                        : "bg-secondary/50 border-border"
-                    }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-mono text-sm font-semibold text-foreground">{inst.symbol}</span>
-                      <span className="text-xs text-muted-foreground">{inst.name}</span>
-                    </div>
-                    <Switch
-                      checked={inst.enabled}
-                      onCheckedChange={() => toggleInstrument(category, inst.symbol)}
-                    />
-                  </div>
-                ))}
-              </div>
-              {filteredInstruments(category).length === 0 && (
-                <p className="text-center text-muted-foreground py-8">No instruments found</p>
-              )}
-            </TabsContent>
-          ))}
+          {(["forex", "commodities", "indices", "crypto", "stocks", "bonds"] as const).map((category) => {
+            const categoryItems = filteredInstruments(category);
+            const subCategories = [...new Set(categoryItems.map(i => i.category))];
+            
+            return (
+              <TabsContent key={category} value={category}>
+                <div className="space-y-4">
+                  {subCategories.map((subCat) => (
+                    <Collapsible 
+                      key={subCat} 
+                      open={openCategories[`${category}-${subCat}`] !== false}
+                      onOpenChange={() => toggleCategory(`${category}-${subCat}`)}
+                    >
+                      <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                        <div className="flex items-center gap-2">
+                          {openCategories[`${category}-${subCat}`] !== false ? (
+                            <ChevronDown className="w-4 h-4" />
+                          ) : (
+                            <ChevronRight className="w-4 h-4" />
+                          )}
+                          <span className="font-semibold text-foreground">{subCat}</span>
+                          <Badge variant="outline" className="ml-2">
+                            {categoryItems.filter(i => i.category === subCat && i.enabled).length}/{categoryItems.filter(i => i.category === subCat).length}
+                          </Badge>
+                        </div>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent className="pt-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+                          {categoryItems.filter(i => i.category === subCat).map((inst) => (
+                            <div
+                              key={inst.symbol}
+                              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
+                                inst.enabled
+                                  ? "bg-primary/10 border-primary/30"
+                                  : "bg-secondary/50 border-border"
+                              }`}
+                            >
+                              <div className="flex flex-col">
+                                <span className="font-mono text-sm font-semibold text-foreground">{inst.symbol}</span>
+                                <span className="text-xs text-muted-foreground">{inst.name}</span>
+                              </div>
+                              <Switch
+                                checked={inst.enabled}
+                                onCheckedChange={() => toggleInstrument(category, inst.symbol)}
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      </CollapsibleContent>
+                    </Collapsible>
+                  ))}
+                </div>
+                {filteredInstruments(category).length === 0 && (
+                  <p className="text-center text-muted-foreground py-8">No instruments found</p>
+                )}
+              </TabsContent>
+            );
+          })}
         </Tabs>
       </Card>
 
