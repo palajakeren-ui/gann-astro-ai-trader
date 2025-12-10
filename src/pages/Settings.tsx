@@ -6,10 +6,10 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight } from "lucide-react";
+import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
-import { tradingInstruments as instrumentsData, InstrumentCategory } from "@/data/tradingInstruments";
+import { tradingInstruments as instrumentsData, InstrumentCategory, Instrument } from "@/data/tradingInstruments";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
@@ -67,8 +67,48 @@ const Settings = () => {
   });
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  // Custom instrument input states
+  const [newInstrument, setNewInstrument] = useState({ symbol: "", name: "", category: "" });
+  const [customInstrumentCategory, setCustomInstrumentCategory] = useState<InstrumentCategory>("forex");
+
   const toggleCategory = (category: string) => {
     setOpenCategories(prev => ({ ...prev, [category]: !prev[category] }));
+  };
+
+  const addCustomInstrument = () => {
+    if (!newInstrument.symbol.trim() || !newInstrument.name.trim()) {
+      toast.error("Please fill in symbol and name");
+      return;
+    }
+    
+    const instrument: Instrument = {
+      symbol: newInstrument.symbol.toUpperCase().trim(),
+      name: newInstrument.name.trim(),
+      enabled: true,
+      category: newInstrument.category.trim() || "Custom"
+    };
+
+    // Check if instrument already exists
+    if (instruments[customInstrumentCategory].some(i => i.symbol === instrument.symbol)) {
+      toast.error("Instrument already exists");
+      return;
+    }
+
+    setInstruments(prev => ({
+      ...prev,
+      [customInstrumentCategory]: [...prev[customInstrumentCategory], instrument]
+    }));
+    
+    setNewInstrument({ symbol: "", name: "", category: "" });
+    toast.success(`${instrument.symbol} added to ${customInstrumentCategory}`);
+  };
+
+  const removeInstrument = (category: InstrumentCategory, symbol: string) => {
+    setInstruments(prev => ({
+      ...prev,
+      [category]: prev[category].filter(i => i.symbol !== symbol)
+    }));
+    toast.success(`${symbol} removed`);
   };
 
   const handleExportSettings = () => {
@@ -902,6 +942,60 @@ platforms:
         </div>
       </Card>
 
+      {/* Add Custom Instrument */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Add Custom Instrument</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Manually add trading instruments that are not in the predefined list
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+          <div className="space-y-2">
+            <Label className="text-foreground">Asset Class</Label>
+            <select
+              value={customInstrumentCategory}
+              onChange={(e) => setCustomInstrumentCategory(e.target.value as InstrumentCategory)}
+              className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground"
+            >
+              <option value="forex">Forex</option>
+              <option value="commodities">Commodities</option>
+              <option value="indices">Indices</option>
+              <option value="crypto">Crypto</option>
+              <option value="stocks">Stocks</option>
+              <option value="bonds">Bonds</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-foreground">Symbol *</Label>
+            <Input
+              placeholder="e.g., BTCUSDT"
+              value={newInstrument.symbol}
+              onChange={(e) => setNewInstrument(prev => ({ ...prev, symbol: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-foreground">Name *</Label>
+            <Input
+              placeholder="e.g., Bitcoin"
+              value={newInstrument.name}
+              onChange={(e) => setNewInstrument(prev => ({ ...prev, name: e.target.value }))}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label className="text-foreground">Sub-Category</Label>
+            <Input
+              placeholder="e.g., Layer 1, Major, etc."
+              value={newInstrument.category}
+              onChange={(e) => setNewInstrument(prev => ({ ...prev, category: e.target.value }))}
+            />
+          </div>
+          <Button onClick={addCustomInstrument} className="h-10">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Instrument
+          </Button>
+        </div>
+      </Card>
+
       {/* Trading Instruments Configuration */}
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Trading Instruments</h2>
@@ -968,14 +1062,24 @@ platforms:
                                   : "bg-secondary/50 border-border"
                               }`}
                             >
-                              <div className="flex flex-col">
+                              <div className="flex flex-col flex-1">
                                 <span className="font-mono text-sm font-semibold text-foreground">{inst.symbol}</span>
                                 <span className="text-xs text-muted-foreground">{inst.name}</span>
                               </div>
-                              <Switch
-                                checked={inst.enabled}
-                                onCheckedChange={() => toggleInstrument(category, inst.symbol)}
-                              />
+                              <div className="flex items-center gap-2">
+                                <Switch
+                                  checked={inst.enabled}
+                                  onCheckedChange={() => toggleInstrument(category, inst.symbol)}
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                  onClick={() => removeInstrument(category, inst.symbol)}
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
                             </div>
                           ))}
                         </div>

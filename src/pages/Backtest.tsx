@@ -1,9 +1,31 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BarChart3, Play, Download } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { BarChart3, Play, Download, Upload, FileText, X, File, Calendar, DollarSign, Clock, TrendingUp } from "lucide-react";
+import { useState, useRef } from "react";
+import { toast } from "sonner";
+
+interface UploadedFile {
+  name: string;
+  size: number;
+  type: string;
+  lastModified: Date;
+}
 
 const Backtest = () => {
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [isDragging, setIsDragging] = useState(false);
+  const [backtestConfig, setBacktestConfig] = useState({
+    startDate: "2023-01-01",
+    endDate: "2024-12-31",
+    initialCapital: "100000",
+    strategy: "Ensemble Multi",
+    timeframe: "H4"
+  });
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const results = [
     { metric: "Total Return", value: "+45.2%", good: true },
     { metric: "Sharpe Ratio", value: "2.4", good: true },
@@ -12,6 +34,78 @@ const Backtest = () => {
     { metric: "Profit Factor", value: "2.8", good: true },
     { metric: "Total Trades", value: "234", good: false },
   ];
+
+  const handleFileUpload = (files: FileList | null) => {
+    if (!files) return;
+    
+    const allowedTypes = [
+      "text/csv",
+      "application/json",
+      "text/plain",
+      "application/vnd.ms-excel",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "application/pdf"
+    ];
+    
+    const newFiles: UploadedFile[] = [];
+    
+    Array.from(files).forEach(file => {
+      if (allowedTypes.includes(file.type) || file.name.endsWith('.csv') || file.name.endsWith('.json') || file.name.endsWith('.txt')) {
+        newFiles.push({
+          name: file.name,
+          size: file.size,
+          type: file.type || getFileExtension(file.name),
+          lastModified: new Date(file.lastModified)
+        });
+      } else {
+        toast.error(`${file.name}: Unsupported file type`);
+      }
+    });
+
+    if (newFiles.length > 0) {
+      setUploadedFiles(prev => [...prev, ...newFiles]);
+      toast.success(`${newFiles.length} file(s) uploaded successfully`);
+    }
+  };
+
+  const getFileExtension = (filename: string) => {
+    return filename.split('.').pop()?.toUpperCase() || "FILE";
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + " B";
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
+  };
+
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+    toast.success("File removed");
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
+
+  const runBacktest = () => {
+    if (uploadedFiles.length === 0) {
+      toast.error("Please upload at least one data file");
+      return;
+    }
+    toast.success("Backtest started with uploaded data...");
+  };
 
   return (
     <div className="space-y-6">
@@ -24,7 +118,7 @@ const Backtest = () => {
           <p className="text-muted-foreground">Strategy performance analysis</p>
         </div>
         <div className="flex items-center space-x-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={runBacktest}>
             <Play className="w-4 h-4 mr-2" />
             Run New Test
           </Button>
@@ -35,29 +129,157 @@ const Backtest = () => {
         </div>
       </div>
 
+      {/* Document Upload Section */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+          <Upload className="w-5 h-5 mr-2" />
+          Upload Backtest Data
+        </h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Upload historical price data files for backtesting (CSV, JSON, Excel, PDF)
+        </p>
+
+        {/* Drop Zone */}
+        <div
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
+            isDragging
+              ? "border-primary bg-primary/10"
+              : "border-border hover:border-primary/50 hover:bg-secondary/30"
+          }`}
+        >
+          <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+          <p className="text-foreground font-medium mb-2">
+            Drag & drop files here, or click to browse
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Supported formats: CSV, JSON, TXT, Excel (.xlsx, .xls), PDF
+          </p>
+          <input
+            ref={fileInputRef}
+            type="file"
+            multiple
+            accept=".csv,.json,.txt,.xlsx,.xls,.pdf"
+            onChange={(e) => handleFileUpload(e.target.files)}
+            className="hidden"
+          />
+        </div>
+
+        {/* Uploaded Files List */}
+        {uploadedFiles.length > 0 && (
+          <div className="mt-4 space-y-2">
+            <Label className="text-foreground">Uploaded Files ({uploadedFiles.length})</Label>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              {uploadedFiles.map((file, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border"
+                >
+                  <div className="flex items-center gap-3">
+                    <File className="w-5 h-5 text-primary" />
+                    <div>
+                      <p className="text-sm font-medium text-foreground truncate max-w-[200px]">
+                        {file.name}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatFileSize(file.size)} • {getFileExtension(file.name)}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                    onClick={() => removeFile(index)}
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </Card>
+
+      {/* Backtest Configuration */}
       <Card className="p-6 border-border bg-card">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-foreground">Test Configuration</h2>
           <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-            Completed
+            {uploadedFiles.length > 0 ? "Ready" : "Awaiting Data"}
           </Badge>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Period</p>
-            <p className="text-sm font-semibold text-foreground">Jan 2023 - Dec 2024</p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+          <div className="space-y-2">
+            <Label className="text-foreground flex items-center gap-1">
+              <Calendar className="w-3 h-3" /> Start Date
+            </Label>
+            <Input
+              type="date"
+              value={backtestConfig.startDate}
+              onChange={(e) => setBacktestConfig(prev => ({ ...prev, startDate: e.target.value }))}
+            />
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Initial Capital</p>
-            <p className="text-sm font-semibold text-foreground">$100,000</p>
+          <div className="space-y-2">
+            <Label className="text-foreground flex items-center gap-1">
+              <Calendar className="w-3 h-3" /> End Date
+            </Label>
+            <Input
+              type="date"
+              value={backtestConfig.endDate}
+              onChange={(e) => setBacktestConfig(prev => ({ ...prev, endDate: e.target.value }))}
+            />
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Strategy</p>
-            <p className="text-sm font-semibold text-foreground">Ensemble Multi</p>
+          <div className="space-y-2">
+            <Label className="text-foreground flex items-center gap-1">
+              <DollarSign className="w-3 h-3" /> Initial Capital
+            </Label>
+            <Input
+              type="number"
+              value={backtestConfig.initialCapital}
+              onChange={(e) => setBacktestConfig(prev => ({ ...prev, initialCapital: e.target.value }))}
+              placeholder="100000"
+            />
           </div>
-          <div>
-            <p className="text-xs text-muted-foreground mb-1">Timeframe</p>
-            <p className="text-sm font-semibold text-foreground">H4</p>
+          <div className="space-y-2">
+            <Label className="text-foreground flex items-center gap-1">
+              <TrendingUp className="w-3 h-3" /> Strategy
+            </Label>
+            <select
+              value={backtestConfig.strategy}
+              onChange={(e) => setBacktestConfig(prev => ({ ...prev, strategy: e.target.value }))}
+              className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground"
+            >
+              <option>Ensemble Multi</option>
+              <option>Gann Geometry</option>
+              <option>Ehlers DSP</option>
+              <option>ML Models</option>
+              <option>Astro Cycles</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-foreground flex items-center gap-1">
+              <Clock className="w-3 h-3" /> Timeframe
+            </Label>
+            <select
+              value={backtestConfig.timeframe}
+              onChange={(e) => setBacktestConfig(prev => ({ ...prev, timeframe: e.target.value }))}
+              className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground"
+            >
+              <option>M1</option>
+              <option>M5</option>
+              <option>M15</option>
+              <option>M30</option>
+              <option>H1</option>
+              <option>H4</option>
+              <option>D1</option>
+              <option>W1</option>
+              <option>MN</option>
+            </select>
           </div>
         </div>
       </Card>
