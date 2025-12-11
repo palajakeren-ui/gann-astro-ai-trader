@@ -12,6 +12,7 @@ import {
   Shield,
   Calendar,
   BarChart3,
+  Zap,
 } from "lucide-react";
 
 const navItems = [
@@ -27,6 +28,7 @@ const navItems = [
   { icon: Shield, label: "Risk Manager", path: "/risk" },
   { icon: BarChart3, label: "Backtest", path: "/backtest" },
   { icon: Target, label: "Gann Tools", path: "/gann-tools" },
+  { icon: Zap, label: "Slippage & Spike", path: "/slippage-spike" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
