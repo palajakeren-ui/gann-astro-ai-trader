@@ -3,7 +3,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { BarChart3, Play, Download, Upload, FileText, X, File, Calendar, DollarSign, Clock, TrendingUp } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { BarChart3, Play, Download, Upload, FileText, X, File, Calendar, DollarSign, Clock, TrendingUp, Zap, AlertTriangle, Settings2 } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 
@@ -13,6 +14,28 @@ interface UploadedFile {
   type: string;
   lastModified: Date;
 }
+
+// Complete timeframes from 1 minute to 1 month
+const TIMEFRAMES = [
+  { value: "M1", label: "1 Minute" },
+  { value: "M2", label: "2 Minutes" },
+  { value: "M3", label: "3 Minutes" },
+  { value: "M5", label: "5 Minutes" },
+  { value: "M10", label: "10 Minutes" },
+  { value: "M15", label: "15 Minutes" },
+  { value: "M30", label: "30 Minutes" },
+  { value: "M45", label: "45 Minutes" },
+  { value: "H1", label: "1 Hour" },
+  { value: "H2", label: "2 Hours" },
+  { value: "H3", label: "3 Hours" },
+  { value: "H4", label: "4 Hours" },
+  { value: "H6", label: "6 Hours" },
+  { value: "H8", label: "8 Hours" },
+  { value: "H12", label: "12 Hours" },
+  { value: "D1", label: "1 Day" },
+  { value: "W1", label: "1 Week" },
+  { value: "MN1", label: "1 Month" },
+];
 
 const Backtest = () => {
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -24,6 +47,23 @@ const Backtest = () => {
     strategy: "Ensemble Multi",
     timeframe: "H4"
   });
+  
+  // Slippage & Spike Detection Settings
+  const [slippageSettings, setSlippageSettings] = useState({
+    autoSlippage: true,
+    slippageValue: "0.5",
+    maxSlippage: "2.0",
+    slippageModel: "adaptive"
+  });
+  
+  const [spikeSettings, setSpikeSettings] = useState({
+    autoDetect: true,
+    sensitivity: "medium",
+    threshold: "3.0",
+    filterSpikes: true,
+    alertOnSpike: true
+  });
+  
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const results = [
@@ -270,19 +310,172 @@ const Backtest = () => {
               onChange={(e) => setBacktestConfig(prev => ({ ...prev, timeframe: e.target.value }))}
               className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground"
             >
-              <option>M1</option>
-              <option>M5</option>
-              <option>M15</option>
-              <option>M30</option>
-              <option>H1</option>
-              <option>H4</option>
-              <option>D1</option>
-              <option>W1</option>
-              <option>MN</option>
+              {TIMEFRAMES.map((tf) => (
+                <option key={tf.value} value={tf.value}>{tf.value} - {tf.label}</option>
+              ))}
             </select>
           </div>
         </div>
       </Card>
+
+      {/* Slippage & Spike Detection Settings */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Auto Slippage Card */}
+        <Card className="p-6 border-border bg-card">
+          <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+            <Settings2 className="w-5 h-5 mr-2 text-primary" />
+            Automatic Slippage
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-foreground">Auto Slippage</Label>
+                <p className="text-xs text-muted-foreground">Automatically calculate slippage based on market conditions</p>
+              </div>
+              <Switch
+                checked={slippageSettings.autoSlippage}
+                onCheckedChange={(checked) => setSlippageSettings(prev => ({ ...prev, autoSlippage: checked }))}
+              />
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground text-sm">Base Slippage (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={slippageSettings.slippageValue}
+                  onChange={(e) => setSlippageSettings(prev => ({ ...prev, slippageValue: e.target.value }))}
+                  disabled={slippageSettings.autoSlippage}
+                  className="bg-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground text-sm">Max Slippage (%)</Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  value={slippageSettings.maxSlippage}
+                  onChange={(e) => setSlippageSettings(prev => ({ ...prev, maxSlippage: e.target.value }))}
+                  className="bg-input"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-foreground text-sm">Slippage Model</Label>
+              <select
+                value={slippageSettings.slippageModel}
+                onChange={(e) => setSlippageSettings(prev => ({ ...prev, slippageModel: e.target.value }))}
+                className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground"
+              >
+                <option value="fixed">Fixed - Constant slippage</option>
+                <option value="adaptive">Adaptive - Based on volatility</option>
+                <option value="volume">Volume-based - Considers liquidity</option>
+                <option value="realistic">Realistic - Market impact model</option>
+              </select>
+            </div>
+
+            <div className="p-3 rounded-lg bg-primary/10 border border-primary/20">
+              <div className="flex items-center gap-2 text-primary">
+                <Zap className="w-4 h-4" />
+                <span className="text-sm font-medium">Current Estimated Slippage</span>
+              </div>
+              <p className="text-2xl font-bold text-foreground mt-1">
+                {slippageSettings.autoSlippage ? "0.35%" : `${slippageSettings.slippageValue}%`}
+              </p>
+              <p className="text-xs text-muted-foreground">Based on {slippageSettings.slippageModel} model</p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Auto Spike Detection Card */}
+        <Card className="p-6 border-border bg-card">
+          <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+            <AlertTriangle className="w-5 h-5 mr-2 text-warning" />
+            Spike Detection
+          </h2>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-foreground">Auto Spike Detection</Label>
+                <p className="text-xs text-muted-foreground">Automatically detect price spikes and anomalies</p>
+              </div>
+              <Switch
+                checked={spikeSettings.autoDetect}
+                onCheckedChange={(checked) => setSpikeSettings(prev => ({ ...prev, autoDetect: checked }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label className="text-foreground text-sm">Sensitivity</Label>
+                <select
+                  value={spikeSettings.sensitivity}
+                  onChange={(e) => setSpikeSettings(prev => ({ ...prev, sensitivity: e.target.value }))}
+                  className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground"
+                  disabled={!spikeSettings.autoDetect}
+                >
+                  <option value="low">Low - Major spikes only</option>
+                  <option value="medium">Medium - Balanced</option>
+                  <option value="high">High - All anomalies</option>
+                  <option value="custom">Custom threshold</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-foreground text-sm">Threshold (σ)</Label>
+                <Input
+                  type="number"
+                  step="0.5"
+                  value={spikeSettings.threshold}
+                  onChange={(e) => setSpikeSettings(prev => ({ ...prev, threshold: e.target.value }))}
+                  disabled={!spikeSettings.autoDetect || spikeSettings.sensitivity !== "custom"}
+                  className="bg-input"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-foreground text-sm">Filter Spikes from Backtest</Label>
+                <p className="text-xs text-muted-foreground">Exclude detected spikes from results</p>
+              </div>
+              <Switch
+                checked={spikeSettings.filterSpikes}
+                onCheckedChange={(checked) => setSpikeSettings(prev => ({ ...prev, filterSpikes: checked }))}
+                disabled={!spikeSettings.autoDetect}
+              />
+            </div>
+
+            <div className="flex items-center justify-between">
+              <div>
+                <Label className="text-foreground text-sm">Alert on Spike</Label>
+                <p className="text-xs text-muted-foreground">Show notification when spike detected</p>
+              </div>
+              <Switch
+                checked={spikeSettings.alertOnSpike}
+                onCheckedChange={(checked) => setSpikeSettings(prev => ({ ...prev, alertOnSpike: checked }))}
+                disabled={!spikeSettings.autoDetect}
+              />
+            </div>
+
+            <div className="p-3 rounded-lg bg-warning/10 border border-warning/20">
+              <div className="flex items-center gap-2 text-warning">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-medium">Spike Detection Status</span>
+              </div>
+              <p className="text-lg font-bold text-foreground mt-1">
+                {spikeSettings.autoDetect ? "Active" : "Disabled"}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {spikeSettings.autoDetect 
+                  ? `Sensitivity: ${spikeSettings.sensitivity}, Threshold: ${spikeSettings.threshold}σ`
+                  : "Enable to detect price anomalies"}
+              </p>
+            </div>
+          </div>
+        </Card>
+      </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         {results.map((result, idx) => (
