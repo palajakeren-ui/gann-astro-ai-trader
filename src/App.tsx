@@ -17,6 +17,7 @@ import Risk from "./pages/Risk";
 import Backtest from "./pages/Backtest";
 import Settings from "./pages/Settings";
 import GannTools from "./pages/GannTools";
+import SlippageSpike from "./pages/SlippageSpike";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -43,6 +44,7 @@ const App = () => (
               <Route path="/risk" element={<Risk />} />
               <Route path="/backtest" element={<Backtest />} />
               <Route path="/gann-tools" element={<GannTools />} />
+              <Route path="/slippage-spike" element={<SlippageSpike />} />
               <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
