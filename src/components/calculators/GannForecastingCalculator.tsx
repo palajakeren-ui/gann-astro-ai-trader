@@ -1,0 +1,290 @@
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CalendarClock, TrendingUp, TrendingDown, Target } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+
+interface ForecastResult {
+  year: number;
+  date: Date;
+  price: number;
+  cycle: string;
+  type: "peak" | "trough" | "neutral";
+  confidence: number;
+}
+
+const CYCLE_TYPES = [
+  { value: "major", label: "Major Cycle (20 Years)" },
+  { value: "intermediate", label: "Intermediate (10 Years)" },
+  { value: "minor", label: "Minor Cycle (5 Years)" },
+  { value: "annual", label: "Annual Cycle" },
+  { value: "quarterly", label: "Quarterly Cycle" },
+  { value: "monthly", label: "Monthly Cycle" },
+];
+
+const YEAR_RANGES = [
+  { value: "10", label: "10 Years" },
+  { value: "25", label: "25 Years" },
+  { value: "50", label: "50 Years" },
+  { value: "100", label: "100 Years" },
+  { value: "200", label: "200 Years" },
+  { value: "365", label: "365 Years" },
+];
+
+export const GannForecastingCalculator = () => {
+  const [basePrice, setBasePrice] = useState("100");
+  const [startYear, setStartYear] = useState(new Date().getFullYear().toString());
+  const [forecastRange, setForecastRange] = useState("100");
+  const [cycleType, setCycleType] = useState("major");
+  const [forecasts, setForecasts] = useState<ForecastResult[]>([]);
+
+  const calculateForecasts = () => {
+    const price = parseFloat(basePrice) || 100;
+    const start = parseInt(startYear) || new Date().getFullYear();
+    const range = parseInt(forecastRange) || 100;
+    
+    const results: ForecastResult[] = [];
+    
+    // Gann cycles: 30, 60, 90, 120, 180, 240, 270, 360 year cycles
+    const gannCycles = [7, 10, 20, 30, 60, 90, 120, 180, 240, 270, 360];
+    
+    for (let i = 1; i <= range; i++) {
+      const year = start + i;
+      const yearsFromStart = i;
+      
+      // Calculate price using Gann square root method
+      const sqrtBase = Math.sqrt(price);
+      const increment = yearsFromStart * 0.0625; // 1/16 of a unit per year
+      const projectedPrice = Math.pow(sqrtBase + increment, 2);
+      
+      // Determine cycle type
+      let cycle = "Annual";
+      let type: "peak" | "trough" | "neutral" = "neutral";
+      let confidence = 50;
+      
+      // Check for major Gann cycles
+      for (const gannCycle of gannCycles) {
+        if (yearsFromStart % gannCycle === 0) {
+          cycle = `${gannCycle}-Year Cycle`;
+          type = gannCycle % 60 === 0 ? "peak" : gannCycle % 30 === 0 ? "trough" : "neutral";
+          confidence = Math.min(95, 60 + (gannCycle / 10));
+          break;
+        }
+      }
+      
+      // Special Gann dates (90, 180, 270, 360 degrees of time)
+      if (yearsFromStart % 90 === 0) {
+        cycle = "Cardinal 90° Cycle";
+        type = "peak";
+        confidence = 92;
+      } else if (yearsFromStart % 45 === 0) {
+        cycle = "Diagonal 45° Cycle";
+        type = yearsFromStart % 90 === 45 ? "trough" : "peak";
+        confidence = 85;
+      }
+      
+      // Square of time analysis
+      const sqrtYear = Math.sqrt(yearsFromStart);
+      if (Number.isInteger(sqrtYear)) {
+        cycle = `Square of ${sqrtYear} (${yearsFromStart} years)`;
+        type = sqrtYear % 2 === 0 ? "peak" : "trough";
+        confidence = 88;
+      }
+      
+      results.push({
+        year,
+        date: new Date(year, 0, 1),
+        price: projectedPrice,
+        cycle,
+        type,
+        confidence,
+      });
+    }
+    
+    setForecasts(results);
+  };
+
+  const significantForecasts = forecasts.filter((f) => f.confidence >= 75);
+  const peakForecasts = forecasts.filter((f) => f.type === "peak" && f.confidence >= 70);
+  const troughForecasts = forecasts.filter((f) => f.type === "trough" && f.confidence >= 70);
+
+  return (
+    <Card className="border-border/50 bg-card/50 backdrop-blur">
+      <CardHeader className="pb-3">
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <CalendarClock className="h-5 w-5 text-primary" />
+          Gann Forecasting (Up to 365 Years)
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="space-y-2">
+            <Label>Base Price</Label>
+            <Input
+              type="number"
+              value={basePrice}
+              onChange={(e) => setBasePrice(e.target.value)}
+              placeholder="100"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Start Year</Label>
+            <Input
+              type="number"
+              value={startYear}
+              onChange={(e) => setStartYear(e.target.value)}
+              placeholder="2024"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Forecast Range</Label>
+            <Select value={forecastRange} onValueChange={setForecastRange}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {YEAR_RANGES.map((range) => (
+                  <SelectItem key={range.value} value={range.value}>
+                    {range.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Cycle Focus</Label>
+            <Select value={cycleType} onValueChange={setCycleType}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {CYCLE_TYPES.map((cycle) => (
+                  <SelectItem key={cycle.value} value={cycle.value}>
+                    {cycle.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <Button onClick={calculateForecasts} className="w-full">
+          <Target className="h-4 w-4 mr-2" />
+          Generate {forecastRange}-Year Forecast
+        </Button>
+
+        {forecasts.length > 0 && (
+          <Tabs defaultValue="significant" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="significant">Significant</TabsTrigger>
+              <TabsTrigger value="peaks">Peaks</TabsTrigger>
+              <TabsTrigger value="troughs">Troughs</TabsTrigger>
+              <TabsTrigger value="all">All</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="significant">
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {significantForecasts.map((forecast) => (
+                    <ForecastItem key={forecast.year} forecast={forecast} />
+                  ))}
+                  {significantForecasts.length === 0 && (
+                    <p className="text-muted-foreground text-center py-4">No significant cycles found</p>
+                  )}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="peaks">
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {peakForecasts.map((forecast) => (
+                    <ForecastItem key={forecast.year} forecast={forecast} />
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="troughs">
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {troughForecasts.map((forecast) => (
+                    <ForecastItem key={forecast.year} forecast={forecast} />
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
+            <TabsContent value="all">
+              <ScrollArea className="h-[300px]">
+                <div className="space-y-2">
+                  {forecasts.map((forecast) => (
+                    <ForecastItem key={forecast.year} forecast={forecast} />
+                  ))}
+                </div>
+              </ScrollArea>
+            </TabsContent>
+          </Tabs>
+        )}
+
+        {/* Summary Stats */}
+        {forecasts.length > 0 && (
+          <div className="grid grid-cols-3 gap-4 text-center">
+            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+              <TrendingUp className="h-5 w-5 mx-auto text-green-500 mb-1" />
+              <div className="text-2xl font-bold text-green-500">{peakForecasts.length}</div>
+              <div className="text-xs text-muted-foreground">Peak Cycles</div>
+            </div>
+            <div className="p-3 rounded-lg bg-red-500/10 border border-red-500/30">
+              <TrendingDown className="h-5 w-5 mx-auto text-red-500 mb-1" />
+              <div className="text-2xl font-bold text-red-500">{troughForecasts.length}</div>
+              <div className="text-xs text-muted-foreground">Trough Cycles</div>
+            </div>
+            <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+              <Target className="h-5 w-5 mx-auto text-primary mb-1" />
+              <div className="text-2xl font-bold text-primary">{significantForecasts.length}</div>
+              <div className="text-xs text-muted-foreground">High Confidence</div>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+const ForecastItem = ({ forecast }: { forecast: ForecastResult }) => (
+  <div
+    className={`p-3 rounded-lg border ${
+      forecast.type === "peak"
+        ? "bg-green-500/5 border-green-500/20"
+        : forecast.type === "trough"
+        ? "bg-red-500/5 border-red-500/20"
+        : "bg-secondary/50 border-border/50"
+    }`}
+  >
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        {forecast.type === "peak" ? (
+          <TrendingUp className="h-4 w-4 text-green-500" />
+        ) : forecast.type === "trough" ? (
+          <TrendingDown className="h-4 w-4 text-red-500" />
+        ) : (
+          <Target className="h-4 w-4 text-muted-foreground" />
+        )}
+        <span className="font-semibold">{forecast.year}</span>
+        <Badge variant="outline" className="text-xs">
+          {forecast.cycle}
+        </Badge>
+      </div>
+      <div className="text-right">
+        <div className="font-mono text-sm">${forecast.price.toFixed(2)}</div>
+        <div className="text-xs text-muted-foreground">{forecast.confidence}% confidence</div>
+      </div>
+    </div>
+  </div>
+);
