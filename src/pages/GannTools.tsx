@@ -3,6 +3,8 @@ import { GannWheelChart } from "@/components/charts/GannWheelChart";
 import { CandlestickChart } from "@/components/charts/CandlestickChart";
 import { GannCalculator } from "@/components/calculators/GannCalculator";
 import { GannFanChart } from "@/components/charts/GannFanChart";
+import { GannBoxChart } from "@/components/charts/GannBoxChart";
+import { GannForecastingCalculator } from "@/components/calculators/GannForecastingCalculator";
 
 // Mock data for candlestick chart
 const mockCandleData = Array.from({ length: 30 }, (_, i) => {
@@ -29,6 +31,12 @@ const GannTools = () => {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           <CandlestickChart data={mockCandleData} />
+          
+          {/* Gann Box 0-360° Multi-Timeframe */}
+          <GannBoxChart basePrice={currentPrice} />
+          
+          {/* Gann Forecasting up to 365 Years */}
+          <GannForecastingCalculator />
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <GannSquareChart centerValue={currentPrice} />
