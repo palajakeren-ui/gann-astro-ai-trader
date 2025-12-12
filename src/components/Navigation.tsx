@@ -13,6 +13,8 @@ import {
   Calendar,
   BarChart3,
   Zap,
+  FileText,
+  BookOpen,
 } from "lucide-react";
 
 const navItems = [
@@ -29,6 +31,8 @@ const navItems = [
   { icon: BarChart3, label: "Backtest", path: "/backtest" },
   { icon: Target, label: "Gann Tools", path: "/gann-tools" },
   { icon: Zap, label: "Slippage & Spike", path: "/slippage-spike" },
+  { icon: FileText, label: "Reports", path: "/reports" },
+  { icon: BookOpen, label: "Trading Journal", path: "/journal" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 

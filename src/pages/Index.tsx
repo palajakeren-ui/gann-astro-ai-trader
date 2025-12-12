@@ -3,6 +3,13 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { TrendingUp, Activity, DollarSign, Percent, Layers } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from "recharts";
+import { GannSquareChart } from "@/components/charts/GannSquareChart";
+import { GannWheelChart } from "@/components/charts/GannWheelChart";
+import { CandlestickChart } from "@/components/charts/CandlestickChart";
+import { GannCalculator } from "@/components/calculators/GannCalculator";
+import { GannFanChart } from "@/components/charts/GannFanChart";
+import { GannBoxChart } from "@/components/charts/GannBoxChart";
+import { GannForecastingCalculator } from "@/components/calculators/GannForecastingCalculator";
 
 const mockPriceData = Array.from({ length: 30 }, (_, i) => {
   const base = 47000 + Math.sin(i / 5) * 2000;
@@ -11,6 +18,17 @@ const mockPriceData = Array.from({ length: 30 }, (_, i) => {
     date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
     price: base + Math.random() * 1000,
     volume: 800000 + Math.random() * 800000,
+  };
+});
+
+const mockCandleData = Array.from({ length: 30 }, (_, i) => {
+  const base = 47000 + Math.sin(i / 5) * 2000;
+  return {
+    date: new Date(2024, 0, i + 1).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    open: base + Math.random() * 500,
+    high: base + Math.random() * 1500,
+    low: base - Math.random() * 800,
+    close: base + Math.random() * 500,
   };
 });
 
@@ -365,17 +383,26 @@ const Index = () => {
         </TabsContent>
 
         <TabsContent value="analysis" className="space-y-4 mt-4">
-          <Card className="p-6 border-border bg-card">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Advanced Analysis</h3>
-            <p className="text-muted-foreground">Deep market analysis and patterns</p>
-          </Card>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Gann Analysis Tools (Real-Time)</h3>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-6">
+              <CandlestickChart data={mockCandleData} />
+              <GannBoxChart basePrice={currentPrice} />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <GannSquareChart centerValue={currentPrice} />
+                <GannWheelChart currentPrice={currentPrice} />
+              </div>
+              <GannFanChart />
+            </div>
+            <div>
+              <GannCalculator />
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="forecasting" className="space-y-4 mt-4">
-          <Card className="p-6 border-border bg-card">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Forecasting Models</h3>
-            <p className="text-muted-foreground">AI-powered price predictions</p>
-          </Card>
+          <h3 className="text-lg font-semibold text-foreground mb-4">Gann Forecasting (Up to 365 Years)</h3>
+          <GannForecastingCalculator />
         </TabsContent>
 
         <TabsContent value="risk" className="space-y-4 mt-4">
