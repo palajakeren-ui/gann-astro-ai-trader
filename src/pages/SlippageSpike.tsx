@@ -61,10 +61,22 @@ const SlippageSpike = () => {
           </h1>
           <p className="text-muted-foreground">Automatic slippage calculation and price spike detection</p>
         </div>
-        <div className="flex items-center space-x-2">
-          <Badge variant="outline" className="bg-success/10 text-success border-success/20">
-            System Active
+        <div className="flex items-center gap-2">
+          <Badge variant={slippageSettings.autoSlippage || spikeSettings.autoDetect ? "default" : "outline"} className={slippageSettings.autoSlippage || spikeSettings.autoDetect ? "bg-success" : ""}>
+            {slippageSettings.autoSlippage || spikeSettings.autoDetect ? "System Active" : "System Paused"}
           </Badge>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => {
+              const newState = !(slippageSettings.autoSlippage && spikeSettings.autoDetect);
+              setSlippageSettings(prev => ({ ...prev, autoSlippage: newState }));
+              setSpikeSettings(prev => ({ ...prev, autoDetect: newState }));
+              toast.success(newState ? "All systems enabled" : "All systems disabled");
+            }}
+          >
+            {slippageSettings.autoSlippage && spikeSettings.autoDetect ? "Disable All" : "Enable All"}
+          </Button>
         </div>
       </div>
 

@@ -30,7 +30,7 @@ const timeframes = [
 ];
 
 const defaultStrategies = [
-  { name: "Gann Geometry", weight: 0.25 },
+  { name: "WD Gann Modul", weight: 0.25 },
   { name: "Astro Cycles", weight: 0.15 },
   { name: "Ehlers DSP", weight: 0.20 },
   { name: "ML Models", weight: 0.25 },
