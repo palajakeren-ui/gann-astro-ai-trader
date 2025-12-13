@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { 
   BookOpen, 
   Plus, 
@@ -19,8 +18,12 @@ import {
   XCircle,
   Edit,
   Trash2,
-  Filter
+  Filter,
+  Download,
+  FileText,
+  FileSpreadsheet
 } from "lucide-react";
+import { toast } from "sonner";
 
 interface JournalEntry {
   id: string;
@@ -153,46 +156,124 @@ const Journal = () => {
       setEntries([entry, ...entries]);
       setNewEntry({ direction: "long", status: "win" });
       setShowNewEntry(false);
+      toast.success("Journal entry added successfully!");
     }
   };
 
+  const exportToCSV = () => {
+    const headers = ["Date", "Symbol", "Direction", "Entry Price", "Exit Price", "Stop Loss", "Take Profit", "Lot Size", "P&L", "P&L %", "Status", "Strategy", "Gann Signals", "Ehlers Confirmation", "Emotional State", "Notes", "Lessons"];
+    const csvContent = [
+      headers.join(","),
+      ...filteredEntries.map(entry => [
+        entry.date,
+        entry.symbol,
+        entry.direction,
+        entry.entryPrice,
+        entry.exitPrice,
+        entry.stopLoss,
+        entry.takeProfit,
+        entry.lotSize,
+        entry.pnl,
+        entry.pnlPercent,
+        entry.status,
+        `"${entry.strategy}"`,
+        `"${entry.gannSignals}"`,
+        `"${entry.ehlersConfirmation}"`,
+        `"${entry.emotionalState}"`,
+        `"${entry.notes}"`,
+        `"${entry.lessons}"`
+      ].join(","))
+    ].join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `trading-journal-${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Journal exported to CSV!");
+  };
+
+  const exportToJSON = () => {
+    const jsonContent = JSON.stringify(filteredEntries, null, 2);
+    const blob = new Blob([jsonContent], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `trading-journal-${new Date().toISOString().split('T')[0]}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast.success("Journal exported to JSON!");
+  };
+
+  const exportToPDF = () => {
+    toast.success("Generating PDF report...");
+    setTimeout(() => {
+      window.print();
+    }, 500);
+  };
+
+  const deleteEntry = (id: string) => {
+    setEntries(entries.filter(e => e.id !== id));
+    toast.success("Entry deleted successfully!");
+  };
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center gap-2">
-            <BookOpen className="w-8 h-8 text-primary" />
+          <h1 className="text-xl md:text-3xl font-bold text-foreground flex items-center gap-2">
+            <BookOpen className="w-6 h-6 md:w-8 md:h-8 text-primary" />
             Trading Journal
           </h1>
-          <p className="text-muted-foreground">Track, analyze, and improve your trading performance</p>
+          <p className="text-sm text-muted-foreground">Track, analyze, and improve your trading performance</p>
         </div>
-        <Button onClick={() => setShowNewEntry(!showNewEntry)}>
-          <Plus className="w-4 h-4 mr-2" />
-          New Entry
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button variant="outline" size="sm" onClick={exportToCSV}>
+            <FileSpreadsheet className="w-4 h-4 mr-2" />
+            CSV
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToJSON}>
+            <FileText className="w-4 h-4 mr-2" />
+            JSON
+          </Button>
+          <Button variant="outline" size="sm" onClick={exportToPDF}>
+            <Download className="w-4 h-4 mr-2" />
+            PDF
+          </Button>
+          <Button size="sm" onClick={() => setShowNewEntry(!showNewEntry)}>
+            <Plus className="w-4 h-4 mr-2" />
+            New Entry
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card className="p-4 border-border bg-card">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 md:gap-4">
+        <Card className="p-3 md:p-4 border-border bg-card">
           <p className="text-xs text-muted-foreground mb-1">Total Trades</p>
-          <p className="text-2xl font-bold text-foreground">{stats.totalTrades}</p>
+          <p className="text-xl md:text-2xl font-bold text-foreground">{stats.totalTrades}</p>
         </Card>
-        <Card className="p-4 border-border bg-card">
+        <Card className="p-3 md:p-4 border-border bg-card">
           <p className="text-xs text-muted-foreground mb-1">Wins</p>
-          <p className="text-2xl font-bold text-success">{stats.wins}</p>
+          <p className="text-xl md:text-2xl font-bold text-success">{stats.wins}</p>
         </Card>
-        <Card className="p-4 border-border bg-card">
+        <Card className="p-3 md:p-4 border-border bg-card">
           <p className="text-xs text-muted-foreground mb-1">Losses</p>
-          <p className="text-2xl font-bold text-destructive">{stats.losses}</p>
+          <p className="text-xl md:text-2xl font-bold text-destructive">{stats.losses}</p>
         </Card>
-        <Card className="p-4 border-border bg-card">
+        <Card className="p-3 md:p-4 border-border bg-card">
           <p className="text-xs text-muted-foreground mb-1">Win Rate</p>
-          <p className="text-2xl font-bold text-foreground">{stats.winRate}%</p>
+          <p className="text-xl md:text-2xl font-bold text-foreground">{stats.winRate}%</p>
         </Card>
-        <Card className="p-4 border-border bg-card">
+        <Card className="p-3 md:p-4 border-border bg-card col-span-2 md:col-span-1">
           <p className="text-xs text-muted-foreground mb-1">Total P&L</p>
-          <p className={`text-2xl font-bold ${stats.totalPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+          <p className={`text-xl md:text-2xl font-bold ${stats.totalPnl >= 0 ? 'text-success' : 'text-destructive'}`}>
             ${stats.totalPnl.toFixed(2)}
           </p>
         </Card>
@@ -200,9 +281,9 @@ const Journal = () => {
 
       {/* New Entry Form */}
       {showNewEntry && (
-        <Card className="p-6 border-border bg-card">
+        <Card className="p-4 md:p-6 border-border bg-card">
           <h3 className="text-lg font-semibold text-foreground mb-4">New Journal Entry</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-4">
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">Symbol</label>
               <Input 
@@ -290,7 +371,7 @@ const Journal = () => {
             </div>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">Strategy Used</label>
               <Input 
@@ -309,13 +390,14 @@ const Journal = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">Gann Signals</label>
               <Textarea 
-                placeholder="Describe Gann signals that triggered this trade..."
+                placeholder="Describe Gann signals..."
                 value={newEntry.gannSignals || ""}
                 onChange={(e) => setNewEntry({ ...newEntry, gannSignals: e.target.value })}
+                className="min-h-[80px]"
               />
             </div>
             <div>
@@ -324,25 +406,28 @@ const Journal = () => {
                 placeholder="Describe Ehlers DSP confirmations..."
                 value={newEntry.ehlersConfirmation || ""}
                 onChange={(e) => setNewEntry({ ...newEntry, ehlersConfirmation: e.target.value })}
+                className="min-h-[80px]"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4">
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">Trade Notes</label>
               <Textarea 
-                placeholder="Additional notes about this trade..."
+                placeholder="Additional notes..."
                 value={newEntry.notes || ""}
                 onChange={(e) => setNewEntry({ ...newEntry, notes: e.target.value })}
+                className="min-h-[80px]"
               />
             </div>
             <div>
               <label className="text-sm text-muted-foreground mb-1 block">Lessons Learned</label>
               <Textarea 
-                placeholder="What did you learn from this trade?"
+                placeholder="What did you learn?"
                 value={newEntry.lessons || ""}
                 onChange={(e) => setNewEntry({ ...newEntry, lessons: e.target.value })}
+                className="min-h-[80px]"
               />
             </div>
           </div>
@@ -368,29 +453,32 @@ const Journal = () => {
             <SelectItem value="breakeven">Breakeven</SelectItem>
           </SelectContent>
         </Select>
+        <span className="text-sm text-muted-foreground">
+          Showing {filteredEntries.length} of {entries.length} entries
+        </span>
       </div>
 
       {/* Journal Entries */}
       <div className="space-y-4">
         {filteredEntries.map((entry) => (
-          <Card key={entry.id} className="p-6 border-border bg-card">
+          <Card key={entry.id} className="p-4 md:p-6 border-border bg-card">
             <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
-              <div className="flex items-center gap-4">
-                <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${
+              <div className="flex items-center gap-3 md:gap-4">
+                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-lg flex items-center justify-center ${
                   entry.status === "win" ? "bg-success/10" : 
                   entry.status === "loss" ? "bg-destructive/10" : "bg-muted"
                 }`}>
                   {entry.status === "win" ? (
-                    <CheckCircle className="w-6 h-6 text-success" />
+                    <CheckCircle className="w-5 h-5 md:w-6 md:h-6 text-success" />
                   ) : entry.status === "loss" ? (
-                    <XCircle className="w-6 h-6 text-destructive" />
+                    <XCircle className="w-5 h-5 md:w-6 md:h-6 text-destructive" />
                   ) : (
-                    <AlertCircle className="w-6 h-6 text-muted-foreground" />
+                    <AlertCircle className="w-5 h-5 md:w-6 md:h-6 text-muted-foreground" />
                   )}
                 </div>
                 <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-lg font-semibold text-foreground">{entry.symbol}</h3>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <h3 className="text-base md:text-lg font-semibold text-foreground">{entry.symbol}</h3>
                     <Badge variant="outline" className={
                       entry.direction === "long" ? "text-success border-success" : "text-destructive border-destructive"
                     }>
@@ -401,77 +489,80 @@ const Journal = () => {
                       )}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground flex items-center gap-1">
+                  <p className="text-xs md:text-sm text-muted-foreground flex items-center gap-1">
                     <Calendar className="w-3 h-3" /> {entry.date}
                   </p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4 md:gap-6">
                 <div className="text-right">
-                  <p className="text-sm text-muted-foreground">P&L</p>
-                  <p className={`text-xl font-bold ${entry.pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  <p className="text-xs md:text-sm text-muted-foreground">P&L</p>
+                  <p className={`text-lg md:text-xl font-bold ${entry.pnl >= 0 ? 'text-success' : 'text-destructive'}`}>
                     ${entry.pnl.toFixed(2)} ({entry.pnlPercent > 0 ? '+' : ''}{entry.pnlPercent}%)
                   </p>
                 </div>
-                <div className="flex gap-2">
-                  <Button variant="ghost" size="icon">
+                <div className="flex gap-1 md:gap-2">
+                  <Button variant="ghost" size="icon" className="w-8 h-8 md:w-10 md:h-10">
                     <Edit className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="icon" className="text-destructive">
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="w-8 h-8 md:w-10 md:h-10 text-destructive"
+                    onClick={() => deleteEntry(entry.id)}
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 p-4 bg-secondary/50 rounded-lg">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-4 p-3 md:p-4 bg-secondary/50 rounded-lg">
               <div>
                 <p className="text-xs text-muted-foreground">Entry</p>
-                <p className="font-mono text-foreground">${entry.entryPrice.toFixed(2)}</p>
+                <p className="font-mono text-sm md:text-base text-foreground">${entry.entryPrice.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Exit</p>
-                <p className="font-mono text-foreground">${entry.exitPrice.toFixed(2)}</p>
+                <p className="font-mono text-sm md:text-base text-foreground">${entry.exitPrice.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Stop Loss</p>
-                <p className="font-mono text-destructive">${entry.stopLoss.toFixed(2)}</p>
+                <p className="font-mono text-sm md:text-base text-destructive">${entry.stopLoss.toFixed(2)}</p>
               </div>
               <div>
                 <p className="text-xs text-muted-foreground">Take Profit</p>
-                <p className="font-mono text-success">${entry.takeProfit.toFixed(2)}</p>
+                <p className="font-mono text-sm md:text-base text-success">${entry.takeProfit.toFixed(2)}</p>
               </div>
             </div>
 
-            <Tabs defaultValue="strategy" className="w-full">
-              <TabsList className="grid w-full grid-cols-4 gap-1">
-                <TabsTrigger value="strategy" className="text-xs">Strategy</TabsTrigger>
-                <TabsTrigger value="signals" className="text-xs">Signals</TabsTrigger>
-                <TabsTrigger value="psychology" className="text-xs">Psychology</TabsTrigger>
-                <TabsTrigger value="lessons" className="text-xs">Lessons</TabsTrigger>
-              </TabsList>
-              <TabsContent value="strategy" className="mt-3">
-                <p className="text-sm text-foreground">{entry.strategy}</p>
-              </TabsContent>
-              <TabsContent value="signals" className="mt-3 space-y-2">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Gann Signals:</p>
-                  <p className="text-sm text-foreground">{entry.gannSignals}</p>
-                </div>
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground">Ehlers Confirmation:</p>
-                  <p className="text-sm text-foreground">{entry.ehlersConfirmation}</p>
-                </div>
-              </TabsContent>
-              <TabsContent value="psychology" className="mt-3">
-                <p className="text-sm text-foreground">{entry.emotionalState}</p>
-                <p className="text-sm text-muted-foreground mt-2">{entry.notes}</p>
-              </TabsContent>
-              <TabsContent value="lessons" className="mt-3">
-                <p className="text-sm text-foreground">{entry.lessons}</p>
-              </TabsContent>
-            </Tabs>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-sm">
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Strategy</p>
+                <p className="text-foreground">{entry.strategy}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Emotional State</p>
+                <p className="text-foreground">{entry.emotionalState}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Gann Signals</p>
+                <p className="text-foreground">{entry.gannSignals}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Ehlers Confirmation</p>
+                <p className="text-foreground">{entry.ehlersConfirmation}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Notes</p>
+                <p className="text-foreground">{entry.notes}</p>
+              </div>
+              <div>
+                <p className="text-xs text-muted-foreground mb-1">Lessons</p>
+                <p className="text-foreground">{entry.lessons}</p>
+              </div>
+            </div>
           </Card>
         ))}
       </div>
