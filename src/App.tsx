@@ -20,6 +20,7 @@ import GannTools from "./pages/GannTools";
 import SlippageSpike from "./pages/SlippageSpike";
 import Reports from "./pages/Reports";
 import Journal from "./pages/Journal";
+import BackendAPI from "./pages/BackendAPI";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -32,7 +33,7 @@ const App = () => (
       <BrowserRouter>
         <div className="flex min-h-screen bg-background">
           <Navigation />
-          <main className="flex-1 ml-64 p-8">
+          <main className="flex-1 ml-64 p-4 md:p-8">
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/charts" element={<Charts />} />
@@ -49,6 +50,7 @@ const App = () => (
               <Route path="/slippage-spike" element={<SlippageSpike />} />
               <Route path="/reports" element={<Reports />} />
               <Route path="/journal" element={<Journal />} />
+              <Route path="/backend-api" element={<BackendAPI />} />
               <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

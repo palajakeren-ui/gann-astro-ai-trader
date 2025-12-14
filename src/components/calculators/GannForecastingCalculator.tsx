@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CalendarClock, TrendingUp, TrendingDown, Target } from "lucide-react";
+import { CalendarClock, TrendingUp, TrendingDown, Target, RefreshCw, Zap } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Switch } from "@/components/ui/switch";
 
 interface ForecastResult {
   year: number;
@@ -36,14 +37,39 @@ const YEAR_RANGES = [
   { value: "365", label: "365 Years" },
 ];
 
-export const GannForecastingCalculator = () => {
-  const [basePrice, setBasePrice] = useState("100");
+interface GannForecastingCalculatorProps {
+  currentPrice?: number;
+  autoCalculate?: boolean;
+}
+
+export const GannForecastingCalculator = ({ currentPrice, autoCalculate = false }: GannForecastingCalculatorProps) => {
+  const [basePrice, setBasePrice] = useState(currentPrice?.toString() || "100");
   const [startYear, setStartYear] = useState(new Date().getFullYear().toString());
   const [forecastRange, setForecastRange] = useState("100");
   const [cycleType, setCycleType] = useState("major");
   const [forecasts, setForecasts] = useState<ForecastResult[]>([]);
+  const [isAutoMode, setIsAutoMode] = useState(autoCalculate);
+  const [isCalculating, setIsCalculating] = useState(false);
+
+  // Update base price when current price changes
+  useEffect(() => {
+    if (currentPrice && isAutoMode) {
+      setBasePrice(currentPrice.toString());
+    }
+  }, [currentPrice, isAutoMode]);
+
+  // Auto-calculate when in auto mode and price changes
+  useEffect(() => {
+    if (isAutoMode && basePrice) {
+      const timer = setTimeout(() => {
+        calculateForecasts();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [basePrice, forecastRange, cycleType, isAutoMode]);
 
   const calculateForecasts = () => {
+    setIsCalculating(true);
     const price = parseFloat(basePrice) || 100;
     const start = parseInt(startYear) || new Date().getFullYear();
     const range = parseInt(forecastRange) || 100;
@@ -107,6 +133,7 @@ export const GannForecastingCalculator = () => {
     }
     
     setForecasts(results);
+    setIsCalculating(false);
   };
 
   const significantForecasts = forecasts.filter((f) => f.confidence >= 75);
@@ -116,13 +143,28 @@ export const GannForecastingCalculator = () => {
   return (
     <Card className="border-border/50 bg-card/50 backdrop-blur">
       <CardHeader className="pb-3">
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <CalendarClock className="h-5 w-5 text-primary" />
-          Gann Forecasting (Up to 365 Years)
-        </CardTitle>
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+          <CardTitle className="flex items-center gap-2 text-base md:text-lg">
+            <CalendarClock className="h-5 w-5 text-primary" />
+            WD Gann Cycle Forecasting (Up to 365 Years)
+          </CardTitle>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 text-sm">
+              <Zap className="w-4 h-4 text-primary" />
+              <span className="text-muted-foreground">Auto</span>
+              <Switch
+                checked={isAutoMode}
+                onCheckedChange={setIsAutoMode}
+              />
+            </div>
+            {isCalculating && (
+              <RefreshCw className="w-4 h-4 text-primary animate-spin" />
+            )}
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
           <div className="space-y-2">
             <Label>Base Price</Label>
             <Input
