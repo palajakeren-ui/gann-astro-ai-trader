@@ -360,111 +360,104 @@ const Settings = () => {
       <Card className="p-4 md:p-6 border-border bg-card">
         <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Leverage Configuration</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Configure leverage settings for MetaTrader and crypto exchanges
+          Configure leverage settings for MetaTrader, crypto exchanges, and FIX connector (manual input supported)
         </p>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
           {/* MetaTrader Leverage */}
           <div className="p-4 rounded-lg bg-secondary/30 border border-border">
             <h3 className="text-base font-semibold text-foreground mb-3">MetaTrader 5</h3>
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label className="text-sm text-foreground">Forex Leverage</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="1:30">1:30</option>
-                  <option value="1:50">1:50</option>
-                  <option value="1:100" selected>1:100</option>
-                  <option value="1:200">1:200</option>
-                  <option value="1:500">1:500</option>
-                  <option value="1:1000">1:1000</option>
-                </select>
+                <Input type="text" placeholder="1:100" defaultValue="1:100" className="text-sm" />
+                <p className="text-xs text-muted-foreground">e.g., 1:30, 1:100, 1:500</p>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-foreground">Indices Leverage</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="1:20">1:20</option>
-                  <option value="1:50" selected>1:50</option>
-                  <option value="1:100">1:100</option>
-                  <option value="1:200">1:200</option>
-                </select>
+                <Input type="text" placeholder="1:50" defaultValue="1:50" className="text-sm" />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-foreground">Commodities Leverage</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="1:10">1:10</option>
-                  <option value="1:20" selected>1:20</option>
-                  <option value="1:50">1:50</option>
-                  <option value="1:100">1:100</option>
-                </select>
+                <Input type="text" placeholder="1:20" defaultValue="1:20" className="text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Crypto CFD Leverage</Label>
+                <Input type="text" placeholder="1:2" defaultValue="1:2" className="text-sm" />
               </div>
             </div>
           </div>
 
-          {/* Binance Leverage */}
+          {/* Binance/Crypto Leverage */}
           <div className="p-4 rounded-lg bg-secondary/30 border border-border">
-            <h3 className="text-base font-semibold text-foreground mb-3">Binance Futures</h3>
+            <h3 className="text-base font-semibold text-foreground mb-3">Crypto Exchanges</h3>
             <div className="space-y-3">
               <div className="space-y-2">
                 <Label className="text-sm text-foreground">BTC/USDT Leverage</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="1">1x</option>
-                  <option value="5">5x</option>
-                  <option value="10">10x</option>
-                  <option value="20" selected>20x</option>
-                  <option value="50">50x</option>
-                  <option value="100">100x</option>
-                  <option value="125">125x</option>
-                </select>
+                <Input type="number" placeholder="20" defaultValue="20" min="1" max="125" className="text-sm" />
+                <p className="text-xs text-muted-foreground">Max: 125x (Binance)</p>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-foreground">ETH/USDT Leverage</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="1">1x</option>
-                  <option value="5">5x</option>
-                  <option value="10">10x</option>
-                  <option value="20" selected>20x</option>
-                  <option value="50">50x</option>
-                  <option value="100">100x</option>
-                </select>
+                <Input type="number" placeholder="20" defaultValue="20" min="1" max="100" className="text-sm" />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-foreground">Altcoins Leverage</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="1">1x</option>
-                  <option value="5">5x</option>
-                  <option value="10" selected>10x</option>
-                  <option value="20">20x</option>
-                  <option value="50">50x</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Bybit Leverage */}
-          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
-            <h3 className="text-base font-semibold text-foreground mb-3">Bybit / OKX / Other</h3>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Default Leverage</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="1">1x</option>
-                  <option value="5">5x</option>
-                  <option value="10" selected>10x</option>
-                  <option value="20">20x</option>
-                  <option value="50">50x</option>
-                  <option value="100">100x</option>
-                </select>
+                <Input type="number" placeholder="10" defaultValue="10" min="1" max="50" className="text-sm" />
               </div>
               <div className="space-y-2">
                 <Label className="text-sm text-foreground">Margin Mode</Label>
                 <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
                   <option value="cross">Cross Margin</option>
-                  <option value="isolated" selected>Isolated Margin</option>
+                  <option value="isolated">Isolated Margin</option>
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* Bybit/OKX Leverage */}
+          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+            <h3 className="text-base font-semibold text-foreground mb-3">Bybit / OKX / Other</h3>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Default Leverage</Label>
+                <Input type="number" placeholder="10" defaultValue="10" min="1" max="100" className="text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Perpetual Leverage</Label>
+                <Input type="number" placeholder="20" defaultValue="20" min="1" max="100" className="text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Options Leverage</Label>
+                <Input type="number" placeholder="5" defaultValue="5" min="1" max="50" className="text-sm" />
+              </div>
               <div className="flex items-center justify-between py-2">
-                <Label className="text-sm text-foreground">Auto-Deleverage Protection</Label>
+                <Label className="text-sm text-foreground">Auto-Deleverage</Label>
                 <Switch defaultChecked />
+              </div>
+            </div>
+          </div>
+
+          {/* FIX Protocol Leverage */}
+          <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
+            <h3 className="text-base font-semibold text-foreground mb-3">FIX Protocol</h3>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Forex Leverage</Label>
+                <Input type="text" placeholder="1:100" defaultValue="1:100" className="text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Equities Leverage</Label>
+                <Input type="text" placeholder="1:4" defaultValue="1:4" className="text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Futures Leverage</Label>
+                <Input type="text" placeholder="1:20" defaultValue="1:20" className="text-sm" />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Custom Leverage</Label>
+                <Input type="text" placeholder="Enter custom ratio" className="text-sm" />
+                <p className="text-xs text-muted-foreground">Format: 1:X or Xx</p>
               </div>
             </div>
           </div>

@@ -276,17 +276,27 @@ const Index = () => {
               </h4>
               <div className="space-y-4">
                 <div>
-                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Hexagon Geometry</h5>
-                  <div className="space-y-2">
+                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Hexagon Geometry (0-360°)</h5>
+                  <div className="space-y-2 max-h-[350px] overflow-y-auto">
                     {[
+                      { angle: "0°", price: (currentPrice * 1.000).toFixed(2), type: "origin point" },
+                      { angle: "30°", price: (currentPrice * 0.992).toFixed(2), type: "support minor" },
                       { angle: "60°", price: (currentPrice * 0.985).toFixed(2), type: "support harmonic" },
+                      { angle: "90°", price: (currentPrice * 0.978).toFixed(2), type: "support major" },
                       { angle: "120°", price: (currentPrice * 1.005).toFixed(2), type: "resistance harmonic" },
-                      { angle: "180°", price: (currentPrice * 1.015).toFixed(2), type: "full hexagon pivot" },
+                      { angle: "150°", price: (currentPrice * 1.012).toFixed(2), type: "resistance minor" },
+                      { angle: "180°", price: (currentPrice * 1.020).toFixed(2), type: "full hexagon pivot" },
+                      { angle: "210°", price: (currentPrice * 1.028).toFixed(2), type: "resistance minor" },
+                      { angle: "240°", price: (currentPrice * 1.035).toFixed(2), type: "resistance harmonic" },
+                      { angle: "270°", price: (currentPrice * 1.042).toFixed(2), type: "resistance major" },
+                      { angle: "300°", price: (currentPrice * 0.970).toFixed(2), type: "support harmonic" },
+                      { angle: "330°", price: (currentPrice * 0.963).toFixed(2), type: "support minor" },
+                      { angle: "360°", price: (currentPrice * 0.955).toFixed(2), type: "full cycle pivot" },
                     ].map((item, idx) => (
                       <div key={idx} className="flex justify-between items-center p-2 bg-secondary/50 rounded">
                         <span className="text-sm font-bold text-accent">{item.angle}</span>
                         <span className="text-sm font-mono text-foreground">${item.price}</span>
-                        <Badge variant="outline" className={item.type.includes("support") ? "text-xs border-success text-success" : "text-xs border-destructive text-destructive"}>
+                        <Badge variant="outline" className={item.type.includes("support") ? "text-xs border-success text-success" : item.type.includes("origin") || item.type.includes("pivot") ? "text-xs border-primary text-primary" : "text-xs border-destructive text-destructive"}>
                           {item.type.split(' ')[0]}
                         </Badge>
                       </div>
