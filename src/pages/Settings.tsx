@@ -10,6 +10,7 @@ import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, 
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { tradingInstruments as instrumentsData, InstrumentCategory, Instrument } from "@/data/tradingInstruments";
+import AlertAPISettings from "@/components/settings/AlertAPISettings";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
@@ -197,21 +198,21 @@ const Settings = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6 px-2 md:px-0">
       <div>
-        <h1 className="text-3xl font-bold text-foreground flex items-center">
-          <SettingsIcon className="w-8 h-8 mr-3" />
+        <h1 className="text-2xl md:text-3xl font-bold text-foreground flex items-center">
+          <SettingsIcon className="w-6 h-6 md:w-8 md:h-8 mr-3" />
           Settings
         </h1>
-        <p className="text-muted-foreground">Configure your trading system</p>
+        <p className="text-sm text-muted-foreground">Configure your trading system</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6 border-border bg-card">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Strategy Weights by Timeframe</h2>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+        <Card className="p-4 md:p-6 border-border bg-card">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Strategy Weights by Timeframe</h2>
           
           <Tabs value={activeTf} onValueChange={setActiveTf} className="w-full">
-            <TabsList className="flex flex-wrap gap-1 h-auto p-2 mb-4">
+            <TabsList className="flex flex-wrap gap-1 h-auto p-1 md:p-2 mb-4">
               {timeframes.map((tf) => (
                 <TabsTrigger key={tf.value} value={tf.value} className="text-xs px-2 py-1">
                   {tf.label}
@@ -229,7 +230,7 @@ const Settings = () => {
                 {tfWeights[tf.value]?.map((strategy, idx) => (
                   <div key={idx} className="space-y-2">
                     <div className="flex items-center justify-between">
-                      <Label className="text-foreground">{strategy.name}</Label>
+                      <Label className="text-foreground text-sm">{strategy.name}</Label>
                       <span className="text-sm font-mono text-foreground bg-secondary px-2 py-0.5 rounded">
                         {strategy.weight.toFixed(2)}
                       </span>
@@ -263,19 +264,19 @@ const Settings = () => {
           </Tabs>
           
           <div className="mt-6 pt-4 border-t border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-4">Primary/Confirmation Timeframe</h3>
+            <h3 className="text-base md:text-lg font-semibold text-foreground mb-4">Primary/Confirmation Timeframe</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="primary-tf" className="text-foreground">Primary Timeframe</Label>
-                <select id="primary-tf" className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground">
+                <Label htmlFor="primary-tf" className="text-foreground text-sm">Primary Timeframe</Label>
+                <select id="primary-tf" className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
                   {timeframes.map((tf) => (
                     <option key={tf.value} value={tf.value} selected={tf.value === "H1"}>{tf.name}</option>
                   ))}
                 </select>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmation-tf" className="text-foreground">Confirmation Timeframe</Label>
-                <select id="confirmation-tf" className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground">
+                <Label htmlFor="confirmation-tf" className="text-foreground text-sm">Confirmation Timeframe</Label>
+                <select id="confirmation-tf" className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
                   {timeframes.map((tf) => (
                     <option key={tf.value} value={tf.value} selected={tf.value === "H4"}>{tf.name}</option>
                   ))}
@@ -285,36 +286,193 @@ const Settings = () => {
           </div>
         </Card>
 
-        <Card className="p-6 border-border bg-card">
-          <h2 className="text-xl font-semibold text-foreground mb-4">Risk Management</h2>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="risk-per-trade" className="text-foreground">Risk Per Trade (%)</Label>
-              <Input id="risk-per-trade" type="number" defaultValue="2.0" step="0.1" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="max-drawdown" className="text-foreground">Max Drawdown (%)</Label>
-              <Input id="max-drawdown" type="number" defaultValue="20" step="1" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="kelly-fraction" className="text-foreground">Kelly Fraction</Label>
-              <Input id="kelly-fraction" type="number" defaultValue="0.5" step="0.1" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="risk-reward-manual" className="text-foreground">Risk-to-Reward Manual</Label>
-              <Input id="risk-reward-manual" type="number" defaultValue="2.0" step="0.1" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="position-lot-manual" className="text-foreground">Open Position Lot Manual</Label>
-              <Input id="position-lot-manual" type="number" defaultValue="0.01" step="0.01" />
-            </div>
-            <div className="flex items-center justify-between py-2">
-              <Label htmlFor="adaptive-sizing" className="text-foreground">Adaptive Position Sizing</Label>
-              <Switch id="adaptive-sizing" defaultChecked />
-            </div>
-          </div>
+        {/* Risk Management - Separated into Dynamic and Fixed */}
+        <Card className="p-4 md:p-6 border-border bg-card">
+          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Risk Management</h2>
+          
+          <Tabs defaultValue="dynamic" className="w-full">
+            <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsTrigger value="dynamic" className="text-sm">Dynamic Risk</TabsTrigger>
+              <TabsTrigger value="fixed" className="text-sm">Fixed Risk</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="dynamic" className="space-y-4">
+              <div className="p-3 rounded bg-primary/10 border border-primary/20 mb-4">
+                <span className="text-sm font-semibold text-primary">Dynamic Risk Settings</span>
+                <p className="text-xs text-muted-foreground mt-1">Automatically adjusts based on market conditions</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="kelly-fraction" className="text-foreground text-sm">Kelly Criterion Fraction</Label>
+                <Input id="kelly-fraction" type="number" defaultValue="0.5" step="0.1" />
+                <p className="text-xs text-muted-foreground">Optimal bet sizing based on edge</p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="dynamic-leverage" className="text-foreground text-sm">Dynamic Leverage</Label>
+                <Input id="dynamic-leverage" type="number" defaultValue="10" step="1" />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <Label htmlFor="adaptive-sizing" className="text-foreground text-sm">Adaptive Position Sizing</Label>
+                <Switch id="adaptive-sizing" defaultChecked />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <Label htmlFor="volatility-adj" className="text-foreground text-sm">Volatility Adjustment</Label>
+                <Switch id="volatility-adj" defaultChecked />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <Label htmlFor="drawdown-protection" className="text-foreground text-sm">Drawdown Protection</Label>
+                <Switch id="drawdown-protection" defaultChecked />
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="fixed" className="space-y-4">
+              <div className="p-3 rounded bg-secondary/50 border border-border mb-4">
+                <span className="text-sm font-semibold text-foreground">Fixed Risk Settings</span>
+                <p className="text-xs text-muted-foreground mt-1">Static risk parameters for consistent exposure</p>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="risk-per-trade" className="text-foreground text-sm">Risk Per Trade (%)</Label>
+                <Input id="risk-per-trade" type="number" defaultValue="2.0" step="0.1" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max-drawdown" className="text-foreground text-sm">Max Drawdown (%)</Label>
+                <Input id="max-drawdown" type="number" defaultValue="20" step="1" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="risk-reward-manual" className="text-foreground text-sm">Risk-to-Reward Ratio</Label>
+                <Input id="risk-reward-manual" type="number" defaultValue="2.0" step="0.1" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="position-lot-manual" className="text-foreground text-sm">Fixed Position Lot Size</Label>
+                <Input id="position-lot-manual" type="number" defaultValue="0.01" step="0.01" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="max-positions" className="text-foreground text-sm">Max Open Positions</Label>
+                <Input id="max-positions" type="number" defaultValue="5" step="1" />
+              </div>
+            </TabsContent>
+          </Tabs>
         </Card>
       </div>
+
+      {/* Leverage Configuration */}
+      <Card className="p-4 md:p-6 border-border bg-card">
+        <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Leverage Configuration</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Configure leverage settings for MetaTrader and crypto exchanges
+        </p>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+          {/* MetaTrader Leverage */}
+          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+            <h3 className="text-base font-semibold text-foreground mb-3">MetaTrader 5</h3>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Forex Leverage</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="1:30">1:30</option>
+                  <option value="1:50">1:50</option>
+                  <option value="1:100" selected>1:100</option>
+                  <option value="1:200">1:200</option>
+                  <option value="1:500">1:500</option>
+                  <option value="1:1000">1:1000</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Indices Leverage</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="1:20">1:20</option>
+                  <option value="1:50" selected>1:50</option>
+                  <option value="1:100">1:100</option>
+                  <option value="1:200">1:200</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Commodities Leverage</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="1:10">1:10</option>
+                  <option value="1:20" selected>1:20</option>
+                  <option value="1:50">1:50</option>
+                  <option value="1:100">1:100</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Binance Leverage */}
+          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+            <h3 className="text-base font-semibold text-foreground mb-3">Binance Futures</h3>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">BTC/USDT Leverage</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="1">1x</option>
+                  <option value="5">5x</option>
+                  <option value="10">10x</option>
+                  <option value="20" selected>20x</option>
+                  <option value="50">50x</option>
+                  <option value="100">100x</option>
+                  <option value="125">125x</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">ETH/USDT Leverage</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="1">1x</option>
+                  <option value="5">5x</option>
+                  <option value="10">10x</option>
+                  <option value="20" selected>20x</option>
+                  <option value="50">50x</option>
+                  <option value="100">100x</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Altcoins Leverage</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="1">1x</option>
+                  <option value="5">5x</option>
+                  <option value="10" selected>10x</option>
+                  <option value="20">20x</option>
+                  <option value="50">50x</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Bybit Leverage */}
+          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
+            <h3 className="text-base font-semibold text-foreground mb-3">Bybit / OKX / Other</h3>
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Default Leverage</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="1">1x</option>
+                  <option value="5">5x</option>
+                  <option value="10" selected>10x</option>
+                  <option value="20">20x</option>
+                  <option value="50">50x</option>
+                  <option value="100">100x</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label className="text-sm text-foreground">Margin Mode</Label>
+                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="cross">Cross Margin</option>
+                  <option value="isolated" selected>Isolated Margin</option>
+                </select>
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <Label className="text-sm text-foreground">Auto-Deleverage Protection</Label>
+                <Switch defaultChecked />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Card>
+
+      {/* Alert API Settings */}
+      <AlertAPISettings />
 
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Active Strategies</h2>

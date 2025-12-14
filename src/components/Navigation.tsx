@@ -15,6 +15,7 @@ import {
   Zap,
   FileText,
   BookOpen,
+  Server,
 } from "lucide-react";
 
 const navItems = [
@@ -33,6 +34,7 @@ const navItems = [
   { icon: Zap, label: "Slippage & Spike", path: "/slippage-spike" },
   { icon: FileText, label: "Reports", path: "/reports" },
   { icon: BookOpen, label: "Trading Journal", path: "/journal" },
+  { icon: Server, label: "Backend API", path: "/backend-api" },
   { icon: Settings, label: "Settings", path: "/settings" },
 ];
 
