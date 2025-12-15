@@ -18,61 +18,186 @@ import {
   TestTube,
   Link,
   Shield,
-  Cpu
+  Cpu,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 
+interface APIConfig {
+  id: string;
+  name: string;
+  baseUrl: string;
+  wsUrl: string;
+  apiVersion: string;
+  timeout: number;
+  retryAttempts: number;
+  apiKey: string;
+  isActive: boolean;
+}
+
+interface DBConfig {
+  id: string;
+  name: string;
+  host: string;
+  port: string;
+  database: string;
+  username: string;
+  password: string;
+  ssl: boolean;
+  poolSize: number;
+  isActive: boolean;
+}
+
 const BackendAPI = () => {
-  const [apiSettings, setApiSettings] = useState({
-    baseUrl: "https://api.gannquantai.com",
-    wsUrl: "wss://ws.gannquantai.com",
-    apiVersion: "v1",
-    timeout: 30000,
-    retryAttempts: 3,
-  });
+  const [apiConfigs, setApiConfigs] = useState<APIConfig[]>([
+    {
+      id: "api-1",
+      name: "Primary API",
+      baseUrl: "https://api.gannquantai.com",
+      wsUrl: "wss://ws.gannquantai.com",
+      apiVersion: "v1",
+      timeout: 30000,
+      retryAttempts: 3,
+      apiKey: "",
+      isActive: true,
+    },
+    {
+      id: "api-2",
+      name: "Backup API",
+      baseUrl: "https://backup-api.gannquantai.com",
+      wsUrl: "wss://backup-ws.gannquantai.com",
+      apiVersion: "v1",
+      timeout: 30000,
+      retryAttempts: 5,
+      apiKey: "",
+      isActive: false,
+    },
+  ]);
 
-  const [dbSettings, setDbSettings] = useState({
-    host: "localhost",
-    port: "5432",
-    database: "gann_quant_db",
-    username: "",
-    password: "",
-    ssl: true,
-    poolSize: 10,
-  });
+  const [dbConfigs, setDbConfigs] = useState<DBConfig[]>([
+    {
+      id: "db-1",
+      name: "Primary Database",
+      host: "localhost",
+      port: "5432",
+      database: "gann_quant_db",
+      username: "",
+      password: "",
+      ssl: true,
+      poolSize: 10,
+      isActive: true,
+    },
+    {
+      id: "db-2",
+      name: "Read Replica",
+      host: "replica.gannquantai.com",
+      port: "5432",
+      database: "gann_quant_replica",
+      username: "",
+      password: "",
+      ssl: true,
+      poolSize: 5,
+      isActive: false,
+    },
+  ]);
 
-  const [connectionStatus, setConnectionStatus] = useState({
-    api: false,
-    database: false,
-    websocket: false,
-  });
+  const [selectedApiId, setSelectedApiId] = useState("api-1");
+  const [selectedDbId, setSelectedDbId] = useState("db-1");
 
-  const [isTestingConnection, setIsTestingConnection] = useState({
-    api: false,
-    database: false,
-    websocket: false,
-  });
+  const [connectionStatus, setConnectionStatus] = useState<Record<string, boolean>>({});
+  const [isTestingConnection, setIsTestingConnection] = useState<Record<string, boolean>>({});
 
-  const testConnection = async (type: "api" | "database" | "websocket") => {
-    setIsTestingConnection(prev => ({ ...prev, [type]: true }));
+  const selectedApi = apiConfigs.find(c => c.id === selectedApiId) || apiConfigs[0];
+  const selectedDb = dbConfigs.find(c => c.id === selectedDbId) || dbConfigs[0];
+
+  const updateApiConfig = (id: string, updates: Partial<APIConfig>) => {
+    setApiConfigs(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const updateDbConfig = (id: string, updates: Partial<DBConfig>) => {
+    setDbConfigs(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
+  };
+
+  const addApiConfig = () => {
+    const newId = `api-${Date.now()}`;
+    setApiConfigs(prev => [...prev, {
+      id: newId,
+      name: `API Config ${prev.length + 1}`,
+      baseUrl: "",
+      wsUrl: "",
+      apiVersion: "v1",
+      timeout: 30000,
+      retryAttempts: 3,
+      apiKey: "",
+      isActive: false,
+    }]);
+    setSelectedApiId(newId);
+    toast.success("New API configuration added");
+  };
+
+  const addDbConfig = () => {
+    const newId = `db-${Date.now()}`;
+    setDbConfigs(prev => [...prev, {
+      id: newId,
+      name: `Database ${prev.length + 1}`,
+      host: "",
+      port: "5432",
+      database: "",
+      username: "",
+      password: "",
+      ssl: true,
+      poolSize: 10,
+      isActive: false,
+    }]);
+    setSelectedDbId(newId);
+    toast.success("New database configuration added");
+  };
+
+  const removeApiConfig = (id: string) => {
+    if (apiConfigs.length <= 1) {
+      toast.error("Cannot remove the last API configuration");
+      return;
+    }
+    setApiConfigs(prev => prev.filter(c => c.id !== id));
+    if (selectedApiId === id) {
+      setSelectedApiId(apiConfigs[0].id);
+    }
+    toast.success("API configuration removed");
+  };
+
+  const removeDbConfig = (id: string) => {
+    if (dbConfigs.length <= 1) {
+      toast.error("Cannot remove the last database configuration");
+      return;
+    }
+    setDbConfigs(prev => prev.filter(c => c.id !== id));
+    if (selectedDbId === id) {
+      setSelectedDbId(dbConfigs[0].id);
+    }
+    toast.success("Database configuration removed");
+  };
+
+  const testConnection = async (type: string, id: string) => {
+    const key = `${type}-${id}`;
+    setIsTestingConnection(prev => ({ ...prev, [key]: true }));
     toast.info(`Testing ${type} connection...`);
     
-    // Simulate connection test
     setTimeout(() => {
       const success = Math.random() > 0.3;
-      setConnectionStatus(prev => ({ ...prev, [type]: success }));
-      setIsTestingConnection(prev => ({ ...prev, [type]: false }));
+      setConnectionStatus(prev => ({ ...prev, [key]: success }));
+      setIsTestingConnection(prev => ({ ...prev, [key]: false }));
       
       if (success) {
-        toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} connected successfully!`);
+        toast.success(`Connection successful!`);
       } else {
-        toast.error(`Failed to connect to ${type}. Please check your settings.`);
+        toast.error(`Failed to connect. Please check your settings.`);
       }
     }, 2000);
   };
 
   const saveSettings = () => {
-    toast.success("Backend API settings saved successfully!");
+    toast.success("All backend configurations saved successfully!");
   };
 
   return (
@@ -92,63 +217,41 @@ const BackendAPI = () => {
       </div>
 
       {/* Connection Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                connectionStatus.api ? "bg-success/20" : "bg-muted"
-              }`}>
-                <Globe className={`w-5 h-5 ${connectionStatus.api ? "text-success" : "text-muted-foreground"}`} />
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {apiConfigs.map(api => (
+          <Card key={api.id} className={`border-border bg-card ${api.isActive ? 'ring-2 ring-primary' : ''}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Globe className={`w-4 h-4 ${connectionStatus[`api-${api.id}`] ? "text-success" : "text-muted-foreground"}`} />
+                  <p className="font-semibold text-foreground text-sm">{api.name}</p>
+                </div>
+                <Badge className={connectionStatus[`api-${api.id}`] ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}>
+                  {connectionStatus[`api-${api.id}`] ? "Connected" : "Offline"}
+                </Badge>
               </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">REST API</p>
-                <p className="text-xs text-muted-foreground">{apiSettings.baseUrl}</p>
+              <p className="text-xs text-muted-foreground truncate">{api.baseUrl || "Not configured"}</p>
+              {api.isActive && <Badge variant="outline" className="mt-2 text-xs">Active</Badge>}
+            </CardContent>
+          </Card>
+        ))}
+        {dbConfigs.map(db => (
+          <Card key={db.id} className={`border-border bg-card ${db.isActive ? 'ring-2 ring-primary' : ''}`}>
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Database className={`w-4 h-4 ${connectionStatus[`db-${db.id}`] ? "text-success" : "text-muted-foreground"}`} />
+                  <p className="font-semibold text-foreground text-sm">{db.name}</p>
+                </div>
+                <Badge className={connectionStatus[`db-${db.id}`] ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}>
+                  {connectionStatus[`db-${db.id}`] ? "Connected" : "Offline"}
+                </Badge>
               </div>
-            </div>
-            <Badge className={connectionStatus.api ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}>
-              {connectionStatus.api ? "Connected" : "Disconnected"}
-            </Badge>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                connectionStatus.database ? "bg-success/20" : "bg-muted"
-              }`}>
-                <Database className={`w-5 h-5 ${connectionStatus.database ? "text-success" : "text-muted-foreground"}`} />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">Database</p>
-                <p className="text-xs text-muted-foreground">{dbSettings.database}</p>
-              </div>
-            </div>
-            <Badge className={connectionStatus.database ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}>
-              {connectionStatus.database ? "Connected" : "Disconnected"}
-            </Badge>
-          </CardContent>
-        </Card>
-
-        <Card className="border-border bg-card">
-          <CardContent className="p-4 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                connectionStatus.websocket ? "bg-success/20" : "bg-muted"
-              }`}>
-                <Link className={`w-5 h-5 ${connectionStatus.websocket ? "text-success" : "text-muted-foreground"}`} />
-              </div>
-              <div>
-                <p className="font-semibold text-foreground text-sm">WebSocket</p>
-                <p className="text-xs text-muted-foreground">{apiSettings.wsUrl}</p>
-              </div>
-            </div>
-            <Badge className={connectionStatus.websocket ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}>
-              {connectionStatus.websocket ? "Connected" : "Disconnected"}
-            </Badge>
-          </CardContent>
-        </Card>
+              <p className="text-xs text-muted-foreground truncate">{db.database || "Not configured"}</p>
+              {db.isActive && <Badge variant="outline" className="mt-2 text-xs">Active</Badge>}
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
       <Tabs defaultValue="api" className="w-full">
@@ -159,36 +262,90 @@ const BackendAPI = () => {
         </TabsList>
 
         <TabsContent value="api" className="space-y-4 mt-4">
+          {/* API Configuration Selector */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Globe className="w-5 h-5 text-primary" />
-                REST API Configuration
-              </CardTitle>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-primary" />
+                  API Configurations ({apiConfigs.length})
+                </CardTitle>
+                <Button onClick={addApiConfig} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add API
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {apiConfigs.map(api => (
+                  <Button
+                    key={api.id}
+                    variant={selectedApiId === api.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedApiId(api.id)}
+                    className="relative"
+                  >
+                    {api.name}
+                    {api.isActive && <span className="ml-2 w-2 h-2 bg-success rounded-full"></span>}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Selected API Configuration */}
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{selectedApi.name}</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedApi.isActive ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      apiConfigs.forEach(c => updateApiConfig(c.id, { isActive: c.id === selectedApiId }));
+                    }}
+                  >
+                    {selectedApi.isActive ? "Active" : "Set Active"}
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => removeApiConfig(selectedApiId)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label className="text-foreground">Configuration Name</Label>
+                  <Input
+                    value={selectedApi.name}
+                    onChange={(e) => updateApiConfig(selectedApiId, { name: e.target.value })}
+                    placeholder="API Name"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label className="text-foreground">Base URL</Label>
                   <Input
-                    value={apiSettings.baseUrl}
-                    onChange={(e) => setApiSettings(prev => ({ ...prev, baseUrl: e.target.value }))}
+                    value={selectedApi.baseUrl}
+                    onChange={(e) => updateApiConfig(selectedApiId, { baseUrl: e.target.value })}
                     placeholder="https://api.example.com"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground">WebSocket URL</Label>
                   <Input
-                    value={apiSettings.wsUrl}
-                    onChange={(e) => setApiSettings(prev => ({ ...prev, wsUrl: e.target.value }))}
+                    value={selectedApi.wsUrl}
+                    onChange={(e) => updateApiConfig(selectedApiId, { wsUrl: e.target.value })}
                     placeholder="wss://ws.example.com"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground">API Version</Label>
                   <Input
-                    value={apiSettings.apiVersion}
-                    onChange={(e) => setApiSettings(prev => ({ ...prev, apiVersion: e.target.value }))}
+                    value={selectedApi.apiVersion}
+                    onChange={(e) => updateApiConfig(selectedApiId, { apiVersion: e.target.value })}
                     placeholder="v1"
                   />
                 </div>
@@ -196,25 +353,38 @@ const BackendAPI = () => {
                   <Label className="text-foreground">Timeout (ms)</Label>
                   <Input
                     type="number"
-                    value={apiSettings.timeout}
-                    onChange={(e) => setApiSettings(prev => ({ ...prev, timeout: parseInt(e.target.value) }))}
+                    value={selectedApi.timeout}
+                    onChange={(e) => updateApiConfig(selectedApiId, { timeout: parseInt(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground">Retry Attempts</Label>
+                  <Input
+                    type="number"
+                    value={selectedApi.retryAttempts}
+                    onChange={(e) => updateApiConfig(selectedApiId, { retryAttempts: parseInt(e.target.value) })}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
                 <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter your API key" />
+                <Input 
+                  type="password" 
+                  value={selectedApi.apiKey}
+                  onChange={(e) => updateApiConfig(selectedApiId, { apiKey: e.target.value })}
+                  placeholder="Enter your API key" 
+                />
               </div>
 
               <div className="flex flex-col md:flex-row gap-3 pt-4">
                 <Button 
                   variant="outline" 
-                  onClick={() => testConnection("api")}
-                  disabled={isTestingConnection.api}
+                  onClick={() => testConnection("api", selectedApiId)}
+                  disabled={isTestingConnection[`api-${selectedApiId}`]}
                   className="flex-1"
                 >
-                  {isTestingConnection.api ? (
+                  {isTestingConnection[`api-${selectedApiId}`] ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <TestTube className="w-4 h-4 mr-2" />
@@ -223,16 +393,16 @@ const BackendAPI = () => {
                 </Button>
                 <Button 
                   variant="outline" 
-                  onClick={() => testConnection("websocket")}
-                  disabled={isTestingConnection.websocket}
+                  onClick={() => testConnection("ws", selectedApiId)}
+                  disabled={isTestingConnection[`ws-${selectedApiId}`]}
                   className="flex-1"
                 >
-                  {isTestingConnection.websocket ? (
+                  {isTestingConnection[`ws-${selectedApiId}`] ? (
                     <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                   ) : (
                     <TestTube className="w-4 h-4 mr-2" />
                   )}
-                  Test WebSocket Connection
+                  Test WebSocket
                 </Button>
               </div>
             </CardContent>
@@ -240,36 +410,90 @@ const BackendAPI = () => {
         </TabsContent>
 
         <TabsContent value="database" className="space-y-4 mt-4">
+          {/* Database Configuration Selector */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Database className="w-5 h-5 text-primary" />
-                Database Configuration
-              </CardTitle>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Database className="w-5 h-5 text-primary" />
+                  Database Configurations ({dbConfigs.length})
+                </CardTitle>
+                <Button onClick={addDbConfig} size="sm">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Database
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {dbConfigs.map(db => (
+                  <Button
+                    key={db.id}
+                    variant={selectedDbId === db.id ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedDbId(db.id)}
+                    className="relative"
+                  >
+                    {db.name}
+                    {db.isActive && <span className="ml-2 w-2 h-2 bg-success rounded-full"></span>}
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Selected Database Configuration */}
+          <Card className="border-border bg-card">
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-lg">{selectedDb.name}</CardTitle>
+                <div className="flex gap-2">
+                  <Button
+                    variant={selectedDb.isActive ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      dbConfigs.forEach(c => updateDbConfig(c.id, { isActive: c.id === selectedDbId }));
+                    }}
+                  >
+                    {selectedDb.isActive ? "Active" : "Set Active"}
+                  </Button>
+                  <Button variant="destructive" size="sm" onClick={() => removeDbConfig(selectedDbId)}>
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label className="text-foreground">Configuration Name</Label>
+                  <Input
+                    value={selectedDb.name}
+                    onChange={(e) => updateDbConfig(selectedDbId, { name: e.target.value })}
+                    placeholder="Database Name"
+                  />
+                </div>
+                <div className="space-y-2">
                   <Label className="text-foreground">Host</Label>
                   <Input
-                    value={dbSettings.host}
-                    onChange={(e) => setDbSettings(prev => ({ ...prev, host: e.target.value }))}
+                    value={selectedDb.host}
+                    onChange={(e) => updateDbConfig(selectedDbId, { host: e.target.value })}
                     placeholder="localhost"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground">Port</Label>
                   <Input
-                    value={dbSettings.port}
-                    onChange={(e) => setDbSettings(prev => ({ ...prev, port: e.target.value }))}
+                    value={selectedDb.port}
+                    onChange={(e) => updateDbConfig(selectedDbId, { port: e.target.value })}
                     placeholder="5432"
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground">Database Name</Label>
                   <Input
-                    value={dbSettings.database}
-                    onChange={(e) => setDbSettings(prev => ({ ...prev, database: e.target.value }))}
+                    value={selectedDb.database}
+                    onChange={(e) => updateDbConfig(selectedDbId, { database: e.target.value })}
                     placeholder="gann_quant_db"
                   />
                 </div>
@@ -277,24 +501,24 @@ const BackendAPI = () => {
                   <Label className="text-foreground">Pool Size</Label>
                   <Input
                     type="number"
-                    value={dbSettings.poolSize}
-                    onChange={(e) => setDbSettings(prev => ({ ...prev, poolSize: parseInt(e.target.value) }))}
+                    value={selectedDb.poolSize}
+                    onChange={(e) => updateDbConfig(selectedDbId, { poolSize: parseInt(e.target.value) })}
                   />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground">Username</Label>
                   <Input
-                    value={dbSettings.username}
-                    onChange={(e) => setDbSettings(prev => ({ ...prev, username: e.target.value }))}
+                    value={selectedDb.username}
+                    onChange={(e) => updateDbConfig(selectedDbId, { username: e.target.value })}
                     placeholder="Enter username"
                   />
                 </div>
-                <div className="space-y-2">
+                <div className="space-y-2 md:col-span-2">
                   <Label className="text-foreground">Password</Label>
                   <Input
                     type="password"
-                    value={dbSettings.password}
-                    onChange={(e) => setDbSettings(prev => ({ ...prev, password: e.target.value }))}
+                    value={selectedDb.password}
+                    onChange={(e) => updateDbConfig(selectedDbId, { password: e.target.value })}
                     placeholder="Enter password"
                   />
                 </div>
@@ -306,18 +530,18 @@ const BackendAPI = () => {
                   <span className="text-sm text-foreground">Enable SSL/TLS</span>
                 </div>
                 <Switch
-                  checked={dbSettings.ssl}
-                  onCheckedChange={(checked) => setDbSettings(prev => ({ ...prev, ssl: checked }))}
+                  checked={selectedDb.ssl}
+                  onCheckedChange={(checked) => updateDbConfig(selectedDbId, { ssl: checked })}
                 />
               </div>
 
               <Button 
                 variant="outline" 
-                onClick={() => testConnection("database")}
-                disabled={isTestingConnection.database}
+                onClick={() => testConnection("db", selectedDbId)}
+                disabled={isTestingConnection[`db-${selectedDbId}`]}
                 className="w-full"
               >
-                {isTestingConnection.database ? (
+                {isTestingConnection[`db-${selectedDbId}`] ? (
                   <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
                 ) : (
                   <TestTube className="w-4 h-4 mr-2" />
@@ -370,11 +594,11 @@ const BackendAPI = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-foreground">Retry Attempts</Label>
+                  <Label className="text-foreground">Retry Attempts (Active API)</Label>
                   <Input
                     type="number"
-                    value={apiSettings.retryAttempts}
-                    onChange={(e) => setApiSettings(prev => ({ ...prev, retryAttempts: parseInt(e.target.value) }))}
+                    value={selectedApi.retryAttempts}
+                    onChange={(e) => updateApiConfig(selectedApiId, { retryAttempts: parseInt(e.target.value) })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -427,9 +651,9 @@ const BackendAPI = () => {
             </CardHeader>
             <CardContent className="space-y-3">
               {[
-                { key: "API_BASE_URL", value: apiSettings.baseUrl, secret: false },
-                { key: "WS_URL", value: apiSettings.wsUrl, secret: false },
-                { key: "DATABASE_URL", value: "postgresql://***:***@***:5432/***", secret: true },
+                { key: "API_BASE_URL", value: selectedApi.baseUrl, secret: false },
+                { key: "WS_URL", value: selectedApi.wsUrl, secret: false },
+                { key: "DATABASE_URL", value: `postgresql://***:***@${selectedDb.host}:${selectedDb.port}/${selectedDb.database}`, secret: true },
                 { key: "API_KEY", value: "••••••••••••••••", secret: true },
                 { key: "JWT_SECRET", value: "••••••••••••••••", secret: true },
               ].map((env, idx) => (
