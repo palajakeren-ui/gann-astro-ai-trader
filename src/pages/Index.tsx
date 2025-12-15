@@ -276,21 +276,17 @@ const Index = () => {
               </h4>
               <div className="space-y-4">
                 <div>
-                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Hexagon Geometry (0-360°)</h5>
+                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">45° Gann Angles (0-360°)</h5>
                   <div className="space-y-2 max-h-[350px] overflow-y-auto">
                     {[
                       { angle: "0°", price: (currentPrice * 1.000).toFixed(2), type: "origin point" },
-                      { angle: "30°", price: (currentPrice * 0.992).toFixed(2), type: "support minor" },
-                      { angle: "60°", price: (currentPrice * 0.985).toFixed(2), type: "support harmonic" },
+                      { angle: "45°", price: (currentPrice * 0.990).toFixed(2), type: "support minor" },
                       { angle: "90°", price: (currentPrice * 0.978).toFixed(2), type: "support major" },
-                      { angle: "120°", price: (currentPrice * 1.005).toFixed(2), type: "resistance harmonic" },
-                      { angle: "150°", price: (currentPrice * 1.012).toFixed(2), type: "resistance minor" },
-                      { angle: "180°", price: (currentPrice * 1.020).toFixed(2), type: "full hexagon pivot" },
-                      { angle: "210°", price: (currentPrice * 1.028).toFixed(2), type: "resistance minor" },
-                      { angle: "240°", price: (currentPrice * 1.035).toFixed(2), type: "resistance harmonic" },
+                      { angle: "135°", price: (currentPrice * 1.008).toFixed(2), type: "resistance minor" },
+                      { angle: "180°", price: (currentPrice * 1.020).toFixed(2), type: "full pivot" },
+                      { angle: "225°", price: (currentPrice * 1.032).toFixed(2), type: "resistance minor" },
                       { angle: "270°", price: (currentPrice * 1.042).toFixed(2), type: "resistance major" },
-                      { angle: "300°", price: (currentPrice * 0.970).toFixed(2), type: "support harmonic" },
-                      { angle: "330°", price: (currentPrice * 0.963).toFixed(2), type: "support minor" },
+                      { angle: "315°", price: (currentPrice * 0.968).toFixed(2), type: "support minor" },
                       { angle: "360°", price: (currentPrice * 0.955).toFixed(2), type: "full cycle pivot" },
                     ].map((item, idx) => (
                       <div key={idx} className="flex justify-between items-center p-2 bg-secondary/50 rounded">

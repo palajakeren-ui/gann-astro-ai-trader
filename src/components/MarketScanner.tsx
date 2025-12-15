@@ -12,10 +12,12 @@ interface ScannerSignal {
   strategies: string[];
 }
 
+const TIMEFRAMES = ["1M", "2M", "3M", "5M", "10M", "15M", "30M", "45M", "1H", "2H", "3H", "4H", "1D", "1W", "1MO"];
+
 const mockSignals: ScannerSignal[] = [
   {
     symbol: "EURUSD",
-    timeframe: "H4",
+    timeframe: "1H",
     signal: "BUY",
     strength: "STRONG",
     price: 1.0875,
@@ -24,7 +26,7 @@ const mockSignals: ScannerSignal[] = [
   },
   {
     symbol: "BTCUSDT",
-    timeframe: "D1",
+    timeframe: "1D",
     signal: "BUY",
     strength: "STRONG",
     price: 43250.50,
@@ -33,7 +35,7 @@ const mockSignals: ScannerSignal[] = [
   },
   {
     symbol: "XAUUSD",
-    timeframe: "H1",
+    timeframe: "15M",
     signal: "SELL",
     strength: "MEDIUM",
     price: 2045.30,
@@ -42,12 +44,30 @@ const mockSignals: ScannerSignal[] = [
   },
   {
     symbol: "US500",
-    timeframe: "H4",
+    timeframe: "4H",
     signal: "BUY",
     strength: "MEDIUM",
     price: 4782.50,
     change: 0.88,
     strategies: ["ML", "Options"],
+  },
+  {
+    symbol: "GBPUSD",
+    timeframe: "30M",
+    signal: "BUY",
+    strength: "WEAK",
+    price: 1.2650,
+    change: 0.25,
+    strategies: ["Gann", "Ehlers"],
+  },
+  {
+    symbol: "ETHUSD",
+    timeframe: "2H",
+    signal: "SELL",
+    strength: "STRONG",
+    price: 2450.75,
+    change: -1.85,
+    strategies: ["ML", "Astro"],
   },
 ];
 
