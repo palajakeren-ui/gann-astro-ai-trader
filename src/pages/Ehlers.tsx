@@ -4,6 +4,7 @@ import { Activity, TrendingUp } from "lucide-react";
 import MAMAFAMAChart from "@/components/charts/MAMAFAMAChart";
 import MAMAFAMACalculator from "@/components/calculators/MAMAFAMACalculator";
 import MAMAFAMAAlerts from "@/components/alerts/MAMAFAMAAlerts";
+import EhlersRealtimeChart from "@/components/charts/EhlersRealtimeChart";
 
 const Ehlers = () => {
   // Mock chart data for MAMA/FAMA visualization
@@ -32,6 +33,7 @@ const Ehlers = () => {
     { index: 7, type: 'bearish' as const, mama: 104.38, fama: 104.40 },
     { index: 8, type: 'bullish' as const, mama: 104.40, fama: 104.42 },
   ];
+
   const indicators = [
     { name: "Fisher Transform", value: "1.33", signal: "Bullish Cross", strength: 93, trend: "bullish" },
     { name: "Smoothed RSI", value: "67.2", signal: "Bullish", strength: 87, trend: "bullish" },
@@ -40,10 +42,11 @@ const Ehlers = () => {
     { name: "FAMA (Following Adaptive)", value: "104,350", signal: "Following", strength: 88, trend: "bullish" },
     { name: "Instantaneous Trendline", value: "104,100", signal: "Uptrend", strength: 89, trend: "bullish" },
     { name: "Cyber Cycle", value: "+0.026", signal: "Rising", strength: 86, trend: "bullish" },
-    { name: "Dominant Cycle", value: "24.0 hari", signal: "Strong", strength: 96, trend: "bullish" },
+    { name: "Dominant Cycle", value: "24.0 days", signal: "Strong", strength: 96, trend: "bullish" },
     { name: "Sinewave Indicator", value: "+0.021", signal: "Bullish phase", strength: 84, trend: "bullish" },
     { name: "Roofing Filter", value: "+0.017", signal: "Uptrend noise", strength: 80, trend: "bullish" },
     { name: "Decycler", value: "+0.028", signal: "Bullish", strength: 82, trend: "bullish" },
+    { name: "Bandpass Filter", value: "+0.015", signal: "Cycle Peak", strength: 88, trend: "bullish" },
   ];
 
   return (
@@ -62,14 +65,16 @@ const Ehlers = () => {
           <Badge className="bg-success text-success-foreground text-lg px-4 py-2">88%</Badge>
         </div>
         <p className="text-sm text-muted-foreground mt-2">
-          Combined confidence across all digital filter indicators
+          Combined confidence across all digital filter indicators (including Bandpass Filter)
         </p>
       </Card>
 
+      {/* Interactive Real-Time Chart */}
+      <EhlersRealtimeChart currentPrice={47509} />
 
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Digital Filter Indicators</h2>
-        <div className="space-y-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {indicators.map((indicator, idx) => (
             <div
               key={idx}
@@ -97,6 +102,32 @@ const Ehlers = () => {
             </div>
           ))}
         </div>
+      </Card>
+
+      {/* Bandpass Filter Detail */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4 flex items-center">
+          <Activity className="w-5 h-5 mr-2 text-primary" />
+          Bandpass Filter Analysis
+        </h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 bg-secondary/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">Center Frequency</p>
+            <p className="text-2xl font-bold text-foreground">20 Bars</p>
+          </div>
+          <div className="p-4 bg-secondary/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">Bandwidth</p>
+            <p className="text-2xl font-bold text-foreground">0.30</p>
+          </div>
+          <div className="p-4 bg-secondary/50 rounded-lg">
+            <p className="text-sm text-muted-foreground">Current Signal</p>
+            <p className="text-2xl font-bold text-success">+0.015</p>
+          </div>
+        </div>
+        <p className="text-sm text-muted-foreground mt-4">
+          The Bandpass Filter isolates the dominant cycle component, removing both high-frequency noise and low-frequency trend. 
+          Positive values indicate bullish cycle phase, negative values indicate bearish phase.
+        </p>
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

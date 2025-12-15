@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { TrendingUp, Activity, DollarSign, Percent, Layers, RefreshCw } from "lucide-react";
+import { TrendingUp, Activity, DollarSign, Percent, Layers, RefreshCw, Wifi } from "lucide-react";
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from "recharts";
 import { GannSquareChart } from "@/components/charts/GannSquareChart";
 import { GannWheelChart } from "@/components/charts/GannWheelChart";
@@ -13,7 +13,10 @@ import { GannBoxChart } from "@/components/charts/GannBoxChart";
 import { GannForecastingCalculator } from "@/components/calculators/GannForecastingCalculator";
 import AstroCyclePanel from "@/components/dashboard/AstroCyclePanel";
 import AIForecastPanel from "@/components/dashboard/AIForecastPanel";
+import HexagonGeometryChart from "@/components/charts/HexagonGeometryChart";
+import GannFanFullModule from "@/components/charts/GannFanFullModule";
 import { Button } from "@/components/ui/button";
+import useWebSocketPrice from "@/hooks/useWebSocketPrice";
 
 const generateMockPriceData = (basePrice: number) => Array.from({ length: 30 }, (_, i) => {
   const base = basePrice + Math.sin(i / 5) * (basePrice * 0.04);
@@ -37,32 +40,20 @@ const generateMockCandleData = (basePrice: number) => Array.from({ length: 30 },
 });
 
 const Index = () => {
-  const [currentPrice, setCurrentPrice] = useState(47509);
-  const [priceChange, setPriceChange] = useState(984);
-  const [priceChangePercent, setPriceChangePercent] = useState(2.11);
-  const [isRealTime, setIsRealTime] = useState(true);
-  const [lastUpdate, setLastUpdate] = useState(new Date());
+  // WebSocket price feed integration
+  const { priceData, isConnected, isLive, toggleConnection } = useWebSocketPrice({
+    symbol: 'BTCUSDT',
+    enabled: true,
+    updateInterval: 2000,
+  });
+
+  const currentPrice = priceData.price;
+  const priceChange = priceData.change;
+  const priceChangePercent = priceData.changePercent;
+  const lastUpdate = priceData.timestamp;
   
   const [mockPriceData, setMockPriceData] = useState(() => generateMockPriceData(currentPrice));
   const [mockCandleData, setMockCandleData] = useState(() => generateMockCandleData(currentPrice));
-
-  // Simulate real-time price updates
-  useEffect(() => {
-    if (!isRealTime) return;
-    
-    const interval = setInterval(() => {
-      const change = (Math.random() - 0.5) * 100;
-      setCurrentPrice(prev => {
-        const newPrice = prev + change;
-        setPriceChange(change);
-        setPriceChangePercent((change / prev) * 100);
-        setLastUpdate(new Date());
-        return newPrice;
-      });
-    }, 3000);
-
-    return () => clearInterval(interval);
-  }, [isRealTime]);
 
   // Update chart data when price changes
   useEffect(() => {
@@ -78,16 +69,20 @@ const Index = () => {
           <p className="text-xs md:text-base text-muted-foreground">BTCUSD - Binance Futures, MetaTrader 5</p>
         </div>
         <div className="flex items-center gap-2">
-          <Badge variant={isRealTime ? "default" : "outline"} className={isRealTime ? "bg-success" : ""}>
-            {isRealTime ? "Live" : "Paused"}
+          <Badge variant="outline" className={isConnected ? "border-success text-success" : "border-destructive text-destructive"}>
+            <Wifi className="w-3 h-3 mr-1" />
+            {isConnected ? "WebSocket" : "Disconnected"}
+          </Badge>
+          <Badge variant={isLive ? "default" : "outline"} className={isLive ? "bg-success" : ""}>
+            {isLive ? "Live" : "Paused"}
           </Badge>
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setIsRealTime(!isRealTime)}
+            onClick={toggleConnection}
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${isRealTime ? 'animate-spin' : ''}`} />
-            {isRealTime ? "Pause" : "Resume"}
+            <RefreshCw className={`w-4 h-4 mr-2 ${isLive ? 'animate-spin' : ''}`} />
+            {isLive ? "Pause" : "Resume"}
           </Button>
         </div>
       </div>
@@ -266,66 +261,43 @@ const Index = () => {
         </TabsContent>
 
         <TabsContent value="calculations" className="space-y-4 mt-4">
-          <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 md:mb-4">Live Calculation Engines</h3>
+          <h3 className="text-lg md:text-xl font-semibold text-foreground mb-3 md:mb-4">Live Calculation Engines (WebSocket: ${currentPrice.toLocaleString()})</h3>
+          
+          {/* Hexagon Geometry and Gann Fan Full Module */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+            <HexagonGeometryChart currentPrice={currentPrice} />
+            <GannFanFullModule currentPrice={currentPrice} />
+          </div>
           
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
             <Card className="p-4 md:p-6 border-border bg-card">
               <h4 className="text-lg font-semibold text-foreground mb-4 flex items-center">
                 <Activity className="w-5 h-5 mr-2 text-success" />
-                WD Gann Analysis
+                WD Gann Angles Summary
               </h4>
-              <div className="space-y-4">
-                <div>
-                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">45° Gann Angles (0-360°)</h5>
-                  <div className="space-y-2 max-h-[350px] overflow-y-auto">
-                    {[
-                      { angle: "0°", price: (currentPrice * 1.000).toFixed(2), type: "origin point" },
-                      { angle: "45°", price: (currentPrice * 0.990).toFixed(2), type: "support minor" },
-                      { angle: "90°", price: (currentPrice * 0.978).toFixed(2), type: "support major" },
-                      { angle: "135°", price: (currentPrice * 1.008).toFixed(2), type: "resistance minor" },
-                      { angle: "180°", price: (currentPrice * 1.020).toFixed(2), type: "full pivot" },
-                      { angle: "225°", price: (currentPrice * 1.032).toFixed(2), type: "resistance minor" },
-                      { angle: "270°", price: (currentPrice * 1.042).toFixed(2), type: "resistance major" },
-                      { angle: "315°", price: (currentPrice * 0.968).toFixed(2), type: "support minor" },
-                      { angle: "360°", price: (currentPrice * 0.955).toFixed(2), type: "full cycle pivot" },
-                    ].map((item, idx) => (
-                      <div key={idx} className="flex justify-between items-center p-2 bg-secondary/50 rounded">
-                        <span className="text-sm font-bold text-accent">{item.angle}</span>
-                        <span className="text-sm font-mono text-foreground">${item.price}</span>
-                        <Badge variant="outline" className={item.type.includes("support") ? "text-xs border-success text-success" : item.type.includes("origin") || item.type.includes("pivot") ? "text-xs border-primary text-primary" : "text-xs border-destructive text-destructive"}>
-                          {item.type.split(' ')[0]}
-                        </Badge>
-                      </div>
-                    ))}
+              <div className="space-y-2 max-h-[350px] overflow-y-auto">
+                {[
+                  { angle: "0°", price: (currentPrice * 1.000).toFixed(2), type: "origin" },
+                  { angle: "15°", price: (currentPrice * 0.996).toFixed(2), type: "minor" },
+                  { angle: "30°", price: (currentPrice * 0.992).toFixed(2), type: "support" },
+                  { angle: "45°", price: (currentPrice * 0.988).toFixed(2), type: "cardinal" },
+                  { angle: "60°", price: (currentPrice * 0.982).toFixed(2), type: "support" },
+                  { angle: "90°", price: (currentPrice * 0.975).toFixed(2), type: "major" },
+                  { angle: "135°", price: (currentPrice * 1.012).toFixed(2), type: "resistance" },
+                  { angle: "180°", price: (currentPrice * 1.025).toFixed(2), type: "pivot" },
+                  { angle: "225°", price: (currentPrice * 1.038).toFixed(2), type: "resistance" },
+                  { angle: "270°", price: (currentPrice * 1.050).toFixed(2), type: "major" },
+                  { angle: "315°", price: (currentPrice * 0.962).toFixed(2), type: "support" },
+                  { angle: "360°", price: (currentPrice * 0.950).toFixed(2), type: "cycle" },
+                ].map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center p-2 bg-secondary/50 rounded">
+                    <span className="text-sm font-bold text-accent">{item.angle}</span>
+                    <span className="text-sm font-mono text-foreground">${item.price}</span>
+                    <Badge variant="outline" className={item.type.includes("support") || item.type === "cardinal" ? "text-xs border-success text-success" : item.type === "origin" || item.type.includes("pivot") || item.type === "cycle" ? "text-xs border-primary text-primary" : item.type === "major" ? "text-xs border-accent text-accent" : "text-xs border-destructive text-destructive"}>
+                      {item.type}
+                    </Badge>
                   </div>
-                </div>
-
-                <div>
-                  <h5 className="text-sm font-semibold text-muted-foreground mb-2">Gann Fan Angles (Full Module)</h5>
-                  <div className="space-y-2 max-h-[300px] overflow-y-auto">
-                    {[
-                      { ratio: "8x1", price: (currentPrice * 0.990).toFixed(2), slope: "82° slope", type: "support" },
-                      { ratio: "4x1", price: (currentPrice * 0.992).toFixed(2), slope: "76° slope", type: "support" },
-                      { ratio: "1x1", price: (currentPrice * 0.994).toFixed(2), slope: "45° slope", type: "support" },
-                      { ratio: "2x1", price: (currentPrice * 0.996).toFixed(2), slope: "26.5° slope", type: "support" },
-                      { ratio: "1x2", price: (currentPrice * 1.004).toFixed(2), slope: "63.5° slope", type: "resistance" },
-                      { ratio: "3x1", price: (currentPrice * 1.010).toFixed(2), slope: "18° slope", type: "resistance" },
-                    ].map((item, idx) => (
-                      <div key={idx} className="p-2 bg-secondary/50 rounded">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-sm font-bold text-foreground">{item.ratio}</span>
-                          <Badge variant="outline" className={item.type === "support" ? "text-xs border-success text-success" : "text-xs border-destructive text-destructive"}>
-                            {item.type}
-                          </Badge>
-                        </div>
-                        <div className="flex justify-between items-center">
-                          <span className="text-sm font-mono text-foreground">${item.price}</span>
-                          <span className="text-xs text-muted-foreground">{item.slope}</span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                ))}
               </div>
             </Card>
 
