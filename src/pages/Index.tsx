@@ -17,6 +17,7 @@ import HexagonGeometryChart from "@/components/charts/HexagonGeometryChart";
 import GannFanFullModule from "@/components/charts/GannFanFullModule";
 import { Button } from "@/components/ui/button";
 import useWebSocketPrice from "@/hooks/useWebSocketPrice";
+import TradingInstrumentSelector from "@/components/TradingInstrumentSelector";
 
 const generateMockPriceData = (basePrice: number) => Array.from({ length: 30 }, (_, i) => {
   const base = basePrice + Math.sin(i / 5) * (basePrice * 0.04);
@@ -219,6 +220,9 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </Card>
+
+      {/* Trading Instrument Selector */}
+      <TradingInstrumentSelector />
 
       {/* Astro Cycle Panel */}
       <AstroCyclePanel />

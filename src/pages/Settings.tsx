@@ -1287,23 +1287,7 @@ platforms:
         </div>
       </Card>
 
-      <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Legacy Configuration</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="broker" className="text-foreground">Broker</Label>
-            <select id="broker" className="w-full px-4 py-2 bg-input border border-border rounded-md text-foreground">
-              <option>MetaTrader 5</option>
-              <option>Binance Futures</option>
-              <option>Interactive Brokers</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="account" className="text-foreground">Account ID</Label>
-            <Input id="account" type="text" placeholder="Enter account ID" />
-          </div>
-        </div>
-      </Card>
+      {/* Legacy Configuration section removed as per user request */}
 
       <div className="flex justify-end">
         <Button size="lg">
