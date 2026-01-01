@@ -16,6 +16,7 @@ import {
   FileText,
   BookOpen,
   Server,
+  Waves,
 } from "lucide-react";
 
 const navItems = [
@@ -26,6 +27,8 @@ const navItems = [
   { icon: Sparkles, label: "Gann Analysis", path: "/gann" },
   { icon: Telescope, label: "Astro Cycles", path: "/astro" },
   { icon: Activity, label: "Ehlers DSP", path: "/ehlers" },
+  { icon: Waves, label: "Pattern Recognition", path: "/pattern-recognition" },
+  { icon: Zap, label: "HFT Trading", path: "/hft" },
   { icon: Brain, label: "AI Models", path: "/ai" },
   { icon: Target, label: "Options", path: "/options" },
   { icon: Shield, label: "Risk Manager", path: "/risk" },

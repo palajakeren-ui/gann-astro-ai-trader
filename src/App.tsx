@@ -21,6 +21,8 @@ import SlippageSpike from "./pages/SlippageSpike";
 import Reports from "./pages/Reports";
 import Journal from "./pages/Journal";
 import BackendAPI from "./pages/BackendAPI";
+import PatternRecognition from "./pages/PatternRecognition";
+import HFT from "./pages/HFT";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -51,6 +53,8 @@ const App = () => (
               <Route path="/reports" element={<Reports />} />
               <Route path="/journal" element={<Journal />} />
               <Route path="/backend-api" element={<BackendAPI />} />
+              <Route path="/pattern-recognition" element={<PatternRecognition />} />
+              <Route path="/hft" element={<HFT />} />
               <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
