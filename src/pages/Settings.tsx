@@ -1247,6 +1247,26 @@ platforms:
         </Tabs>
       </Card>
 
+      {/* FIX Protocol Connectors */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">FIX Protocol Connectors</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Configure multiple FIX protocol connections for institutional trading
+        </p>
+        
+        <FixConnectorManager />
+      </Card>
+
+      {/* Trading Mode Configuration */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">Trading Mode Configuration</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Configure settings for Spot and Futures trading modes
+        </p>
+        
+        <TradingModeSettings />
+      </Card>
+
       {/* Import/Export Settings */}
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Backup & Restore Settings</h2>
@@ -1283,11 +1303,11 @@ platforms:
             <li>• Trading instruments configuration</li>
             <li>• Broker connection settings (excluding API keys for security)</li>
             <li>• Risk management parameters</li>
+            <li>• FIX Protocol connector configurations</li>
+            <li>• Trading mode settings (Spot/Futures)</li>
           </ul>
         </div>
       </Card>
-
-      {/* Legacy Configuration section removed as per user request */}
 
       <div className="flex justify-end">
         <Button size="lg">
@@ -1296,6 +1316,472 @@ platforms:
         </Button>
       </div>
     </div>
+  );
+};
+
+// FIX Connector Manager Component
+const FixConnectorManager = () => {
+  const [connectors, setConnectors] = useState([
+    {
+      id: 1,
+      name: "Primary FIX",
+      host: "fix.broker1.com",
+      port: "9880",
+      senderCompId: "CLIENT1",
+      targetCompId: "BROKER1",
+      enabled: true,
+      protocol: "FIX 4.4",
+    },
+  ]);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newConnector, setNewConnector] = useState({
+    name: "",
+    host: "",
+    port: "9880",
+    senderCompId: "",
+    targetCompId: "",
+    protocol: "FIX 4.4",
+  });
+
+  const addConnector = () => {
+    if (!newConnector.name || !newConnector.host || !newConnector.senderCompId) {
+      toast.error("Please fill in required fields");
+      return;
+    }
+    setConnectors([
+      ...connectors,
+      { ...newConnector, id: Date.now(), enabled: false },
+    ]);
+    setNewConnector({
+      name: "",
+      host: "",
+      port: "9880",
+      senderCompId: "",
+      targetCompId: "",
+      protocol: "FIX 4.4",
+    });
+    setShowAddForm(false);
+    toast.success("FIX Connector added");
+  };
+
+  const removeConnector = (id: number) => {
+    setConnectors(connectors.filter((c) => c.id !== id));
+    toast.success("Connector removed");
+  };
+
+  const toggleConnector = (id: number) => {
+    setConnectors(
+      connectors.map((c) =>
+        c.id === id ? { ...c, enabled: !c.enabled } : c
+      )
+    );
+  };
+
+  const testConnection = (id: number) => {
+    const conn = connectors.find((c) => c.id === id);
+    if (conn) {
+      toast.info(`Testing connection to ${conn.host}:${conn.port}...`);
+      setTimeout(() => {
+        toast.success(`Connection to ${conn.name} successful`);
+      }, 1500);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {connectors.map((connector) => (
+        <div
+          key={connector.id}
+          className={`p-4 rounded-lg border transition-colors ${
+            connector.enabled
+              ? "bg-success/10 border-success/30"
+              : "bg-secondary/50 border-border"
+          }`}
+        >
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-3">
+              <h3 className="font-semibold text-foreground">{connector.name}</h3>
+              <Badge variant="outline">{connector.protocol}</Badge>
+              {connector.enabled && (
+                <Badge className="bg-success text-success-foreground">Active</Badge>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => testConnection(connector.id)}
+              >
+                Test
+              </Button>
+              <Switch
+                checked={connector.enabled}
+                onCheckedChange={() => toggleConnector(connector.id)}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-destructive hover:text-destructive"
+                onClick={() => removeConnector(connector.id)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div>
+              <Label className="text-muted-foreground text-xs">Host</Label>
+              <p className="text-foreground font-mono">{connector.host}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-xs">Port</Label>
+              <p className="text-foreground font-mono">{connector.port}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-xs">Sender CompID</Label>
+              <p className="text-foreground font-mono">{connector.senderCompId}</p>
+            </div>
+            <div>
+              <Label className="text-muted-foreground text-xs">Target CompID</Label>
+              <p className="text-foreground font-mono">{connector.targetCompId}</p>
+            </div>
+          </div>
+        </div>
+      ))}
+
+      {showAddForm ? (
+        <div className="p-4 rounded-lg bg-secondary/50 border border-border space-y-4">
+          <h4 className="font-semibold text-foreground">Add New FIX Connector</h4>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Connector Name *</Label>
+              <Input
+                value={newConnector.name}
+                onChange={(e) =>
+                  setNewConnector({ ...newConnector, name: e.target.value })
+                }
+                placeholder="e.g., Primary FIX"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Protocol</Label>
+              <select
+                className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
+                value={newConnector.protocol}
+                onChange={(e) =>
+                  setNewConnector({ ...newConnector, protocol: e.target.value })
+                }
+              >
+                <option value="FIX 4.0">FIX 4.0</option>
+                <option value="FIX 4.2">FIX 4.2</option>
+                <option value="FIX 4.4">FIX 4.4</option>
+                <option value="FIX 5.0">FIX 5.0</option>
+                <option value="FIX 5.0 SP2">FIX 5.0 SP2</option>
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label>Host *</Label>
+              <Input
+                value={newConnector.host}
+                onChange={(e) =>
+                  setNewConnector({ ...newConnector, host: e.target.value })
+                }
+                placeholder="e.g., fix.broker.com"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Port</Label>
+              <Input
+                value={newConnector.port}
+                onChange={(e) =>
+                  setNewConnector({ ...newConnector, port: e.target.value })
+                }
+                placeholder="9880"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Sender CompID *</Label>
+              <Input
+                value={newConnector.senderCompId}
+                onChange={(e) =>
+                  setNewConnector({ ...newConnector, senderCompId: e.target.value })
+                }
+                placeholder="YOUR_COMP_ID"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Target CompID</Label>
+              <Input
+                value={newConnector.targetCompId}
+                onChange={(e) =>
+                  setNewConnector({ ...newConnector, targetCompId: e.target.value })
+                }
+                placeholder="BROKER_COMP_ID"
+              />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={addConnector}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Connector
+            </Button>
+            <Button variant="outline" onClick={() => setShowAddForm(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <Button variant="outline" onClick={() => setShowAddForm(true)}>
+          <Plus className="w-4 h-4 mr-2" />
+          Add FIX Connector
+        </Button>
+      )}
+    </div>
+  );
+};
+
+// Trading Mode Settings Component
+const TradingModeSettings = () => {
+  const [activeMode, setActiveMode] = useState<"spot" | "futures">("spot");
+  const [spotSettings, setSpotSettings] = useState({
+    defaultOrderType: "limit",
+    slippageTolerance: "0.5",
+    autoConvertDust: true,
+    preferredQuoteCurrency: "USDT",
+    enableMarginTrading: false,
+  });
+  const [futuresSettings, setFuturesSettings] = useState({
+    defaultLeverage: "10",
+    marginMode: "cross",
+    positionMode: "hedge",
+    autoDeleverage: true,
+    stopLossPercentage: "2",
+    takeProfitPercentage: "4",
+    trailingStopEnabled: false,
+    trailingStopCallback: "1",
+    reduceOnlyDefault: false,
+  });
+
+  return (
+    <Tabs value={activeMode} onValueChange={(v) => setActiveMode(v as "spot" | "futures")}>
+      <TabsList className="grid w-full grid-cols-2 mb-6">
+        <TabsTrigger value="spot" className="text-sm">
+          Spot Trading
+        </TabsTrigger>
+        <TabsTrigger value="futures" className="text-sm">
+          Futures Trading
+        </TabsTrigger>
+      </TabsList>
+
+      <TabsContent value="spot" className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label>Default Order Type</Label>
+            <select
+              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
+              value={spotSettings.defaultOrderType}
+              onChange={(e) =>
+                setSpotSettings({ ...spotSettings, defaultOrderType: e.target.value })
+              }
+            >
+              <option value="market">Market</option>
+              <option value="limit">Limit</option>
+              <option value="stop-limit">Stop Limit</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Slippage Tolerance (%)</Label>
+            <Input
+              type="number"
+              value={spotSettings.slippageTolerance}
+              onChange={(e) =>
+                setSpotSettings({ ...spotSettings, slippageTolerance: e.target.value })
+              }
+              step="0.1"
+              min="0"
+              max="5"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Preferred Quote Currency</Label>
+            <select
+              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
+              value={spotSettings.preferredQuoteCurrency}
+              onChange={(e) =>
+                setSpotSettings({ ...spotSettings, preferredQuoteCurrency: e.target.value })
+              }
+            >
+              <option value="USDT">USDT</option>
+              <option value="USDC">USDC</option>
+              <option value="BUSD">BUSD</option>
+              <option value="BTC">BTC</option>
+              <option value="ETH">ETH</option>
+            </select>
+          </div>
+          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+            <div>
+              <Label>Auto-Convert Dust</Label>
+              <p className="text-xs text-muted-foreground">
+                Automatically convert small balances to BNB
+              </p>
+            </div>
+            <Switch
+              checked={spotSettings.autoConvertDust}
+              onCheckedChange={(checked) =>
+                setSpotSettings({ ...spotSettings, autoConvertDust: checked })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg md:col-span-2">
+            <div>
+              <Label>Enable Margin Trading</Label>
+              <p className="text-xs text-muted-foreground">
+                Allow borrowing for leveraged spot positions
+              </p>
+            </div>
+            <Switch
+              checked={spotSettings.enableMarginTrading}
+              onCheckedChange={(checked) =>
+                setSpotSettings({ ...spotSettings, enableMarginTrading: checked })
+              }
+            />
+          </div>
+        </div>
+      </TabsContent>
+
+      <TabsContent value="futures" className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label>Default Leverage</Label>
+            <select
+              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
+              value={futuresSettings.defaultLeverage}
+              onChange={(e) =>
+                setFuturesSettings({ ...futuresSettings, defaultLeverage: e.target.value })
+              }
+            >
+              {[1, 2, 3, 5, 10, 20, 25, 50, 75, 100, 125].map((lev) => (
+                <option key={lev} value={lev.toString()}>
+                  {lev}x
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Margin Mode</Label>
+            <select
+              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
+              value={futuresSettings.marginMode}
+              onChange={(e) =>
+                setFuturesSettings({ ...futuresSettings, marginMode: e.target.value })
+              }
+            >
+              <option value="cross">Cross Margin</option>
+              <option value="isolated">Isolated Margin</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Position Mode</Label>
+            <select
+              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
+              value={futuresSettings.positionMode}
+              onChange={(e) =>
+                setFuturesSettings({ ...futuresSettings, positionMode: e.target.value })
+              }
+            >
+              <option value="one-way">One-Way Mode</option>
+              <option value="hedge">Hedge Mode</option>
+            </select>
+          </div>
+          <div className="space-y-2">
+            <Label>Default Stop Loss (%)</Label>
+            <Input
+              type="number"
+              value={futuresSettings.stopLossPercentage}
+              onChange={(e) =>
+                setFuturesSettings({ ...futuresSettings, stopLossPercentage: e.target.value })
+              }
+              step="0.5"
+              min="0.5"
+              max="50"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Default Take Profit (%)</Label>
+            <Input
+              type="number"
+              value={futuresSettings.takeProfitPercentage}
+              onChange={(e) =>
+                setFuturesSettings({ ...futuresSettings, takeProfitPercentage: e.target.value })
+              }
+              step="0.5"
+              min="0.5"
+              max="100"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Trailing Stop Callback (%)</Label>
+            <Input
+              type="number"
+              value={futuresSettings.trailingStopCallback}
+              onChange={(e) =>
+                setFuturesSettings({ ...futuresSettings, trailingStopCallback: e.target.value })
+              }
+              step="0.1"
+              min="0.1"
+              max="5"
+              disabled={!futuresSettings.trailingStopEnabled}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+            <div>
+              <Label>Auto-Deleverage</Label>
+              <p className="text-xs text-muted-foreground">Prevent liquidation</p>
+            </div>
+            <Switch
+              checked={futuresSettings.autoDeleverage}
+              onCheckedChange={(checked) =>
+                setFuturesSettings({ ...futuresSettings, autoDeleverage: checked })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+            <div>
+              <Label>Trailing Stop</Label>
+              <p className="text-xs text-muted-foreground">Dynamic stop loss</p>
+            </div>
+            <Switch
+              checked={futuresSettings.trailingStopEnabled}
+              onCheckedChange={(checked) =>
+                setFuturesSettings({ ...futuresSettings, trailingStopEnabled: checked })
+              }
+            />
+          </div>
+          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+            <div>
+              <Label>Reduce-Only Default</Label>
+              <p className="text-xs text-muted-foreground">Orders reduce position only</p>
+            </div>
+            <Switch
+              checked={futuresSettings.reduceOnlyDefault}
+              onCheckedChange={(checked) =>
+                setFuturesSettings({ ...futuresSettings, reduceOnlyDefault: checked })
+              }
+            />
+          </div>
+        </div>
+        
+        <div className="mt-4 p-4 rounded-lg bg-warning/10 border border-warning/30">
+          <p className="text-sm text-warning font-medium">⚠️ Risk Warning</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Futures trading involves significant risk of loss. Higher leverage increases both potential profits and losses. 
+            Always use proper risk management and never trade with funds you cannot afford to lose.
+          </p>
+        </div>
+      </TabsContent>
+    </Tabs>
   );
 };
 

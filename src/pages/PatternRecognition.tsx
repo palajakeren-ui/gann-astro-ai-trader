@@ -154,8 +154,8 @@ const PatternRecognition = () => {
       {/* Instrument & Timeframe Selector */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <TradingInstrumentSelector
-          selectedInstrument={selectedInstrument}
-          onInstrumentChange={setSelectedInstrument}
+          onInstrumentChange={(symbol) => setSelectedInstrument(symbol)}
+          compact={false}
         />
         <Card className="p-4 border-border bg-card">
           <Label className="text-foreground mb-2 block">Timeframe</Label>
