@@ -18,7 +18,7 @@ import GannFanFullModule from "@/components/charts/GannFanFullModule";
 import { Button } from "@/components/ui/button";
 import useWebSocketPrice from "@/hooks/useWebSocketPrice";
 import TradingInstrumentSelector from "@/components/TradingInstrumentSelector";
-import TradingModePanel from "@/components/TradingModePanel";
+
 
 const generateMockPriceData = (basePrice: number) => Array.from({ length: 30 }, (_, i) => {
   const base = basePrice + Math.sin(i / 5) * (basePrice * 0.04);
@@ -225,8 +225,6 @@ const Index = () => {
       {/* Trading Instrument Selector */}
       <TradingInstrumentSelector />
 
-      {/* Trading Mode & Risk Configuration Panel */}
-      <TradingModePanel />
 
       {/* Astro Cycle Panel */}
       <AstroCyclePanel />
