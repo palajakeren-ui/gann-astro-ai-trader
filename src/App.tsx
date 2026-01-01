@@ -23,6 +23,7 @@ import Journal from "./pages/Journal";
 import BackendAPI from "./pages/BackendAPI";
 import PatternRecognition from "./pages/PatternRecognition";
 import HFT from "./pages/HFT";
+import TradingMode from "./pages/TradingMode";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <main className="flex-1 ml-64 p-4 md:p-8">
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/trading-mode" element={<TradingMode />} />
               <Route path="/charts" element={<Charts />} />
               <Route path="/scanner" element={<Scanner />} />
               <Route path="/forecasting" element={<Forecasting />} />

@@ -17,10 +17,12 @@ import {
   BookOpen,
   Server,
   Waves,
+  Layers,
 } from "lucide-react";
 
 const navItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Layers, label: "Trading Mode", path: "/trading-mode" },
   { icon: TrendingUp, label: "Charts", path: "/charts" },
   { icon: Search, label: "Scanner", path: "/scanner" },
   { icon: Calendar, label: "Forecasting", path: "/forecasting" },
