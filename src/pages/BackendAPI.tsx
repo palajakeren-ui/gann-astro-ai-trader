@@ -20,7 +20,11 @@ import {
   Shield,
   Cpu,
   Plus,
-  Trash2
+  Trash2,
+  Edit,
+  Eye,
+  Download,
+  Upload
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -49,6 +53,18 @@ interface DBConfig {
   isActive: boolean;
 }
 
+interface TableRecord {
+  id: string;
+  [key: string]: string | number | boolean;
+}
+
+interface DBTable {
+  name: string;
+  rows: number;
+  columns: string[];
+  records: TableRecord[];
+}
+
 const BackendAPI = () => {
   const [apiConfigs, setApiConfigs] = useState<APIConfig[]>([
     {
@@ -71,7 +87,18 @@ const BackendAPI = () => {
       timeout: 30000,
       retryAttempts: 5,
       apiKey: "",
-      isActive: false,
+      isActive: true, // Multiple active allowed
+    },
+    {
+      id: "api-3",
+      name: "Binance API",
+      baseUrl: "https://api.binance.com",
+      wsUrl: "wss://stream.binance.com:9443",
+      apiVersion: "v3",
+      timeout: 10000,
+      retryAttempts: 3,
+      apiKey: "",
+      isActive: true,
     },
   ]);
 
@@ -98,18 +125,61 @@ const BackendAPI = () => {
       password: "",
       ssl: true,
       poolSize: 5,
-      isActive: false,
+      isActive: true, // Multiple active allowed
     },
   ]);
 
   const [selectedApiId, setSelectedApiId] = useState("api-1");
   const [selectedDbId, setSelectedDbId] = useState("db-1");
-
   const [connectionStatus, setConnectionStatus] = useState<Record<string, boolean>>({});
   const [isTestingConnection, setIsTestingConnection] = useState<Record<string, boolean>>({});
 
+  // CRUD State
+  const [selectedTable, setSelectedTable] = useState<string>("trades");
+  const [crudMode, setCrudMode] = useState<"view" | "create" | "edit">("view");
+  const [editingRecord, setEditingRecord] = useState<TableRecord | null>(null);
+  const [newRecord, setNewRecord] = useState<Record<string, string>>({});
+
+  const [dbTables, setDbTables] = useState<DBTable[]>([
+    { 
+      name: "trades", 
+      rows: 15420, 
+      columns: ["id", "symbol", "side", "price", "quantity", "timestamp"],
+      records: [
+        { id: "1", symbol: "BTCUSDT", side: "BUY", price: 47500, quantity: 0.5, timestamp: "2024-01-15 10:30:00" },
+        { id: "2", symbol: "ETHUSDT", side: "SELL", price: 2450, quantity: 2.0, timestamp: "2024-01-15 11:15:00" },
+        { id: "3", symbol: "XAUUSD", side: "BUY", price: 2045, quantity: 1.0, timestamp: "2024-01-15 12:00:00" },
+      ]
+    },
+    { 
+      name: "positions", 
+      rows: 45, 
+      columns: ["id", "symbol", "side", "entry_price", "quantity", "pnl"],
+      records: [
+        { id: "1", symbol: "BTCUSDT", side: "LONG", entry_price: 47000, quantity: 0.5, pnl: 250 },
+        { id: "2", symbol: "ETHUSDT", side: "SHORT", entry_price: 2500, quantity: 2.0, pnl: -100 },
+      ]
+    },
+    { 
+      name: "signals", 
+      rows: 8932, 
+      columns: ["id", "symbol", "timeframe", "signal", "strength", "timestamp"],
+      records: [
+        { id: "1", symbol: "BTCUSDT", timeframe: "1H", signal: "BUY", strength: 85, timestamp: "2024-01-15 10:00:00" },
+        { id: "2", symbol: "EURUSD", timeframe: "4H", signal: "SELL", strength: 72, timestamp: "2024-01-15 08:00:00" },
+      ]
+    },
+    { name: "forecasts", rows: 2341, columns: ["id", "symbol", "prediction", "confidence"], records: [] },
+    { name: "alerts", rows: 567, columns: ["id", "type", "message", "status"], records: [] },
+    { name: "users", rows: 12, columns: ["id", "username", "email", "role"], records: [] },
+    { name: "settings", rows: 1, columns: ["id", "key", "value"], records: [] },
+    { name: "logs", rows: 45678, columns: ["id", "level", "message", "timestamp"], records: [] },
+    { name: "backtest_results", rows: 234, columns: ["id", "strategy", "profit", "drawdown"], records: [] },
+  ]);
+
   const selectedApi = apiConfigs.find(c => c.id === selectedApiId) || apiConfigs[0];
   const selectedDb = dbConfigs.find(c => c.id === selectedDbId) || dbConfigs[0];
+  const currentTable = dbTables.find(t => t.name === selectedTable);
 
   const updateApiConfig = (id: string, updates: Partial<APIConfig>) => {
     setApiConfigs(prev => prev.map(c => c.id === id ? { ...c, ...updates } : c));
@@ -196,9 +266,53 @@ const BackendAPI = () => {
     }, 2000);
   };
 
+  // CRUD Operations
+  const handleCreateRecord = () => {
+    if (!currentTable) return;
+    
+    const newId = String(Date.now());
+    const record: TableRecord = { id: newId, ...newRecord };
+    
+    setDbTables(prev => prev.map(t => 
+      t.name === selectedTable 
+        ? { ...t, rows: t.rows + 1, records: [...t.records, record] }
+        : t
+    ));
+    
+    setNewRecord({});
+    setCrudMode("view");
+    toast.success(`Record created in ${selectedTable}`);
+  };
+
+  const handleUpdateRecord = () => {
+    if (!editingRecord || !currentTable) return;
+    
+    setDbTables(prev => prev.map(t => 
+      t.name === selectedTable 
+        ? { ...t, records: t.records.map(r => r.id === editingRecord.id ? editingRecord : r) }
+        : t
+    ));
+    
+    setEditingRecord(null);
+    setCrudMode("view");
+    toast.success(`Record updated in ${selectedTable}`);
+  };
+
+  const handleDeleteRecord = (recordId: string) => {
+    setDbTables(prev => prev.map(t => 
+      t.name === selectedTable 
+        ? { ...t, rows: t.rows - 1, records: t.records.filter(r => r.id !== recordId) }
+        : t
+    ));
+    toast.success(`Record deleted from ${selectedTable}`);
+  };
+
   const saveSettings = () => {
     toast.success("All backend configurations saved successfully!");
   };
+
+  const activeApiCount = apiConfigs.filter(c => c.isActive).length;
+  const activeDbCount = dbConfigs.filter(c => c.isActive).length;
 
   return (
     <div className="space-y-4 md:space-y-6 px-2 md:px-0">
@@ -208,67 +322,65 @@ const BackendAPI = () => {
             <Server className="w-6 h-6 md:w-8 md:h-8 text-primary" />
             Backend API & Database
           </h1>
-          <p className="text-sm text-muted-foreground">Configure backend connections and database settings</p>
+          <p className="text-sm text-muted-foreground">Configure backend connections and database settings (Multiple Active Supported)</p>
         </div>
-        <Button onClick={saveSettings} className="w-full md:w-auto">
-          <Save className="w-4 h-4 mr-2" />
-          Save All Settings
-        </Button>
+        <div className="flex gap-2">
+          <Badge variant="outline" className="text-sm">
+            {activeApiCount} APIs Active
+          </Badge>
+          <Badge variant="outline" className="text-sm">
+            {activeDbCount} DBs Active
+          </Badge>
+          <Button onClick={saveSettings}>
+            <Save className="w-4 h-4 mr-2" />
+            Save All
+          </Button>
+        </div>
       </div>
 
       {/* Connection Status Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
         {apiConfigs.map(api => (
-          <Card key={api.id} className={`border-border bg-card ${api.isActive ? 'ring-2 ring-primary' : ''}`}>
-            <CardContent className="p-4">
+          <Card key={api.id} className={`border-border bg-card ${api.isActive ? 'ring-2 ring-success' : ''}`}>
+            <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Globe className={`w-4 h-4 ${connectionStatus[`api-${api.id}`] ? "text-success" : "text-muted-foreground"}`} />
-                  <p className="font-semibold text-foreground text-sm">{api.name}</p>
-                </div>
-                <Badge className={connectionStatus[`api-${api.id}`] ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}>
-                  {connectionStatus[`api-${api.id}`] ? "Connected" : "Offline"}
-                </Badge>
+                <Globe className={`w-4 h-4 ${connectionStatus[`api-${api.id}`] ? "text-success" : "text-muted-foreground"}`} />
+                {api.isActive && <Badge className="bg-success/20 text-success text-xs">Active</Badge>}
               </div>
+              <p className="font-semibold text-foreground text-sm truncate">{api.name}</p>
               <p className="text-xs text-muted-foreground truncate">{api.baseUrl || "Not configured"}</p>
-              {api.isActive && <Badge variant="outline" className="mt-2 text-xs">Active</Badge>}
             </CardContent>
           </Card>
         ))}
         {dbConfigs.map(db => (
           <Card key={db.id} className={`border-border bg-card ${db.isActive ? 'ring-2 ring-primary' : ''}`}>
-            <CardContent className="p-4">
+            <CardContent className="p-3">
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Database className={`w-4 h-4 ${connectionStatus[`db-${db.id}`] ? "text-success" : "text-muted-foreground"}`} />
-                  <p className="font-semibold text-foreground text-sm">{db.name}</p>
-                </div>
-                <Badge className={connectionStatus[`db-${db.id}`] ? "bg-success/20 text-success" : "bg-muted text-muted-foreground"}>
-                  {connectionStatus[`db-${db.id}`] ? "Connected" : "Offline"}
-                </Badge>
+                <Database className={`w-4 h-4 ${connectionStatus[`db-${db.id}`] ? "text-success" : "text-muted-foreground"}`} />
+                {db.isActive && <Badge className="bg-primary/20 text-primary text-xs">Active</Badge>}
               </div>
+              <p className="font-semibold text-foreground text-sm truncate">{db.name}</p>
               <p className="text-xs text-muted-foreground truncate">{db.database || "Not configured"}</p>
-              {db.isActive && <Badge variant="outline" className="mt-2 text-xs">Active</Badge>}
             </CardContent>
           </Card>
         ))}
       </div>
 
       <Tabs defaultValue="api" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-grid">
           <TabsTrigger value="api" className="text-xs md:text-sm">REST API</TabsTrigger>
           <TabsTrigger value="database" className="text-xs md:text-sm">Database</TabsTrigger>
+          <TabsTrigger value="crud" className="text-xs md:text-sm">CRUD Operations</TabsTrigger>
           <TabsTrigger value="advanced" className="text-xs md:text-sm">Advanced</TabsTrigger>
         </TabsList>
 
         <TabsContent value="api" className="space-y-4 mt-4">
-          {/* API Configuration Selector */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Globe className="w-5 h-5 text-primary" />
-                  API Configurations ({apiConfigs.length})
+                  API Configurations ({apiConfigs.length}) - Multiple Active Supported
                 </CardTitle>
                 <Button onClick={addApiConfig} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
@@ -294,7 +406,6 @@ const BackendAPI = () => {
             </CardContent>
           </Card>
 
-          {/* Selected API Configuration */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -303,11 +414,9 @@ const BackendAPI = () => {
                   <Button
                     variant={selectedApi.isActive ? "default" : "outline"}
                     size="sm"
-                    onClick={() => {
-                      apiConfigs.forEach(c => updateApiConfig(c.id, { isActive: c.id === selectedApiId }));
-                    }}
+                    onClick={() => updateApiConfig(selectedApiId, { isActive: !selectedApi.isActive })}
                   >
-                    {selectedApi.isActive ? "Active" : "Set Active"}
+                    {selectedApi.isActive ? "Active" : "Inactive"}
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => removeApiConfig(selectedApiId)}>
                     <Trash2 className="w-4 h-4" />
@@ -389,7 +498,7 @@ const BackendAPI = () => {
                   ) : (
                     <TestTube className="w-4 h-4 mr-2" />
                   )}
-                  Test API Connection
+                  Test API
                 </Button>
                 <Button 
                   variant="outline" 
@@ -410,13 +519,12 @@ const BackendAPI = () => {
         </TabsContent>
 
         <TabsContent value="database" className="space-y-4 mt-4">
-          {/* Database Configuration Selector */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <Database className="w-5 h-5 text-primary" />
-                  Database Configurations ({dbConfigs.length})
+                  Database Configurations ({dbConfigs.length}) - Multiple Active Supported
                 </CardTitle>
                 <Button onClick={addDbConfig} size="sm">
                   <Plus className="w-4 h-4 mr-2" />
@@ -442,7 +550,6 @@ const BackendAPI = () => {
             </CardContent>
           </Card>
 
-          {/* Selected Database Configuration */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
@@ -451,11 +558,9 @@ const BackendAPI = () => {
                   <Button
                     variant={selectedDb.isActive ? "default" : "outline"}
                     size="sm"
-                    onClick={() => {
-                      dbConfigs.forEach(c => updateDbConfig(c.id, { isActive: c.id === selectedDbId }));
-                    }}
+                    onClick={() => updateDbConfig(selectedDbId, { isActive: !selectedDb.isActive })}
                   >
-                    {selectedDb.isActive ? "Active" : "Set Active"}
+                    {selectedDb.isActive ? "Active" : "Inactive"}
                   </Button>
                   <Button variant="destructive" size="sm" onClick={() => removeDbConfig(selectedDbId)}>
                     <Trash2 className="w-4 h-4" />
@@ -550,35 +655,183 @@ const BackendAPI = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          {/* Database Tables Preview */}
+        {/* CRUD Operations Tab */}
+        <TabsContent value="crud" className="space-y-4 mt-4">
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
-              <CardTitle className="text-lg">Database Schema</CardTitle>
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Database className="w-5 h-5 text-primary" />
+                  Database CRUD Operations
+                </CardTitle>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={crudMode === "create" ? "default" : "outline"} 
+                    size="sm"
+                    onClick={() => {
+                      setCrudMode("create");
+                      setNewRecord({});
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Create
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Download className="w-4 h-4 mr-1" />
+                    Export
+                  </Button>
+                  <Button variant="outline" size="sm">
+                    <Upload className="w-4 h-4 mr-1" />
+                    Import
+                  </Button>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {[
-                  { name: "trades", rows: 15420, status: "active" },
-                  { name: "positions", rows: 45, status: "active" },
-                  { name: "signals", rows: 8932, status: "active" },
-                  { name: "forecasts", rows: 2341, status: "active" },
-                  { name: "alerts", rows: 567, status: "active" },
-                  { name: "users", rows: 12, status: "active" },
-                  { name: "settings", rows: 1, status: "active" },
-                  { name: "logs", rows: 45678, status: "active" },
-                  { name: "backtest_results", rows: 234, status: "active" },
-                ].map((table, idx) => (
-                  <div key={idx} className="p-3 rounded-lg bg-secondary/30 border border-border">
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-sm text-foreground">{table.name}</span>
-                      <Badge variant="outline" className="text-xs">
-                        {table.rows.toLocaleString()} rows
+              {/* Table Selector */}
+              <div className="mb-4">
+                <Label className="text-foreground mb-2 block">Select Table</Label>
+                <div className="flex flex-wrap gap-2">
+                  {dbTables.map(table => (
+                    <Button
+                      key={table.name}
+                      variant={selectedTable === table.name ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => {
+                        setSelectedTable(table.name);
+                        setCrudMode("view");
+                        setEditingRecord(null);
+                      }}
+                    >
+                      {table.name}
+                      <Badge variant="secondary" className="ml-2 text-xs">
+                        {table.rows}
                       </Badge>
-                    </div>
-                  </div>
-                ))}
+                    </Button>
+                  ))}
+                </div>
               </div>
+
+              {/* Create Form */}
+              {crudMode === "create" && currentTable && (
+                <div className="p-4 bg-secondary/30 rounded-lg mb-4">
+                  <h4 className="font-semibold text-foreground mb-3">Create New Record in {selectedTable}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {currentTable.columns.filter(c => c !== "id").map(col => (
+                      <div key={col} className="space-y-1">
+                        <Label className="text-sm text-foreground">{col}</Label>
+                        <Input
+                          value={newRecord[col] || ""}
+                          onChange={(e) => setNewRecord(prev => ({ ...prev, [col]: e.target.value }))}
+                          placeholder={col}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button onClick={handleCreateRecord}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Save Record
+                    </Button>
+                    <Button variant="outline" onClick={() => setCrudMode("view")}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Edit Form */}
+              {crudMode === "edit" && editingRecord && currentTable && (
+                <div className="p-4 bg-primary/10 rounded-lg mb-4">
+                  <h4 className="font-semibold text-foreground mb-3">Edit Record #{editingRecord.id}</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {currentTable.columns.filter(c => c !== "id").map(col => (
+                      <div key={col} className="space-y-1">
+                        <Label className="text-sm text-foreground">{col}</Label>
+                        <Input
+                          value={String(editingRecord[col] || "")}
+                          onChange={(e) => setEditingRecord(prev => prev ? { ...prev, [col]: e.target.value } : null)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button onClick={handleUpdateRecord}>
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      Update Record
+                    </Button>
+                    <Button variant="outline" onClick={() => {
+                      setCrudMode("view");
+                      setEditingRecord(null);
+                    }}>
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Records Table */}
+              {currentTable && (
+                <div className="border border-border rounded-lg overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-secondary/50">
+                        <tr>
+                          {currentTable.columns.map(col => (
+                            <th key={col} className="px-4 py-2 text-left font-semibold text-foreground">
+                              {col}
+                            </th>
+                          ))}
+                          <th className="px-4 py-2 text-left font-semibold text-foreground">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {currentTable.records.length === 0 ? (
+                          <tr>
+                            <td colSpan={currentTable.columns.length + 1} className="px-4 py-8 text-center text-muted-foreground">
+                              No records found. Click "Create" to add a new record.
+                            </td>
+                          </tr>
+                        ) : (
+                          currentTable.records.map((record, idx) => (
+                            <tr key={record.id} className={idx % 2 === 0 ? "bg-card" : "bg-secondary/20"}>
+                              {currentTable.columns.map(col => (
+                                <td key={col} className="px-4 py-2 text-foreground">
+                                  {String(record[col] || "-")}
+                                </td>
+                              ))}
+                              <td className="px-4 py-2">
+                                <div className="flex gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    onClick={() => {
+                                      setEditingRecord(record);
+                                      setCrudMode("edit");
+                                    }}
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm"
+                                    className="text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteRecord(record.id)}
+                                  >
+                                    <Trash2 className="w-4 h-4" />
+                                  </Button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -594,12 +847,8 @@ const BackendAPI = () => {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label className="text-foreground">Retry Attempts (Active API)</Label>
-                  <Input
-                    type="number"
-                    value={selectedApi.retryAttempts}
-                    onChange={(e) => updateApiConfig(selectedApiId, { retryAttempts: parseInt(e.target.value) })}
-                  />
+                  <Label className="text-foreground">Retry Attempts (Global)</Label>
+                  <Input type="number" defaultValue="3" />
                 </div>
                 <div className="space-y-2">
                   <Label className="text-foreground">Request Rate Limit (per min)</Label>
@@ -637,11 +886,14 @@ const BackendAPI = () => {
                   <span className="text-sm text-foreground">Auto-reconnect on Disconnect</span>
                   <Switch defaultChecked />
                 </div>
+                <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
+                  <span className="text-sm text-foreground">Load Balance Across Active APIs</span>
+                  <Switch defaultChecked />
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Environment Variables */}
           <Card className="border-border bg-card">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg flex items-center gap-2">
