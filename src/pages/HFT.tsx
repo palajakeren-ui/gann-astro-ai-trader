@@ -79,7 +79,37 @@ const HFT = () => {
     // Momentum
     signalThreshold: 0.8,
     holdPeriod: 500, // ms
+
+    // Risk Management
+    riskMode: "dynamic" as "dynamic" | "fixed",
+    // Dynamic Risk
+    kellyFraction: 0.25,
+    volatilityAdjusted: true,
+    maxDailyDrawdown: 5.0,
+    dynamicPositionScaling: true,
+    // Fixed Risk
+    fixedRiskPercent: 1.0,
+    fixedLotSize: 0.1,
+    fixedStopLoss: 50,
+    fixedTakeProfit: 100,
+
+    // Instrument Configuration
+    instrumentMode: "single" as "single" | "multi",
+    selectedInstruments: ["BTCUSDT"] as string[],
+
+    // Strategy Settings
+    useGannStrategy: false,
+    useEhlersStrategy: false,
+    gannAngle: 45,
+    gannTimeUnit: 1,
+    ehlersFilterPeriod: 20,
+    ehlersBandwidth: 0.3,
   });
+
+  const availableInstruments = [
+    "BTCUSDT", "ETHUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", 
+    "DOGEUSDT", "SOLUSDT", "DOTUSDT", "MATICUSDT", "LTCUSDT"
+  ];
 
   const latencyData = generateLatencyData();
   const pnlData = generatePnLData();
@@ -124,7 +154,20 @@ const HFT = () => {
     { id: "arbitrage", name: "Statistical Arbitrage", status: "Active", pnl: 890, trades: 1562 },
     { id: "momentum", name: "Momentum Scalping", status: "Paused", pnl: 420, trades: 892 },
     { id: "mean-reversion", name: "Mean Reversion", status: "Active", pnl: 285, trades: 643 },
+    { id: "gann-angles", name: "Gann Angles Strategy", status: config.useGannStrategy ? "Active" : "Inactive", pnl: 560, trades: 428 },
+    { id: "ehlers-dsp", name: "Ehlers DSP Filter", status: config.useEhlersStrategy ? "Active" : "Inactive", pnl: 720, trades: 315 },
   ];
+
+  const toggleInstrument = (instrument: string) => {
+    setConfig(prev => {
+      const current = prev.selectedInstruments;
+      if (current.includes(instrument)) {
+        return { ...prev, selectedInstruments: current.filter(i => i !== instrument) };
+      } else {
+        return { ...prev, selectedInstruments: [...current, instrument] };
+      }
+    });
+  };
 
   const toggleHFT = () => {
     setIsRunning(!isRunning);
@@ -135,7 +178,7 @@ const HFT = () => {
     }
   };
 
-  const updateConfig = (key: string, value: number | boolean) => {
+  const updateConfig = (key: string, value: number | boolean | string) => {
     setConfig(prev => ({ ...prev, [key]: value }));
   };
 
@@ -373,125 +416,393 @@ const HFT = () => {
 
         {/* Configuration Tab */}
         <TabsContent value="config" className="space-y-4 mt-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="p-4 border-border bg-card">
-              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Settings className="w-4 h-4 text-primary" />
-                General Settings
-              </h4>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground">Enable HFT</Label>
-                  <Switch checked={config.enabled} onCheckedChange={(v) => updateConfig("enabled", v)} />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Max Orders/Second</Label>
-                  <Input 
-                    type="number" 
-                    value={config.maxOrdersPerSecond}
-                    onChange={(e) => updateConfig("maxOrdersPerSecond", parseInt(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Max Position Size</Label>
-                  <Input 
-                    type="number" 
-                    value={config.maxPositionSize}
-                    onChange={(e) => updateConfig("maxPositionSize", parseInt(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Risk Limit/Trade (%)</Label>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    value={config.riskLimitPerTrade}
-                    onChange={(e) => updateConfig("riskLimitPerTrade", parseFloat(e.target.value))}
-                  />
-                </div>
-              </div>
-            </Card>
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="general" className="text-xs">General</TabsTrigger>
+              <TabsTrigger value="risk" className="text-xs">Risk Mgmt</TabsTrigger>
+              <TabsTrigger value="instruments" className="text-xs">Instruments</TabsTrigger>
+              <TabsTrigger value="strategies" className="text-xs">Strategies</TabsTrigger>
+              <TabsTrigger value="latency" className="text-xs">Latency</TabsTrigger>
+            </TabsList>
 
-            <Card className="p-4 border-border bg-card">
-              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-accent" />
-                Latency Settings
-              </h4>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Target Latency (ms)</Label>
-                  <Input 
-                    type="number" 
-                    step="0.1"
-                    value={config.targetLatency}
-                    onChange={(e) => updateConfig("targetLatency", parseFloat(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Max Latency (ms)</Label>
-                  <Input 
-                    type="number" 
-                    step="0.1"
-                    value={config.maxLatency}
-                    onChange={(e) => updateConfig("maxLatency", parseFloat(e.target.value))}
-                  />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-sm">Co-Location</Label>
-                  <Switch checked={config.coLocation} onCheckedChange={(v) => updateConfig("coLocation", v)} />
-                </div>
-                <div className="flex items-center justify-between">
-                  <Label className="text-foreground text-sm">Direct Market Access</Label>
-                  <Switch checked={config.directMarketAccess} onCheckedChange={(v) => updateConfig("directMarketAccess", v)} />
-                </div>
-              </div>
-            </Card>
+            {/* General Settings */}
+            <TabsContent value="general" className="mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="p-4 border-border bg-card">
+                  <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <Settings className="w-4 h-4 text-primary" />
+                    General Settings
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground">Enable HFT</Label>
+                      <Switch checked={config.enabled} onCheckedChange={(v) => updateConfig("enabled", v)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Max Orders/Second</Label>
+                      <Input 
+                        type="number" 
+                        value={config.maxOrdersPerSecond}
+                        onChange={(e) => updateConfig("maxOrdersPerSecond", parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Max Position Size</Label>
+                      <Input 
+                        type="number" 
+                        value={config.maxPositionSize}
+                        onChange={(e) => updateConfig("maxPositionSize", parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </Card>
 
-            <Card className="p-4 border-border bg-card">
-              <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-success" />
-                Market Making
-              </h4>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Spread (bps)</Label>
-                  <Input 
-                    type="number" 
-                    step="0.1"
-                    value={config.spreadBps}
-                    onChange={(e) => updateConfig("spreadBps", parseFloat(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Inventory Limit</Label>
-                  <Input 
-                    type="number" 
-                    value={config.inventoryLimit}
-                    onChange={(e) => updateConfig("inventoryLimit", parseInt(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Quote Size</Label>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    value={config.quoteSize}
-                    onChange={(e) => updateConfig("quoteSize", parseFloat(e.target.value))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-foreground text-sm">Refresh Rate (ms)</Label>
-                  <Input 
-                    type="number" 
-                    value={config.refreshRate}
-                    onChange={(e) => updateConfig("refreshRate", parseInt(e.target.value))}
-                  />
-                </div>
+                <Card className="p-4 border-border bg-card">
+                  <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-success" />
+                    Market Making
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Spread (bps)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        value={config.spreadBps}
+                        onChange={(e) => updateConfig("spreadBps", parseFloat(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Inventory Limit</Label>
+                      <Input 
+                        type="number" 
+                        value={config.inventoryLimit}
+                        onChange={(e) => updateConfig("inventoryLimit", parseInt(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Quote Size</Label>
+                      <Input 
+                        type="number" 
+                        step="0.01"
+                        value={config.quoteSize}
+                        onChange={(e) => updateConfig("quoteSize", parseFloat(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Refresh Rate (ms)</Label>
+                      <Input 
+                        type="number" 
+                        value={config.refreshRate}
+                        onChange={(e) => updateConfig("refreshRate", parseInt(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                </Card>
               </div>
-            </Card>
-          </div>
+            </TabsContent>
 
-          <Button onClick={() => toast.success("Configuration saved!")} className="w-full md:w-auto">
+            {/* Risk Management */}
+            <TabsContent value="risk" className="mt-4">
+              <div className="space-y-4">
+                <div className="flex gap-2 mb-4">
+                  <Button 
+                    variant={config.riskMode === "dynamic" ? "default" : "outline"}
+                    onClick={() => updateConfig("riskMode", "dynamic")}
+                    className="flex-1"
+                  >
+                    Dynamic Risk
+                  </Button>
+                  <Button 
+                    variant={config.riskMode === "fixed" ? "default" : "outline"}
+                    onClick={() => updateConfig("riskMode", "fixed")}
+                    className="flex-1"
+                  >
+                    Fixed Risk
+                  </Button>
+                </div>
+
+                {config.riskMode === "dynamic" ? (
+                  <Card className="p-4 border-border bg-card">
+                    <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-accent" />
+                      Dynamic Risk Management
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-foreground text-sm">Kelly Fraction</Label>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            value={config.kellyFraction}
+                            onChange={(e) => updateConfig("kellyFraction", parseFloat(e.target.value))}
+                          />
+                          <p className="text-xs text-muted-foreground">Optimal: 0.25 (Quarter Kelly)</p>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-foreground text-sm">Volatility Adjusted</Label>
+                          <Switch 
+                            checked={config.volatilityAdjusted} 
+                            onCheckedChange={(v) => updateConfig("volatilityAdjusted", v)} 
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-foreground text-sm">Max Daily Drawdown (%)</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1"
+                            value={config.maxDailyDrawdown}
+                            onChange={(e) => updateConfig("maxDailyDrawdown", parseFloat(e.target.value))}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <Label className="text-foreground text-sm">Dynamic Position Scaling</Label>
+                          <Switch 
+                            checked={config.dynamicPositionScaling} 
+                            onCheckedChange={(v) => updateConfig("dynamicPositionScaling", v)} 
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                ) : (
+                  <Card className="p-4 border-border bg-card">
+                    <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-primary" />
+                      Fixed Risk Management
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-foreground text-sm">Fixed Risk per Trade (%)</Label>
+                          <Input 
+                            type="number" 
+                            step="0.1"
+                            value={config.fixedRiskPercent}
+                            onChange={(e) => updateConfig("fixedRiskPercent", parseFloat(e.target.value))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-foreground text-sm">Fixed Lot Size (Open Position)</Label>
+                          <Input 
+                            type="number" 
+                            step="0.01"
+                            value={config.fixedLotSize}
+                            onChange={(e) => updateConfig("fixedLotSize", parseFloat(e.target.value))}
+                          />
+                          <p className="text-xs text-muted-foreground">Lot size untuk buka posisi</p>
+                        </div>
+                      </div>
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-foreground text-sm">Fixed Stop Loss (pips/points)</Label>
+                          <Input 
+                            type="number" 
+                            value={config.fixedStopLoss}
+                            onChange={(e) => updateConfig("fixedStopLoss", parseInt(e.target.value))}
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label className="text-foreground text-sm">Fixed Take Profit (pips/points)</Label>
+                          <Input 
+                            type="number" 
+                            value={config.fixedTakeProfit}
+                            onChange={(e) => updateConfig("fixedTakeProfit", parseInt(e.target.value))}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* Instruments Configuration */}
+            <TabsContent value="instruments" className="mt-4">
+              <Card className="p-4 border-border bg-card">
+                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-4 h-4 text-accent" />
+                  Instrument Trading Mode
+                </h4>
+                <div className="space-y-4">
+                  <div className="flex gap-2 mb-4">
+                    <Button 
+                      variant={config.instrumentMode === "single" ? "default" : "outline"}
+                      onClick={() => updateConfig("instrumentMode", "single")}
+                      className="flex-1"
+                    >
+                      Single Instrument
+                    </Button>
+                    <Button 
+                      variant={config.instrumentMode === "multi" ? "default" : "outline"}
+                      onClick={() => updateConfig("instrumentMode", "multi")}
+                      className="flex-1"
+                    >
+                      Multi Instrument
+                    </Button>
+                  </div>
+
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                    {availableInstruments.map((instrument) => (
+                      <Button
+                        key={instrument}
+                        variant={config.selectedInstruments.includes(instrument) ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => {
+                          if (config.instrumentMode === "single") {
+                            setConfig(prev => ({ ...prev, selectedInstruments: [instrument] }));
+                          } else {
+                            toggleInstrument(instrument);
+                          }
+                        }}
+                        className="text-xs"
+                      >
+                        {instrument}
+                      </Button>
+                    ))}
+                  </div>
+
+                  <div className="p-3 bg-secondary/50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">
+                      Active Instruments: <span className="text-foreground font-semibold">{config.selectedInstruments.join(", ")}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {config.instrumentMode === "single" 
+                        ? "Mode: Single - Hanya satu instrumen aktif" 
+                        : "Mode: Multi - Beberapa instrumen bisa aktif bersamaan"}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* Strategy Settings */}
+            <TabsContent value="strategies" className="mt-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Card className="p-4 border-border bg-card">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 text-accent" />
+                      Gann Strategy
+                    </h4>
+                    <Switch 
+                      checked={config.useGannStrategy} 
+                      onCheckedChange={(v) => updateConfig("useGannStrategy", v)} 
+                    />
+                  </div>
+                  <div className={`space-y-4 ${!config.useGannStrategy && 'opacity-50'}`}>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Gann Angle (°)</Label>
+                      <Input 
+                        type="number" 
+                        value={config.gannAngle}
+                        onChange={(e) => updateConfig("gannAngle", parseInt(e.target.value))}
+                        disabled={!config.useGannStrategy}
+                      />
+                      <p className="text-xs text-muted-foreground">1x1 = 45°, 2x1 = 63.75°, 1x2 = 26.25°</p>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Time Unit</Label>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        value={config.gannTimeUnit}
+                        onChange={(e) => updateConfig("gannTimeUnit", parseFloat(e.target.value))}
+                        disabled={!config.useGannStrategy}
+                      />
+                    </div>
+                    <div className="p-2 bg-secondary/50 rounded text-xs text-muted-foreground">
+                      Gann menggunakan price-time squares untuk prediksi support/resistance dan time cycles.
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4 border-border bg-card">
+                  <div className="flex items-center justify-between mb-4">
+                    <h4 className="font-semibold text-foreground flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-primary" />
+                      Ehlers DSP Strategy
+                    </h4>
+                    <Switch 
+                      checked={config.useEhlersStrategy} 
+                      onCheckedChange={(v) => updateConfig("useEhlersStrategy", v)} 
+                    />
+                  </div>
+                  <div className={`space-y-4 ${!config.useEhlersStrategy && 'opacity-50'}`}>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Filter Period</Label>
+                      <Input 
+                        type="number" 
+                        value={config.ehlersFilterPeriod}
+                        onChange={(e) => updateConfig("ehlersFilterPeriod", parseInt(e.target.value))}
+                        disabled={!config.useEhlersStrategy}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Bandwidth</Label>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        value={config.ehlersBandwidth}
+                        onChange={(e) => updateConfig("ehlersBandwidth", parseFloat(e.target.value))}
+                        disabled={!config.useEhlersStrategy}
+                      />
+                    </div>
+                    <div className="p-2 bg-secondary/50 rounded text-xs text-muted-foreground">
+                      Ehlers DSP menggunakan digital signal processing untuk filtering noise dan deteksi cycle.
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            </TabsContent>
+
+            {/* Latency Settings */}
+            <TabsContent value="latency" className="mt-4">
+              <Card className="p-4 border-border bg-card">
+                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-accent" />
+                  Latency Settings
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Target Latency (ms)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        value={config.targetLatency}
+                        onChange={(e) => updateConfig("targetLatency", parseFloat(e.target.value))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-foreground text-sm">Max Latency (ms)</Label>
+                      <Input 
+                        type="number" 
+                        step="0.1"
+                        value={config.maxLatency}
+                        onChange={(e) => updateConfig("maxLatency", parseFloat(e.target.value))}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground text-sm">Co-Location</Label>
+                      <Switch checked={config.coLocation} onCheckedChange={(v) => updateConfig("coLocation", v)} />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-foreground text-sm">Direct Market Access</Label>
+                      <Switch checked={config.directMarketAccess} onCheckedChange={(v) => updateConfig("directMarketAccess", v)} />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
+          </Tabs>
+
+          <Button onClick={() => toast.success("Configuration saved!")} className="w-full md:w-auto mt-4">
             Save Configuration
           </Button>
         </TabsContent>
