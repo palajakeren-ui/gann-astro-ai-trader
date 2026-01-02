@@ -12,6 +12,7 @@ import { GannFanChart } from "@/components/charts/GannFanChart";
 import { GannBoxChart } from "@/components/charts/GannBoxChart";
 import { GannForecastingCalculator } from "@/components/calculators/GannForecastingCalculator";
 import AstroCyclePanel from "@/components/dashboard/AstroCyclePanel";
+import EhlersDSPPanel from "@/components/dashboard/EhlersDSPPanel";
 import AIForecastPanel from "@/components/dashboard/AIForecastPanel";
 import HexagonGeometryChart from "@/components/charts/HexagonGeometryChart";
 import GannFanFullModule from "@/components/charts/GannFanFullModule";
@@ -228,6 +229,9 @@ const Index = () => {
 
       {/* Astro Cycle Panel */}
       <AstroCyclePanel />
+
+      {/* Ehlers DSP Multi-Timeframe & Multi-Instrument Analysis */}
+      <EhlersDSPPanel />
 
       <Tabs defaultValue="calculations" className="w-full">
         <div className="overflow-x-auto">
