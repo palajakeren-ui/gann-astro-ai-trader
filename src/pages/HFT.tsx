@@ -20,11 +20,12 @@ import {
   AlertTriangle,
   Server,
   Cpu,
-  Network
+  Network,
+  TestTube
 } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
-
+import { BacktestSimulator } from "@/components/hft/BacktestSimulator";
 // Generate mock latency data
 const generateLatencyData = () => {
   return Array.from({ length: 60 }, (_, i) => ({
@@ -249,11 +250,15 @@ const HFT = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 md:w-auto md:inline-grid">
           <TabsTrigger value="dashboard" className="text-xs md:text-sm">Dashboard</TabsTrigger>
           <TabsTrigger value="strategies" className="text-xs md:text-sm">Strategies</TabsTrigger>
           <TabsTrigger value="orderbook" className="text-xs md:text-sm">Order Book</TabsTrigger>
           <TabsTrigger value="config" className="text-xs md:text-sm">Configuration</TabsTrigger>
+          <TabsTrigger value="backtest" className="text-xs md:text-sm">
+            <TestTube className="w-3 h-3 mr-1" />
+            Backtest
+          </TabsTrigger>
           <TabsTrigger value="infrastructure" className="text-xs md:text-sm">Infrastructure</TabsTrigger>
         </TabsList>
 
@@ -924,6 +929,21 @@ const HFT = () => {
               ))}
             </div>
           </Card>
+        </TabsContent>
+
+        {/* Backtest Simulator Tab */}
+        <TabsContent value="backtest" className="space-y-4 mt-4">
+          <Card className="p-4 border-border bg-card">
+            <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+              <TestTube className="w-5 h-5 text-primary" />
+              Backtest Simulator
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Test your risk management configuration and strategies before live trading. 
+              Includes all W.D. Gann and Ehlers DSP strategies with manual instrument input.
+            </p>
+          </Card>
+          <BacktestSimulator />
         </TabsContent>
       </Tabs>
     </div>
