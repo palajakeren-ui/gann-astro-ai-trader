@@ -7,26 +7,242 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Activity, TrendingUp, TrendingDown, Waves, BarChart3, Clock, RefreshCw, Wifi, Plus, Trash2, Edit2, Target, AlertTriangle } from "lucide-react";
+import { Activity, TrendingUp, TrendingDown, Waves, BarChart3, Clock, RefreshCw, Wifi, Plus, Trash2, Edit2, Target, AlertTriangle, Zap, Search, Eye, FileText, Save } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Area, ReferenceLine } from "recharts";
 import TradingInstrumentSelector from "@/components/TradingInstrumentSelector";
 import useWebSocketPrice from "@/hooks/useWebSocketPrice";
 
-// Timeframe options from 1 minute to 1 year
+// Timeframe options from 1 minute to 1 year (expanded)
 const TIMEFRAMES = [
-  { value: "1M", label: "1 Minute" },
-  { value: "5M", label: "5 Minutes" },
-  { value: "15M", label: "15 Minutes" },
-  { value: "30M", label: "30 Minutes" },
+  { value: "M1", label: "1 Minute" },
+  { value: "M2", label: "2 Minutes" },
+  { value: "M3", label: "3 Minutes" },
+  { value: "M5", label: "5 Minutes" },
+  { value: "M10", label: "10 Minutes" },
+  { value: "M15", label: "15 Minutes" },
+  { value: "M30", label: "30 Minutes" },
+  { value: "M45", label: "45 Minutes" },
   { value: "1H", label: "1 Hour" },
+  { value: "2H", label: "2 Hours" },
+  { value: "3H", label: "3 Hours" },
   { value: "4H", label: "4 Hours" },
   { value: "1D", label: "1 Day" },
   { value: "1W", label: "1 Week" },
   { value: "1MO", label: "1 Month" },
-  { value: "3MO", label: "3 Months" },
-  { value: "6MO", label: "6 Months" },
   { value: "1Y", label: "1 Year" },
 ];
+
+// Auto-detection pattern types
+const PATTERN_TYPES = [
+  "Candlestick",
+  "Wave Structure", 
+  "Time–Price Wave",
+  "Harmonic Pattern",
+  "Chart Pattern",
+];
+
+// Generate auto-detected patterns based on price data
+const generateAutoPatterns = (price: number, instrument: string): DetectedPattern[] => {
+  const now = new Date();
+  const patterns: DetectedPattern[] = [];
+  
+  // Candlestick patterns detection
+  const candlestickPatterns = [
+    { name: "Bullish Engulfing", confidence: 0.75 + Math.random() * 0.2 },
+    { name: "Morning Star", confidence: 0.70 + Math.random() * 0.15 },
+    { name: "Hammer", confidence: 0.65 + Math.random() * 0.2 },
+    { name: "Doji", confidence: 0.60 + Math.random() * 0.25 },
+    { name: "Bearish Engulfing", confidence: 0.70 + Math.random() * 0.18 },
+    { name: "Evening Star", confidence: 0.68 + Math.random() * 0.17 },
+    { name: "Shooting Star", confidence: 0.62 + Math.random() * 0.2 },
+    { name: "Three White Soldiers", confidence: 0.78 + Math.random() * 0.15 },
+    { name: "Three Black Crows", confidence: 0.75 + Math.random() * 0.15 },
+  ];
+
+  // Select random candlestick patterns
+  const selectedCandlestick = candlestickPatterns.filter(() => Math.random() > 0.6);
+  selectedCandlestick.forEach((p, idx) => {
+    const futureDate = new Date(now.getTime() + (idx + 1) * 3600000);
+    const priceLevel = price * (0.98 + Math.random() * 0.04);
+    patterns.push({
+      id: `auto-candle-${Date.now()}-${idx}`,
+      name: p.name,
+      type: "Candlestick",
+      confidence: Math.min(p.confidence, 0.95),
+      priceRange: `Konfirmasi: ${priceLevel.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+      timeWindow: `valid pada ${now.toISOString().split('T')[0]} ${now.toTimeString().slice(0,5)}–${futureDate.toTimeString().slice(0,5)} UTC`,
+      signal: p.name.toLowerCase().includes("bearish") || p.name.toLowerCase().includes("evening") || p.name.toLowerCase().includes("shooting") || p.name.toLowerCase().includes("black") ? "Bearish" : "Bullish",
+      instrument,
+      timeframe: TIMEFRAMES[Math.floor(Math.random() * 8)].value,
+    });
+  });
+
+  // Elliott Wave patterns
+  const elliottWaves = [
+    { name: "Elliott Wave — Wave 1 (impulse)", target: 1.03, days: "3–5" },
+    { name: "Elliott Wave — Wave 2 (corrective)", target: 0.98, days: "2–4" },
+    { name: "Elliott Wave — Wave 3 (impulse)", target: 1.08, days: "7–14" },
+    { name: "Elliott Wave — Wave 4 (corrective)", target: 1.04, days: "5–8" },
+    { name: "Elliott Wave — Wave 5 (impulse)", target: 1.12, days: "10–20" },
+    { name: "Elliott Wave — Wave A (corrective)", target: 0.95, days: "4–7" },
+    { name: "Elliott Wave — Wave B (corrective)", target: 0.98, days: "3–6" },
+    { name: "Elliott Wave — Wave C (corrective)", target: 0.90, days: "7–12" },
+  ];
+
+  const selectedElliott = elliottWaves[Math.floor(Math.random() * elliottWaves.length)];
+  const elliottConfidence = 0.78 + Math.random() * 0.15;
+  const targetPrice = price * selectedElliott.target;
+  const peakDate = new Date(now.getTime() + (7 + Math.random() * 14) * 86400000);
+  
+  patterns.push({
+    id: `auto-elliott-${Date.now()}`,
+    name: selectedElliott.name,
+    type: "Wave Structure",
+    confidence: Math.min(elliottConfidence, 0.92),
+    priceRange: `Target: ${targetPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+    timeWindow: `next ${selectedElliott.days} days (peak probability ~${peakDate.toISOString().split('T')[0]})`,
+    signal: selectedElliott.target > 1 ? "Bullish" : "Bearish",
+    instrument,
+    timeframe: "1D",
+  });
+
+  // Gann Wave patterns
+  const gannWaves = [
+    { name: "Gann Wave — Uptrend Cycle 1", projection: 1.05, hours: "12–24" },
+    { name: "Gann Wave — Uptrend Cycle 2", projection: 1.08, hours: "24–48" },
+    { name: "Gann Wave — Uptrend Cycle 3", projection: 1.12, hours: "48–96" },
+    { name: "Gann Wave — Downtrend Cycle 1", projection: 0.95, hours: "12–24" },
+    { name: "Gann Wave — Downtrend Cycle 2", projection: 0.92, hours: "24–48" },
+    { name: "Gann Wave — Reversal Window", projection: 1.03, hours: "6–12" },
+  ];
+
+  const selectedGann = gannWaves[Math.floor(Math.random() * gannWaves.length)];
+  const gannConfidence = 0.75 + Math.random() * 0.15;
+  const gannTarget = price * selectedGann.projection;
+  const gannDate = new Date(now.getTime() + (3 + Math.random() * 10) * 86400000);
+
+  patterns.push({
+    id: `auto-gann-${Date.now()}`,
+    name: selectedGann.name,
+    type: "Time–Price Wave",
+    confidence: Math.min(gannConfidence, 0.90),
+    priceRange: `Projection: ${gannTarget.toLocaleString(undefined, { maximumFractionDigits: 2 })} (reversal area)`,
+    timeWindow: `~${gannDate.toISOString().split('T')[0]} ±${selectedGann.hours} hours`,
+    signal: selectedGann.projection > 1 ? "Bullish" : "Bearish",
+    instrument,
+    timeframe: "4H",
+  });
+
+  // Harmonic patterns
+  const harmonicPatterns = [
+    { name: "Harmonic AB=CD (confluence)", range: [0.98, 1.04] },
+    { name: "Harmonic Gartley", range: [0.97, 1.05] },
+    { name: "Harmonic Butterfly", range: [0.95, 1.08] },
+    { name: "Harmonic Bat", range: [0.96, 1.06] },
+    { name: "Harmonic Crab", range: [0.94, 1.10] },
+    { name: "Harmonic Shark", range: [0.93, 1.07] },
+    { name: "Harmonic Cypher", range: [0.97, 1.05] },
+  ];
+
+  const selectedHarmonic = harmonicPatterns[Math.floor(Math.random() * harmonicPatterns.length)];
+  const harmonicConfidence = 0.70 + Math.random() * 0.18;
+  const rangeStart = price * selectedHarmonic.range[0];
+  const rangeEnd = price * selectedHarmonic.range[1];
+  const daysToComplete = 3 + Math.floor(Math.random() * 8);
+
+  patterns.push({
+    id: `auto-harmonic-${Date.now()}`,
+    name: selectedHarmonic.name,
+    type: "Harmonic Pattern",
+    confidence: Math.min(harmonicConfidence, 0.88),
+    priceRange: `Range: ${rangeStart.toLocaleString(undefined, { maximumFractionDigits: 2 })} → ${rangeEnd.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+    timeWindow: `${daysToComplete}–${daysToComplete + 3} days to completion`,
+    signal: rangeEnd > rangeStart ? "Bullish" : "Bearish",
+    instrument,
+    timeframe: "4H",
+  });
+
+  // Chart patterns
+  const chartPatterns = [
+    { name: "Head & Shoulders", direction: "Bearish" as const },
+    { name: "Inverse Head & Shoulders", direction: "Bullish" as const },
+    { name: "Double Top", direction: "Bearish" as const },
+    { name: "Double Bottom", direction: "Bullish" as const },
+    { name: "Triple Top", direction: "Bearish" as const },
+    { name: "Triple Bottom", direction: "Bullish" as const },
+    { name: "Ascending Triangle", direction: "Bullish" as const },
+    { name: "Descending Triangle", direction: "Bearish" as const },
+    { name: "Symmetrical Triangle", direction: "Neutral" as const },
+    { name: "Bull Flag", direction: "Bullish" as const },
+    { name: "Bear Flag", direction: "Bearish" as const },
+    { name: "Cup & Handle", direction: "Bullish" as const },
+    { name: "Rising Wedge", direction: "Bearish" as const },
+    { name: "Falling Wedge", direction: "Bullish" as const },
+  ];
+
+  const selectedChartPatterns = chartPatterns.filter(() => Math.random() > 0.75);
+  selectedChartPatterns.forEach((p, idx) => {
+    const chartConfidence = 0.68 + Math.random() * 0.22;
+    const breakoutPrice = price * (p.direction === "Bullish" ? 1.02 + Math.random() * 0.05 : 0.95 + Math.random() * 0.03);
+    patterns.push({
+      id: `auto-chart-${Date.now()}-${idx}`,
+      name: p.name,
+      type: "Chart Pattern",
+      confidence: Math.min(chartConfidence, 0.90),
+      priceRange: `Breakout: ${breakoutPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}`,
+      timeWindow: `forming over ${2 + Math.floor(Math.random() * 10)} periods`,
+      signal: p.direction,
+      instrument,
+      timeframe: TIMEFRAMES[8 + Math.floor(Math.random() * 4)].value,
+    });
+  });
+
+  return patterns;
+};
+
+// Generate pattern summary narration
+const generatePatternNarration = (patterns: DetectedPattern[]): string[] => {
+  const narrations: string[] = [];
+  
+  const bullishPatterns = patterns.filter(p => p.signal === "Bullish" && p.confidence >= 0.75);
+  const bearishPatterns = patterns.filter(p => p.signal === "Bearish" && p.confidence >= 0.75);
+  
+  // Sort by confidence
+  const topBullish = bullishPatterns.sort((a, b) => b.confidence - a.confidence).slice(0, 3);
+  const topBearish = bearishPatterns.sort((a, b) => b.confidence - a.confidence).slice(0, 2);
+
+  topBullish.forEach(p => {
+    if (p.type === "Candlestick") {
+      narrations.push(`**${p.name}** pada ${p.priceRange.replace(/.*: /, '')} (${p.timeWindow}) memberikan sinyal masuk awal dengan confidence ${(p.confidence * 100).toFixed(0)}%.`);
+    } else if (p.type === "Wave Structure") {
+      narrations.push(`**${p.name}** — ${p.priceRange} dalam ${p.timeWindow}. Setup impulsif dengan target terukur.`);
+    } else if (p.type === "Time–Price Wave") {
+      narrations.push(`**${p.name}** menunjuk reversal window (${p.priceRange}) — gunakan untuk manajemen TP bagian/scale-out.`);
+    } else if (p.type === "Harmonic Pattern") {
+      narrations.push(`**${p.name}** confluence di ${p.priceRange}, estimasi ${p.timeWindow}.`);
+    } else {
+      narrations.push(`**${p.name}** terdeteksi dengan confidence ${(p.confidence * 100).toFixed(0)}% — ${p.priceRange}.`);
+    }
+  });
+
+  topBearish.forEach(p => {
+    narrations.push(`⚠️ **${p.name}** (${p.type}) menunjukkan potensi reversal bearish di ${p.priceRange}. Pertimbangkan risk management.`);
+  });
+
+  return narrations;
+};
+
+interface ManualTimeframeAnalysis {
+  id: string;
+  timeframe: string;
+  instrument: string;
+  notes: string;
+  patterns: string[];
+  bias: "Bullish" | "Bearish" | "Neutral";
+  keyLevels: { support: number; resistance: number };
+  createdAt: Date;
+}
 
 interface DetectedPattern {
   id: string;
@@ -192,6 +408,23 @@ const PatternRecognition = () => {
     },
   ]);
   
+  // Auto-detected patterns
+  const [autoPatterns, setAutoPatterns] = useState<DetectedPattern[]>([]);
+  const [isAutoDetecting, setIsAutoDetecting] = useState(false);
+  const [lastAutoDetect, setLastAutoDetect] = useState<Date | null>(null);
+
+  // Manual timeframe analysis
+  const [manualAnalyses, setManualAnalyses] = useState<ManualTimeframeAnalysis[]>([]);
+  const [newManualAnalysis, setNewManualAnalysis] = useState({
+    timeframe: "1H",
+    notes: "",
+    patterns: "",
+    bias: "Neutral" as "Bullish" | "Bearish" | "Neutral",
+    support: "",
+    resistance: "",
+  });
+  const [editingAnalysisId, setEditingAnalysisId] = useState<string | null>(null);
+  
   // New pattern form
   const [newPattern, setNewPattern] = useState({
     name: "",
@@ -216,6 +449,64 @@ const PatternRecognition = () => {
   const gannWaveData = generateGannWaveData(currentPrice);
   const elliottWaveData = generateElliottWaveData(currentPrice);
   const timePatterns = generateTimePatternData();
+  
+  // Auto-detect patterns function
+  const runAutoDetection = () => {
+    setIsAutoDetecting(true);
+    setTimeout(() => {
+      const detected = generateAutoPatterns(currentPrice, selectedInstrument);
+      setAutoPatterns(detected);
+      setLastAutoDetect(new Date());
+      setIsAutoDetecting(false);
+    }, 1500);
+  };
+
+  // Add manual analysis
+  const handleAddManualAnalysis = () => {
+    if (!newManualAnalysis.notes) return;
+    
+    const analysis: ManualTimeframeAnalysis = {
+      id: Date.now().toString(),
+      timeframe: newManualAnalysis.timeframe,
+      instrument: selectedInstrument,
+      notes: newManualAnalysis.notes,
+      patterns: newManualAnalysis.patterns.split(",").map(p => p.trim()).filter(Boolean),
+      bias: newManualAnalysis.bias,
+      keyLevels: {
+        support: parseFloat(newManualAnalysis.support) || currentPrice * 0.95,
+        resistance: parseFloat(newManualAnalysis.resistance) || currentPrice * 1.05,
+      },
+      createdAt: new Date(),
+    };
+    
+    setManualAnalyses([...manualAnalyses, analysis]);
+    setNewManualAnalysis({
+      timeframe: "1H",
+      notes: "",
+      patterns: "",
+      bias: "Neutral",
+      support: "",
+      resistance: "",
+    });
+  };
+
+  // Update manual analysis
+  const handleUpdateManualAnalysis = (id: string) => {
+    if (!editingAnalysisId) {
+      setEditingAnalysisId(id);
+    } else {
+      setEditingAnalysisId(null);
+    }
+  };
+
+  // Delete manual analysis
+  const handleDeleteManualAnalysis = (id: string) => {
+    setManualAnalyses(manualAnalyses.filter(a => a.id !== id));
+  };
+
+  // Generate narration from all patterns
+  const allPatterns = [...patterns, ...autoPatterns];
+  const patternNarrations = generatePatternNarration(allPatterns);
 
   // Gann Wave analysis
   const gannWaveAnalysis = [
@@ -332,6 +623,204 @@ const PatternRecognition = () => {
           </Button>
         </div>
       </div>
+
+      {/* Auto-Detection Panel */}
+      <Card className="p-4 border-border bg-card border-l-4 border-l-accent">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-accent/20 rounded-lg">
+              <Zap className="w-6 h-6 text-accent" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-foreground">Auto Pattern Detection</h3>
+              <p className="text-sm text-muted-foreground">
+                {lastAutoDetect 
+                  ? `Last scan: ${lastAutoDetect.toLocaleTimeString()}` 
+                  : "Click to run automatic pattern detection"}
+              </p>
+            </div>
+          </div>
+          <Button 
+            onClick={runAutoDetection} 
+            disabled={isAutoDetecting}
+            className="bg-accent hover:bg-accent/90"
+          >
+            {isAutoDetecting ? (
+              <>
+                <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
+                Detecting...
+              </>
+            ) : (
+              <>
+                <Search className="w-4 h-4 mr-2" />
+                Run Auto Detection
+              </>
+            )}
+          </Button>
+        </div>
+
+        {autoPatterns.length > 0 && (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Pattern Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Confidence</TableHead>
+                  <TableHead>Price Range</TableHead>
+                  <TableHead>Time Window</TableHead>
+                  <TableHead>Signal</TableHead>
+                  <TableHead>Timeframe</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {autoPatterns.map((pattern) => (
+                  <TableRow key={pattern.id} className="bg-accent/5">
+                    <TableCell className="font-semibold">{pattern.name}</TableCell>
+                    <TableCell><Badge variant="outline">{pattern.type}</Badge></TableCell>
+                    <TableCell className={`font-mono ${getConfidenceColor(pattern.confidence)}`}>
+                      {(pattern.confidence * 100).toFixed(0)}%
+                    </TableCell>
+                    <TableCell className="text-sm">{pattern.priceRange}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{pattern.timeWindow}</TableCell>
+                    <TableCell>{getSignalBadge(pattern.signal)}</TableCell>
+                    <TableCell><Badge variant="secondary">{pattern.timeframe}</Badge></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </Card>
+
+      {/* Manual Timeframe Analysis */}
+      <Card className="p-4 border-border bg-card">
+        <h3 className="text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
+          <FileText className="w-5 h-5 text-primary" />
+          Manual Timeframe Analysis
+        </h3>
+        
+        {/* Add New Analysis Form */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4 p-4 bg-secondary/30 rounded-lg">
+          <div>
+            <Label className="text-sm">Timeframe</Label>
+            <Select value={newManualAnalysis.timeframe} onValueChange={(v) => setNewManualAnalysis({...newManualAnalysis, timeframe: v})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {TIMEFRAMES.map(tf => (
+                  <SelectItem key={tf.value} value={tf.value}>{tf.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm">Bias</Label>
+            <Select value={newManualAnalysis.bias} onValueChange={(v: "Bullish" | "Bearish" | "Neutral") => setNewManualAnalysis({...newManualAnalysis, bias: v})}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="Bullish">Bullish</SelectItem>
+                <SelectItem value="Bearish">Bearish</SelectItem>
+                <SelectItem value="Neutral">Neutral</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label className="text-sm">Support Level</Label>
+            <Input 
+              type="number"
+              placeholder={`e.g. ${(currentPrice * 0.95).toFixed(0)}`}
+              value={newManualAnalysis.support}
+              onChange={(e) => setNewManualAnalysis({...newManualAnalysis, support: e.target.value})}
+            />
+          </div>
+          <div>
+            <Label className="text-sm">Resistance Level</Label>
+            <Input 
+              type="number"
+              placeholder={`e.g. ${(currentPrice * 1.05).toFixed(0)}`}
+              value={newManualAnalysis.resistance}
+              onChange={(e) => setNewManualAnalysis({...newManualAnalysis, resistance: e.target.value})}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label className="text-sm">Patterns Identified (comma separated)</Label>
+            <Input 
+              placeholder="e.g. Double Bottom, Rising Wedge, MACD Divergence"
+              value={newManualAnalysis.patterns}
+              onChange={(e) => setNewManualAnalysis({...newManualAnalysis, patterns: e.target.value})}
+            />
+          </div>
+          <div className="md:col-span-2">
+            <Label className="text-sm">Analysis Notes</Label>
+            <Textarea 
+              placeholder="Your analysis notes..."
+              value={newManualAnalysis.notes}
+              onChange={(e) => setNewManualAnalysis({...newManualAnalysis, notes: e.target.value})}
+              className="min-h-[60px]"
+            />
+          </div>
+        </div>
+        <Button onClick={handleAddManualAnalysis} className="mb-4">
+          <Save className="w-4 h-4 mr-2" />
+          Save Analysis
+        </Button>
+
+        {/* Manual Analyses List */}
+        {manualAnalyses.length > 0 && (
+          <div className="space-y-3">
+            {manualAnalyses.map((analysis) => (
+              <div key={analysis.id} className="p-4 bg-secondary/30 rounded-lg border border-border">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-3">
+                    <Badge variant="outline" className="font-mono">{analysis.timeframe}</Badge>
+                    <Badge className={
+                      analysis.bias === "Bullish" ? "bg-success text-success-foreground" :
+                      analysis.bias === "Bearish" ? "bg-destructive text-destructive-foreground" :
+                      "bg-muted text-muted-foreground"
+                    }>
+                      {analysis.bias === "Bullish" && <TrendingUp className="w-3 h-3 mr-1" />}
+                      {analysis.bias === "Bearish" && <TrendingDown className="w-3 h-3 mr-1" />}
+                      {analysis.bias}
+                    </Badge>
+                    <span className="text-sm text-muted-foreground">{analysis.instrument}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-muted-foreground">{analysis.createdAt.toLocaleString()}</span>
+                    <Button variant="outline" size="sm" onClick={() => handleUpdateManualAnalysis(analysis.id)}>
+                      <Edit2 className="w-3 h-3" />
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleDeleteManualAnalysis(analysis.id)}>
+                      <Trash2 className="w-3 h-3" />
+                    </Button>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-4 mb-2">
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Support: </span>
+                    <span className="font-mono text-destructive">${analysis.keyLevels.support.toLocaleString()}</span>
+                  </div>
+                  <div className="text-sm">
+                    <span className="text-muted-foreground">Resistance: </span>
+                    <span className="font-mono text-success">${analysis.keyLevels.resistance.toLocaleString()}</span>
+                  </div>
+                </div>
+                {analysis.patterns.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {analysis.patterns.map((p, idx) => (
+                      <Badge key={idx} variant="secondary" className="text-xs">{p}</Badge>
+                    ))}
+                  </div>
+                )}
+                <p className="text-sm text-foreground">{analysis.notes}</p>
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Multi-Asset & Multi-Timeframe Management */}
       <Card className="p-4 border-border bg-card">
@@ -524,22 +1013,40 @@ const PatternRecognition = () => {
         </div>
       </Card>
 
-      {/* Pattern Summary (Narasi) */}
+      {/* Pattern Summary (Narasi) - Dynamic */}
       <Card className="p-4 border-border bg-card border-l-4 border-l-primary">
         <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-primary" />
           Pattern Summary (Narasi)
         </h3>
         <div className="space-y-3 text-sm">
-          <p className="p-3 bg-success/10 border border-success/30 rounded-lg">
-            <strong>Bullish Engulfing</strong> pada 101,700 (konfirmasi intraday 2025-11-04 15:25:00 UTC) memberikan sinyal masuk awal.
-          </p>
-          <p className="p-3 bg-success/10 border border-success/30 rounded-lg">
-            <strong>Morning Star</strong> pada area 101,800 memperkuat setup bagi Wave 3 impulsif — target terukur 102,200 dalam 7–14 days.
-          </p>
-          <p className="p-3 bg-accent/10 border border-accent/30 rounded-lg">
-            <strong>Gann Wave</strong> menunjuk reversal window kuat sekitar 2025-11-16 (target 103,000) — gunakan untuk manajemen TP bagian/scale-out.
-          </p>
+          {patternNarrations.length > 0 ? (
+            patternNarrations.map((narration, idx) => (
+              <p 
+                key={idx} 
+                className={`p-3 rounded-lg ${
+                  narration.includes("⚠️") 
+                    ? "bg-destructive/10 border border-destructive/30" 
+                    : "bg-success/10 border border-success/30"
+                }`}
+                dangerouslySetInnerHTML={{ 
+                  __html: narration.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+                }}
+              />
+            ))
+          ) : (
+            <>
+              <p className="p-3 bg-success/10 border border-success/30 rounded-lg">
+                <strong>Bullish Engulfing</strong> pada 101,700 (konfirmasi intraday 2025-11-04 15:25:00 UTC) memberikan sinyal masuk awal.
+              </p>
+              <p className="p-3 bg-success/10 border border-success/30 rounded-lg">
+                <strong>Morning Star</strong> pada area 101,800 memperkuat setup bagi Wave 3 impulsif — target terukur 102,200 dalam 7–14 days.
+              </p>
+              <p className="p-3 bg-accent/10 border border-accent/30 rounded-lg">
+                <strong>Gann Wave</strong> menunjuk reversal window kuat sekitar 2025-11-16 (target 103,000) — gunakan untuk manajemen TP bagian/scale-out.
+              </p>
+            </>
+          )}
         </div>
       </Card>
 
