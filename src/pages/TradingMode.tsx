@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,6 +23,21 @@ import {
   Upload
 } from "lucide-react";
 import { toast } from "sonner";
+
+// Helper to parse numeric input (supports comma as decimal separator)
+const parseNumericInput = (value: string): number | null => {
+  if (value === "" || value === "-") return null;
+  // Replace comma with dot for decimal
+  const normalized = value.replace(",", ".");
+  const parsed = parseFloat(normalized);
+  return isNaN(parsed) ? null : parsed;
+};
+
+// Helper to format number for display
+const formatNumericValue = (value: number | null | undefined): string => {
+  if (value === null || value === undefined) return "";
+  return String(value);
+};
 
 type RiskManagementType = "dynamic" | "fixed";
 
@@ -94,6 +109,59 @@ interface ExportConfig {
   activeModes: TradingModeConfig[];
   manualLeverages: ManualLeverageConfig[];
 }
+
+// Custom NumericInput component that allows empty values and comma
+const NumericInput = ({ 
+  value, 
+  onChange, 
+  step = "1",
+  className = "",
+  placeholder = ""
+}: { 
+  value: number; 
+  onChange: (value: number) => void; 
+  step?: string;
+  className?: string;
+  placeholder?: string;
+}) => {
+  const [localValue, setLocalValue] = useState<string>(formatNumericValue(value));
+  
+  // Sync local value when external value changes
+  useEffect(() => {
+    setLocalValue(formatNumericValue(value));
+  }, [value]);
+  
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const inputValue = e.target.value;
+    // Allow empty, numbers, dots, commas, and minus sign
+    if (inputValue === "" || /^-?[\d.,]*$/.test(inputValue)) {
+      setLocalValue(inputValue);
+    }
+  };
+  
+  const handleBlur = () => {
+    const parsed = parseNumericInput(localValue);
+    if (parsed !== null) {
+      onChange(parsed);
+      setLocalValue(formatNumericValue(parsed));
+    } else if (localValue === "" || localValue === "-") {
+      onChange(0);
+      setLocalValue("0");
+    }
+  };
+  
+  return (
+    <Input 
+      type="text"
+      inputMode="decimal"
+      value={localValue}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      className={className}
+      placeholder={placeholder}
+    />
+  );
+};
 
 const TradingMode = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -184,11 +252,11 @@ const TradingMode = () => {
     toast.success(`${mode?.name} ${mode?.enabled ? 'disabled' : 'enabled'}`);
   };
 
-  const handleUpdateMode = (id: string, updates: Partial<TradingModeConfig>) => {
+  const handleUpdateMode = useCallback((id: string, updates: Partial<TradingModeConfig>) => {
     setActiveModes(prev => prev.map(m => 
       m.id === id ? { ...m, ...updates } : m
     ));
-  };
+  }, []);
 
   const addNewMode = (type: "spot" | "futures") => {
     const newMode: TradingModeConfig = {
@@ -478,19 +546,16 @@ const TradingMode = () => {
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label className="text-xs">Open Position Lot Size</Label>
-                      <Input 
-                        type="number" 
+                      <NumericInput 
                         value={mode.openLotSize}
-                        step="0.01"
-                        onChange={(e) => handleUpdateMode(mode.id, { openLotSize: Number(e.target.value) })}
+                        onChange={(val) => handleUpdateMode(mode.id, { openLotSize: val })}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs">Trailing Distance (%)</Label>
-                      <Input 
-                        type="number" 
+                      <NumericInput 
                         value={mode.trailingStopDistance}
-                        onChange={(e) => handleUpdateMode(mode.id, { trailingStopDistance: Number(e.target.value) })}
+                        onChange={(val) => handleUpdateMode(mode.id, { trailingStopDistance: val })}
                       />
                     </div>
                   </div>
@@ -525,38 +590,30 @@ const TradingMode = () => {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label className="text-xs">Kelly Criterion Fraction</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.kellyFraction}
-                              step="0.1"
-                              onChange={(e) => handleUpdateMode(mode.id, { kellyFraction: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { kellyFraction: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Max Drawdown (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.maxDrawdown}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { maxDrawdown: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Daily Loss Limit (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.dailyLossLimit}
-                              step="0.5"
-                              onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { dailyLossLimit: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Weekly Loss Limit (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.weeklyLossLimit}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { weeklyLossLimit: val })}
                             />
                           </div>
                         </div>
@@ -592,47 +649,37 @@ const TradingMode = () => {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label className="text-xs">Risk Per Trade (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.fixedRiskPerTrade}
-                              step="0.1"
-                              onChange={(e) => handleUpdateMode(mode.id, { fixedRiskPerTrade: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { fixedRiskPerTrade: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Max Drawdown (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.fixedMaxDrawdown}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { fixedMaxDrawdown: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { fixedMaxDrawdown: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Risk-to-Reward Ratio</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.riskRewardRatio}
-                              step="0.1"
-                              onChange={(e) => handleUpdateMode(mode.id, { riskRewardRatio: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { riskRewardRatio: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Fixed Lot Size</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.fixedLotSize}
-                              step="0.01"
-                              onChange={(e) => handleUpdateMode(mode.id, { fixedLotSize: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { fixedLotSize: val })}
                             />
                           </div>
                           <div className="space-y-2 col-span-2">
                             <Label className="text-xs">Max Open Positions</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.maxOpenPositions}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { maxOpenPositions: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { maxOpenPositions: val })}
                             />
                           </div>
                         </div>
@@ -705,12 +752,9 @@ const TradingMode = () => {
                     <div className="space-y-2">
                       <Label className="text-xs">Leverage</Label>
                       <div className="flex items-center gap-2">
-                        <Input 
-                          type="number"
+                        <NumericInput 
                           value={mode.leverage}
-                          onChange={(e) => handleUpdateMode(mode.id, { leverage: Number(e.target.value) })}
-                          min={1}
-                          max={125}
+                          onChange={(val) => handleUpdateMode(mode.id, { leverage: val })}
                           className="flex-1"
                         />
                         <span className="text-sm font-mono w-8">x</span>
@@ -729,19 +773,16 @@ const TradingMode = () => {
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs">Open Position Lot Size</Label>
-                      <Input 
-                        type="number" 
+                      <NumericInput 
                         value={mode.openLotSize}
-                        step="0.01"
-                        onChange={(e) => handleUpdateMode(mode.id, { openLotSize: Number(e.target.value) })}
+                        onChange={(val) => handleUpdateMode(mode.id, { openLotSize: val })}
                       />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-xs">Trailing Distance (%)</Label>
-                      <Input 
-                        type="number" 
+                      <NumericInput 
                         value={mode.trailingStopDistance}
-                        onChange={(e) => handleUpdateMode(mode.id, { trailingStopDistance: Number(e.target.value) })}
+                        onChange={(val) => handleUpdateMode(mode.id, { trailingStopDistance: val })}
                       />
                     </div>
                   </div>
@@ -776,47 +817,37 @@ const TradingMode = () => {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label className="text-xs">Kelly Criterion Fraction</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.kellyFraction}
-                              step="0.1"
-                              onChange={(e) => handleUpdateMode(mode.id, { kellyFraction: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { kellyFraction: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Max Drawdown (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.maxDrawdown}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { maxDrawdown: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Daily Loss Limit (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.dailyLossLimit}
-                              step="0.5"
-                              onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { dailyLossLimit: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Weekly Loss Limit (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.weeklyLossLimit}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { weeklyLossLimit: val })}
                             />
                           </div>
                           <div className="space-y-2 col-span-2">
                             <Label className="text-xs">Liquidation Alert (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.liquidationAlert}
-                              step="5"
-                              onChange={(e) => handleUpdateMode(mode.id, { liquidationAlert: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { liquidationAlert: val })}
                             />
                           </div>
                         </div>
@@ -852,56 +883,44 @@ const TradingMode = () => {
                         <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-2">
                             <Label className="text-xs">Risk Per Trade (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.fixedRiskPerTrade}
-                              step="0.1"
-                              onChange={(e) => handleUpdateMode(mode.id, { fixedRiskPerTrade: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { fixedRiskPerTrade: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Max Drawdown (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.fixedMaxDrawdown}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { fixedMaxDrawdown: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { fixedMaxDrawdown: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Risk-to-Reward Ratio</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.riskRewardRatio}
-                              step="0.1"
-                              onChange={(e) => handleUpdateMode(mode.id, { riskRewardRatio: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { riskRewardRatio: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Fixed Lot Size</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.fixedLotSize}
-                              step="0.01"
-                              onChange={(e) => handleUpdateMode(mode.id, { fixedLotSize: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { fixedLotSize: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Max Open Positions</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.maxOpenPositions}
-                              step="1"
-                              onChange={(e) => handleUpdateMode(mode.id, { maxOpenPositions: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { maxOpenPositions: val })}
                             />
                           </div>
                           <div className="space-y-2">
                             <Label className="text-xs">Liquidation Alert (%)</Label>
-                            <Input 
-                              type="number" 
+                            <NumericInput 
                               value={mode.liquidationAlert}
-                              step="5"
-                              onChange={(e) => handleUpdateMode(mode.id, { liquidationAlert: Number(e.target.value) })}
+                              onChange={(val) => handleUpdateMode(mode.id, { liquidationAlert: val })}
                             />
                           </div>
                         </div>
