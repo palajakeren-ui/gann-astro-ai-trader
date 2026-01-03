@@ -286,186 +286,7 @@ const Settings = () => {
           </div>
         </Card>
 
-        {/* Risk Management - Dynamic and Fixed only */}
-        <Card className="p-4 md:p-6 border-border bg-card">
-          <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Risk Management</h2>
-          <p className="text-xs text-muted-foreground mb-4">
-            Spot & Futures risk settings are configured in Trading Mode page
-          </p>
-          
-          <Tabs defaultValue="dynamic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="dynamic" className="text-sm">Dynamic</TabsTrigger>
-              <TabsTrigger value="fixed" className="text-sm">Fixed</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="dynamic" className="space-y-4">
-              <div className="p-3 rounded bg-primary/10 border border-primary/20 mb-4">
-                <span className="text-sm font-semibold text-primary">Dynamic Risk Settings</span>
-                <p className="text-xs text-muted-foreground mt-1">Automatically adjusts based on market conditions</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="kelly-fraction" className="text-foreground text-sm">Kelly Criterion Fraction</Label>
-                <Input id="kelly-fraction" type="number" defaultValue="0.5" step="0.1" />
-                <p className="text-xs text-muted-foreground">Optimal bet sizing based on edge</p>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="dynamic-leverage" className="text-foreground text-sm">Dynamic Leverage</Label>
-                <Input id="dynamic-leverage" type="number" defaultValue="10" step="1" />
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <Label htmlFor="adaptive-sizing" className="text-foreground text-sm">Adaptive Position Sizing</Label>
-                <Switch id="adaptive-sizing" defaultChecked />
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <Label htmlFor="volatility-adj" className="text-foreground text-sm">Volatility Adjustment</Label>
-                <Switch id="volatility-adj" defaultChecked />
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <Label htmlFor="drawdown-protection" className="text-foreground text-sm">Drawdown Protection</Label>
-                <Switch id="drawdown-protection" defaultChecked />
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="fixed" className="space-y-4">
-              <div className="p-3 rounded bg-secondary/50 border border-border mb-4">
-                <span className="text-sm font-semibold text-foreground">Fixed Risk Settings</span>
-                <p className="text-xs text-muted-foreground mt-1">Static risk parameters for consistent exposure</p>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="risk-per-trade" className="text-foreground text-sm">Risk Per Trade (%)</Label>
-                <Input id="risk-per-trade" type="number" defaultValue="2.0" step="0.1" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="max-drawdown" className="text-foreground text-sm">Max Drawdown (%)</Label>
-                <Input id="max-drawdown" type="number" defaultValue="20" step="1" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="risk-reward-manual" className="text-foreground text-sm">Risk-to-Reward Ratio</Label>
-                <Input id="risk-reward-manual" type="number" defaultValue="2.0" step="0.1" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="position-lot-manual" className="text-foreground text-sm">Fixed Position Lot Size</Label>
-                <Input id="position-lot-manual" type="number" defaultValue="0.01" step="0.01" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="max-positions" className="text-foreground text-sm">Max Open Positions</Label>
-                <Input id="max-positions" type="number" defaultValue="5" step="1" />
-              </div>
-            </TabsContent>
-          </Tabs>
-        </Card>
       </div>
-
-      {/* Leverage Configuration */}
-      <Card className="p-4 md:p-6 border-border bg-card">
-        <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Leverage Configuration</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Configure leverage settings for MetaTrader, crypto exchanges, and FIX connector (manual input supported)
-        </p>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-          {/* MetaTrader Leverage */}
-          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
-            <h3 className="text-base font-semibold text-foreground mb-3">MetaTrader 5</h3>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Forex Leverage</Label>
-                <Input type="text" placeholder="1:100" defaultValue="1:100" className="text-sm" />
-                <p className="text-xs text-muted-foreground">e.g., 1:30, 1:100, 1:500</p>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Indices Leverage</Label>
-                <Input type="text" placeholder="1:50" defaultValue="1:50" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Commodities Leverage</Label>
-                <Input type="text" placeholder="1:20" defaultValue="1:20" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Crypto CFD Leverage</Label>
-                <Input type="text" placeholder="1:2" defaultValue="1:2" className="text-sm" />
-              </div>
-            </div>
-          </div>
-
-          {/* Binance/Crypto Leverage */}
-          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
-            <h3 className="text-base font-semibold text-foreground mb-3">Crypto Exchanges</h3>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">BTC/USDT Leverage</Label>
-                <Input type="number" placeholder="20" defaultValue="20" min="1" max="125" className="text-sm" />
-                <p className="text-xs text-muted-foreground">Max: 125x (Binance)</p>
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">ETH/USDT Leverage</Label>
-                <Input type="number" placeholder="20" defaultValue="20" min="1" max="100" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Altcoins Leverage</Label>
-                <Input type="number" placeholder="10" defaultValue="10" min="1" max="50" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Margin Mode</Label>
-                <select className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="cross">Cross Margin</option>
-                  <option value="isolated">Isolated Margin</option>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          {/* Bybit/OKX Leverage */}
-          <div className="p-4 rounded-lg bg-secondary/30 border border-border">
-            <h3 className="text-base font-semibold text-foreground mb-3">Bybit / OKX / Other</h3>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Default Leverage</Label>
-                <Input type="number" placeholder="10" defaultValue="10" min="1" max="100" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Perpetual Leverage</Label>
-                <Input type="number" placeholder="20" defaultValue="20" min="1" max="100" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Options Leverage</Label>
-                <Input type="number" placeholder="5" defaultValue="5" min="1" max="50" className="text-sm" />
-              </div>
-              <div className="flex items-center justify-between py-2">
-                <Label className="text-sm text-foreground">Auto-Deleverage</Label>
-                <Switch defaultChecked />
-              </div>
-            </div>
-          </div>
-
-          {/* FIX Protocol Leverage */}
-          <div className="p-4 rounded-lg bg-primary/10 border border-primary/30">
-            <h3 className="text-base font-semibold text-foreground mb-3">FIX Protocol</h3>
-            <div className="space-y-3">
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Forex Leverage</Label>
-                <Input type="text" placeholder="1:100" defaultValue="1:100" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Equities Leverage</Label>
-                <Input type="text" placeholder="1:4" defaultValue="1:4" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Futures Leverage</Label>
-                <Input type="text" placeholder="1:20" defaultValue="1:20" className="text-sm" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-sm text-foreground">Custom Leverage</Label>
-                <Input type="text" placeholder="Enter custom ratio" className="text-sm" />
-                <p className="text-xs text-muted-foreground">Format: 1:X or Xx</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </Card>
 
       {/* Alert API Settings */}
       <AlertAPISettings />
@@ -492,539 +313,807 @@ const Settings = () => {
         </div>
       </Card>
 
+      {/* Crypto Exchange API Configuration - Spot & Futures Separated */}
       <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Trading Platform Configuration</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-4">Crypto Exchange API Configuration</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Configure connections to MetaTrader 5 and all major crypto exchanges
+          Configure Spot and Futures API keys separately for each exchange
         </p>
         
-        <div className="space-y-6">
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              MetaTrader 5 Configuration
-              <Switch defaultChecked />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="mt5-server" className="text-foreground">Server Address</Label>
-                <Input id="mt5-server" placeholder="broker.server.com:443" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-login" className="text-foreground">Login ID</Label>
-                <Input id="mt5-login" type="number" placeholder="12345678" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-password" className="text-foreground">Password</Label>
-                <Input id="mt5-password" type="password" placeholder="••••••••" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-account" className="text-foreground">Account Type</Label>
-                <Input id="mt5-account" placeholder="Real / Demo" defaultValue="Demo" />
-              </div>
-            </div>
-          </div>
+        <Tabs defaultValue="spot" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="spot" className="text-sm">Spot Trading</TabsTrigger>
+            <TabsTrigger value="futures" className="text-sm">Futures Trading</TabsTrigger>
+          </TabsList>
 
-          {/* Binance */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Binance Spot
-              <Switch defaultChecked />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.binance.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="binance-spot-test" />
-                <Label htmlFor="binance-spot-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
+          {/* SPOT TRADING TAB */}
+          <TabsContent value="spot" className="space-y-4">
+            <div className="p-3 rounded bg-primary/10 border border-primary/20 mb-4">
+              <span className="text-sm font-semibold text-primary">Spot Trading APIs</span>
+              <p className="text-xs text-muted-foreground mt-1">Configure API credentials for spot/margin trading</p>
             </div>
-          </div>
 
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Binance Futures
-              <Switch defaultChecked />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://fapi.binance.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="binance-futures-test" />
-                <Label htmlFor="binance-futures-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* Binance Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟡</span>
+                  <span className="font-semibold text-foreground">Binance Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Endpoint</Label>
+                    <Input defaultValue="https://api.binance.com" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="binance-spot-testnet" />
+                    <Label htmlFor="binance-spot-testnet">Testnet</Label>
+                    <Switch id="binance-spot-enabled" defaultChecked />
+                    <Label htmlFor="binance-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Bybit */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Bybit
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.bybit.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="bybit-test" />
-                <Label htmlFor="bybit-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* Bybit Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟠</span>
+                  <span className="font-semibold text-foreground">Bybit Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Endpoint</Label>
+                    <Input defaultValue="https://api.bybit.com" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="bybit-spot-testnet" />
+                    <Label htmlFor="bybit-spot-testnet">Testnet</Label>
+                    <Switch id="bybit-spot-enabled" />
+                    <Label htmlFor="bybit-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* OKX */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              OKX
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Passphrase</Label>
-                <Input type="password" placeholder="Enter Passphrase" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://www.okx.com" />
-              </div>
-            </div>
-          </div>
+            {/* OKX Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">⚫</span>
+                  <span className="font-semibold text-foreground">OKX Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Passphrase</Label>
+                    <Input type="password" placeholder="Enter Passphrase" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="okx-spot-enabled" />
+                    <Label htmlFor="okx-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* KuCoin */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              KuCoin
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Passphrase</Label>
-                <Input type="password" placeholder="Enter Passphrase" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.kucoin.com" />
-              </div>
-            </div>
-          </div>
+            {/* KuCoin Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟢</span>
+                  <span className="font-semibold text-foreground">KuCoin Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Passphrase</Label>
+                    <Input type="password" placeholder="Enter Passphrase" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="kucoin-spot-enabled" />
+                    <Label htmlFor="kucoin-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Kraken */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Kraken
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.kraken.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="kraken-test" />
-                <Label htmlFor="kraken-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* Gate.io Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔴</span>
+                  <span className="font-semibold text-foreground">Gate.io Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="gateio-spot-enabled" />
+                    <Label htmlFor="gateio-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Coinbase */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Coinbase
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.coinbase.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="coinbase-sandbox" />
-                <Label htmlFor="coinbase-sandbox" className="text-sm text-muted-foreground">Sandbox</Label>
-              </div>
-            </div>
-          </div>
+            {/* Bitget Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟦</span>
+                  <span className="font-semibold text-foreground">Bitget Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Passphrase</Label>
+                    <Input type="password" placeholder="Enter Passphrase" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="bitget-spot-enabled" />
+                    <Label htmlFor="bitget-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Gate.io */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Gate.io
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.gateio.ws" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="gateio-test" />
-                <Label htmlFor="gateio-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* MEXC Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">💙</span>
+                  <span className="font-semibold text-foreground">MEXC Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="mexc-spot-enabled" />
+                    <Label htmlFor="mexc-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Bitget */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Bitget
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Passphrase</Label>
-                <Input type="password" placeholder="Enter Passphrase" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.bitget.com" />
-              </div>
-            </div>
-          </div>
+            {/* Kraken Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟣</span>
+                  <span className="font-semibold text-foreground">Kraken Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="kraken-spot-enabled" />
+                    <Label htmlFor="kraken-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* MEXC */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              MEXC
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.mexc.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="mexc-test" />
-                <Label htmlFor="mexc-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* Coinbase Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔵</span>
+                  <span className="font-semibold text-foreground">Coinbase Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="coinbase-spot-sandbox" />
+                    <Label htmlFor="coinbase-spot-sandbox">Sandbox</Label>
+                    <Switch id="coinbase-spot-enabled" />
+                    <Label htmlFor="coinbase-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Huobi */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              HTX (Huobi)
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.huobi.pro" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="huobi-test" />
-                <Label htmlFor="huobi-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* HTX Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔷</span>
+                  <span className="font-semibold text-foreground">HTX (Huobi) Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="htx-spot-enabled" />
+                    <Label htmlFor="htx-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Bitfinex */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Bitfinex
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.bitfinex.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="bitfinex-test" />
-                <Label htmlFor="bitfinex-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* Crypto.com Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">💎</span>
+                  <span className="font-semibold text-foreground">Crypto.com Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="cryptocom-spot-enabled" />
+                    <Label htmlFor="cryptocom-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Gemini */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Gemini
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.gemini.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="gemini-sandbox" />
-                <Label htmlFor="gemini-sandbox" className="text-sm text-muted-foreground">Sandbox</Label>
-              </div>
-            </div>
-          </div>
+            {/* BingX Spot */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🌐</span>
+                  <span className="font-semibold text-foreground">BingX Spot</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">Spot</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Spot API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="bingx-spot-enabled" />
+                    <Label htmlFor="bingx-spot-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </TabsContent>
 
-          {/* Bitstamp */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Bitstamp
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Customer ID</Label>
-                <Input placeholder="Enter Customer ID" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://www.bitstamp.net/api" />
-              </div>
+          {/* FUTURES TRADING TAB */}
+          <TabsContent value="futures" className="space-y-4">
+            <div className="p-3 rounded bg-warning/10 border border-warning/20 mb-4">
+              <span className="text-sm font-semibold text-warning">Futures/Derivatives Trading APIs</span>
+              <p className="text-xs text-muted-foreground mt-1">Configure API credentials for perpetual & futures contracts</p>
             </div>
-          </div>
 
-          {/* Crypto.com */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Crypto.com
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.crypto.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="cryptocom-sandbox" />
-                <Label htmlFor="cryptocom-sandbox" className="text-sm text-muted-foreground">Sandbox</Label>
-              </div>
-            </div>
-          </div>
+            {/* Binance Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟡</span>
+                  <span className="font-semibold text-foreground">Binance Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Endpoint</Label>
+                    <Input defaultValue="https://fapi.binance.com" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="binance-futures-testnet" />
+                    <Label htmlFor="binance-futures-testnet">Testnet</Label>
+                    <Switch id="binance-futures-enabled" defaultChecked />
+                    <Label htmlFor="binance-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Deribit */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Deribit
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">Client ID</Label>
-                <Input type="password" placeholder="Enter Client ID" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Client Secret</Label>
-                <Input type="password" placeholder="Enter Client Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://www.deribit.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="deribit-test" />
-                <Label htmlFor="deribit-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* Bybit Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟠</span>
+                  <span className="font-semibold text-foreground">Bybit Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Endpoint</Label>
+                    <Input defaultValue="https://api.bybit.com" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="bybit-futures-testnet" />
+                    <Label htmlFor="bybit-futures-testnet">Testnet</Label>
+                    <Switch id="bybit-futures-enabled" />
+                    <Label htmlFor="bybit-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* Phemex */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              Phemex
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://api.phemex.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="phemex-test" />
-                <Label htmlFor="phemex-test" className="text-sm text-muted-foreground">Testnet</Label>
-              </div>
-            </div>
-          </div>
+            {/* OKX Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">⚫</span>
+                  <span className="font-semibold text-foreground">OKX Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Passphrase</Label>
+                    <Input type="password" placeholder="Enter Passphrase" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="okx-futures-enabled" />
+                    <Label htmlFor="okx-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          {/* BingX */}
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3 flex items-center justify-between">
-              BingX
-              <Switch />
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label className="text-foreground">API Key</Label>
-                <Input type="password" placeholder="Enter API Key" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">API Secret</Label>
-                <Input type="password" placeholder="Enter API Secret" />
-              </div>
-              <div className="space-y-2">
-                <Label className="text-foreground">Endpoint</Label>
-                <Input defaultValue="https://open-api.bingx.com" />
-              </div>
-              <div className="flex items-center space-x-2 pt-6">
-                <Switch id="bingx-test" />
-                <Label htmlFor="bingx-test" className="text-sm text-muted-foreground">Demo</Label>
-              </div>
-            </div>
-          </div>
+            {/* KuCoin Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟢</span>
+                  <span className="font-semibold text-foreground">KuCoin Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Passphrase</Label>
+                    <Input type="password" placeholder="Enter Passphrase" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="kucoin-futures-enabled" />
+                    <Label htmlFor="kucoin-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
 
-          <div className="p-4 rounded-lg bg-secondary/50 border border-border">
-            <h3 className="text-lg font-semibold text-foreground mb-3">Algorithm Configuration (YAML)</h3>
-            <div className="space-y-2">
-              <Label htmlFor="yaml-config" className="text-foreground">Trading Algorithm Architecture</Label>
-              <textarea
-                id="yaml-config"
-                className="w-full h-32 p-3 rounded-md bg-background border border-border text-foreground font-mono text-sm"
-                placeholder={`# Trading Algorithm Configuration
-algorithm:
-  type: gann_navigator
-  version: 1.0
-  
-platforms:
-  - mt5
-  - binance
-  - bybit
-  - okx
-  - kucoin
-  - kraken
-  - coinbase
-  - gate_io
-  - bitget
-  - mexc
-  - htx
-  - bitfinex
-  - gemini
-  - bitstamp
-  - crypto_com
-  - deribit
-  - phemex
-  - bingx`}
-              />
-            </div>
+            {/* Gate.io Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🔴</span>
+                  <span className="font-semibold text-foreground">Gate.io Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="gateio-futures-enabled" />
+                    <Label htmlFor="gateio-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Bitget Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟦</span>
+                  <span className="font-semibold text-foreground">Bitget Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Passphrase</Label>
+                    <Input type="password" placeholder="Enter Passphrase" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="bitget-futures-enabled" />
+                    <Label htmlFor="bitget-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* MEXC Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">💙</span>
+                  <span className="font-semibold text-foreground">MEXC Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="mexc-futures-enabled" />
+                    <Label htmlFor="mexc-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Kraken Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🟣</span>
+                  <span className="font-semibold text-foreground">Kraken Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="kraken-futures-enabled" />
+                    <Label htmlFor="kraken-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Deribit */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">📊</span>
+                  <span className="font-semibold text-foreground">Deribit</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Derivatives</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Client ID</Label>
+                    <Input type="password" placeholder="Enter Client ID" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Client Secret</Label>
+                    <Input type="password" placeholder="Enter Client Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="deribit-testnet" />
+                    <Label htmlFor="deribit-testnet">Testnet</Label>
+                    <Switch id="deribit-enabled" />
+                    <Label htmlFor="deribit-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* Phemex Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">⚡</span>
+                  <span className="font-semibold text-foreground">Phemex Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="phemex-futures-testnet" />
+                    <Label htmlFor="phemex-futures-testnet">Testnet</Label>
+                    <Switch id="phemex-futures-enabled" />
+                    <Label htmlFor="phemex-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+
+            {/* BingX Futures */}
+            <Collapsible>
+              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                <div className="flex items-center gap-3">
+                  <span className="text-xl">🌐</span>
+                  <span className="font-semibold text-foreground">BingX Futures</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </CollapsibleTrigger>
+              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>API Key</Label>
+                    <Input type="password" placeholder="Enter Futures API Key" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>API Secret</Label>
+                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  </div>
+                  <div className="flex items-center gap-4 pt-6">
+                    <Switch id="bingx-futures-demo" />
+                    <Label htmlFor="bingx-futures-demo">Demo</Label>
+                    <Switch id="bingx-futures-enabled" />
+                    <Label htmlFor="bingx-futures-enabled">Enabled</Label>
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
+          </TabsContent>
+        </Tabs>
+      </Card>
+
+      {/* MetaTrader 5 Configuration */}
+      <Card className="p-6 border-border bg-card">
+        <h2 className="text-xl font-semibold text-foreground mb-4">MetaTrader 5 Configuration</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="mt5-server" className="text-foreground">Server Address</Label>
+            <Input id="mt5-server" placeholder="broker.server.com:443" />
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="mt5-login" className="text-foreground">Login ID</Label>
+            <Input id="mt5-login" type="number" placeholder="12345678" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="mt5-password" className="text-foreground">Password</Label>
+            <Input id="mt5-password" type="password" placeholder="••••••••" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="mt5-account" className="text-foreground">Account Type</Label>
+            <Input id="mt5-account" placeholder="Real / Demo" defaultValue="Demo" />
+          </div>
+        </div>
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+          <Label htmlFor="mt5-enabled" className="text-foreground">Enable MetaTrader 5</Label>
+          <Switch id="mt5-enabled" defaultChecked />
         </div>
       </Card>
 
@@ -1260,15 +1349,7 @@ platforms:
         <FixConnectorManager />
       </Card>
 
-      {/* Trading Mode Configuration */}
-      <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Trading Mode Configuration</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Configure settings for Spot and Futures trading modes
-        </p>
-        
-        <TradingModeSettings />
-      </Card>
+      {/* Removed: Trading Mode Configuration - now in Trading Mode page */}
 
       {/* Import/Export Settings */}
       <Card className="p-6 border-border bg-card">
@@ -1543,249 +1624,6 @@ const FixConnectorManager = () => {
   );
 };
 
-// Trading Mode Settings Component
-const TradingModeSettings = () => {
-  const [activeMode, setActiveMode] = useState<"spot" | "futures">("spot");
-  const [spotSettings, setSpotSettings] = useState({
-    defaultOrderType: "limit",
-    slippageTolerance: "0.5",
-    autoConvertDust: true,
-    preferredQuoteCurrency: "USDT",
-    enableMarginTrading: false,
-  });
-  const [futuresSettings, setFuturesSettings] = useState({
-    defaultLeverage: "10",
-    marginMode: "cross",
-    positionMode: "hedge",
-    autoDeleverage: true,
-    stopLossPercentage: "2",
-    takeProfitPercentage: "4",
-    trailingStopEnabled: false,
-    trailingStopCallback: "1",
-    reduceOnlyDefault: false,
-  });
-
-  return (
-    <Tabs value={activeMode} onValueChange={(v) => setActiveMode(v as "spot" | "futures")}>
-      <TabsList className="grid w-full grid-cols-2 mb-6">
-        <TabsTrigger value="spot" className="text-sm">
-          Spot Trading
-        </TabsTrigger>
-        <TabsTrigger value="futures" className="text-sm">
-          Futures Trading
-        </TabsTrigger>
-      </TabsList>
-
-      <TabsContent value="spot" className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label>Default Order Type</Label>
-            <select
-              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-              value={spotSettings.defaultOrderType}
-              onChange={(e) =>
-                setSpotSettings({ ...spotSettings, defaultOrderType: e.target.value })
-              }
-            >
-              <option value="market">Market</option>
-              <option value="limit">Limit</option>
-              <option value="stop-limit">Stop Limit</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label>Slippage Tolerance (%)</Label>
-            <Input
-              type="number"
-              value={spotSettings.slippageTolerance}
-              onChange={(e) =>
-                setSpotSettings({ ...spotSettings, slippageTolerance: e.target.value })
-              }
-              step="0.1"
-              min="0"
-              max="5"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Preferred Quote Currency</Label>
-            <select
-              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-              value={spotSettings.preferredQuoteCurrency}
-              onChange={(e) =>
-                setSpotSettings({ ...spotSettings, preferredQuoteCurrency: e.target.value })
-              }
-            >
-              <option value="USDT">USDT</option>
-              <option value="USDC">USDC</option>
-              <option value="BUSD">BUSD</option>
-              <option value="BTC">BTC</option>
-              <option value="ETH">ETH</option>
-            </select>
-          </div>
-          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-            <div>
-              <Label>Auto-Convert Dust</Label>
-              <p className="text-xs text-muted-foreground">
-                Automatically convert small balances to BNB
-              </p>
-            </div>
-            <Switch
-              checked={spotSettings.autoConvertDust}
-              onCheckedChange={(checked) =>
-                setSpotSettings({ ...spotSettings, autoConvertDust: checked })
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg md:col-span-2">
-            <div>
-              <Label>Enable Margin Trading</Label>
-              <p className="text-xs text-muted-foreground">
-                Allow borrowing for leveraged spot positions
-              </p>
-            </div>
-            <Switch
-              checked={spotSettings.enableMarginTrading}
-              onCheckedChange={(checked) =>
-                setSpotSettings({ ...spotSettings, enableMarginTrading: checked })
-              }
-            />
-          </div>
-        </div>
-      </TabsContent>
-
-      <TabsContent value="futures" className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <Label>Default Leverage</Label>
-            <select
-              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-              value={futuresSettings.defaultLeverage}
-              onChange={(e) =>
-                setFuturesSettings({ ...futuresSettings, defaultLeverage: e.target.value })
-              }
-            >
-              {[1, 2, 3, 5, 10, 20, 25, 50, 75, 100, 125].map((lev) => (
-                <option key={lev} value={lev.toString()}>
-                  {lev}x
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label>Margin Mode</Label>
-            <select
-              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-              value={futuresSettings.marginMode}
-              onChange={(e) =>
-                setFuturesSettings({ ...futuresSettings, marginMode: e.target.value })
-              }
-            >
-              <option value="cross">Cross Margin</option>
-              <option value="isolated">Isolated Margin</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label>Position Mode</Label>
-            <select
-              className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground"
-              value={futuresSettings.positionMode}
-              onChange={(e) =>
-                setFuturesSettings({ ...futuresSettings, positionMode: e.target.value })
-              }
-            >
-              <option value="one-way">One-Way Mode</option>
-              <option value="hedge">Hedge Mode</option>
-            </select>
-          </div>
-          <div className="space-y-2">
-            <Label>Default Stop Loss (%)</Label>
-            <Input
-              type="number"
-              value={futuresSettings.stopLossPercentage}
-              onChange={(e) =>
-                setFuturesSettings({ ...futuresSettings, stopLossPercentage: e.target.value })
-              }
-              step="0.5"
-              min="0.5"
-              max="50"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Default Take Profit (%)</Label>
-            <Input
-              type="number"
-              value={futuresSettings.takeProfitPercentage}
-              onChange={(e) =>
-                setFuturesSettings({ ...futuresSettings, takeProfitPercentage: e.target.value })
-              }
-              step="0.5"
-              min="0.5"
-              max="100"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Trailing Stop Callback (%)</Label>
-            <Input
-              type="number"
-              value={futuresSettings.trailingStopCallback}
-              onChange={(e) =>
-                setFuturesSettings({ ...futuresSettings, trailingStopCallback: e.target.value })
-              }
-              step="0.1"
-              min="0.1"
-              max="5"
-              disabled={!futuresSettings.trailingStopEnabled}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-            <div>
-              <Label>Auto-Deleverage</Label>
-              <p className="text-xs text-muted-foreground">Prevent liquidation</p>
-            </div>
-            <Switch
-              checked={futuresSettings.autoDeleverage}
-              onCheckedChange={(checked) =>
-                setFuturesSettings({ ...futuresSettings, autoDeleverage: checked })
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-            <div>
-              <Label>Trailing Stop</Label>
-              <p className="text-xs text-muted-foreground">Dynamic stop loss</p>
-            </div>
-            <Switch
-              checked={futuresSettings.trailingStopEnabled}
-              onCheckedChange={(checked) =>
-                setFuturesSettings({ ...futuresSettings, trailingStopEnabled: checked })
-              }
-            />
-          </div>
-          <div className="flex items-center justify-between p-3 bg-secondary/30 rounded-lg">
-            <div>
-              <Label>Reduce-Only Default</Label>
-              <p className="text-xs text-muted-foreground">Orders reduce position only</p>
-            </div>
-            <Switch
-              checked={futuresSettings.reduceOnlyDefault}
-              onCheckedChange={(checked) =>
-                setFuturesSettings({ ...futuresSettings, reduceOnlyDefault: checked })
-              }
-            />
-          </div>
-        </div>
-        
-        <div className="mt-4 p-4 rounded-lg bg-warning/10 border border-warning/30">
-          <p className="text-sm text-warning font-medium">⚠️ Risk Warning</p>
-          <p className="text-xs text-muted-foreground mt-1">
-            Futures trading involves significant risk of loss. Higher leverage increases both potential profits and losses. 
-            Always use proper risk management and never trade with funds you cannot afford to lose.
-          </p>
-        </div>
-      </TabsContent>
-    </Tabs>
-  );
-};
+// Removed: TradingModeSettings component - now in Trading Mode page
 
 export default Settings;
