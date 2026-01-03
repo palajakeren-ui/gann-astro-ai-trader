@@ -22,7 +22,10 @@ import {
   Cpu,
   Activity,
   CheckCircle,
-  AlertTriangle
+  AlertTriangle,
+  GitMerge,
+  Plus,
+  Trash2
 } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -146,6 +149,50 @@ interface SearchResult {
   status: "completed" | "running" | "pending";
 }
 
+// Ensemble Methods
+const ENSEMBLE_METHODS = [
+  { id: "stacking", name: "Stacking", description: "Train meta-learner on base model predictions" },
+  { id: "bagging", name: "Bagging", description: "Bootstrap aggregating with parallel training" },
+  { id: "boosting", name: "Boosting", description: "Sequential training with weighted samples" },
+  { id: "voting", name: "Voting", description: "Combine predictions by voting or averaging" },
+  { id: "blending", name: "Blending", description: "Use holdout set for meta-learner training" },
+];
+
+const META_LEARNERS = [
+  { id: "logistic", name: "Logistic Regression", description: "Simple linear meta-learner" },
+  { id: "ridge", name: "Ridge Regression", description: "L2 regularized linear model" },
+  { id: "xgboost", name: "XGBoost", description: "Gradient boosted trees" },
+  { id: "lightgbm", name: "LightGBM", description: "Light gradient boosting" },
+  { id: "mlp", name: "Neural Network", description: "Multi-layer perceptron" },
+];
+
+const VOTING_STRATEGIES = [
+  { id: "hard", name: "Hard Voting", description: "Majority class voting" },
+  { id: "soft", name: "Soft Voting", description: "Average probability voting" },
+  { id: "weighted", name: "Weighted Voting", description: "Weighted probability average" },
+];
+
+interface EnsembleModel {
+  id: string;
+  name: string;
+  weight: number;
+  enabled: boolean;
+  accuracy: number;
+}
+
+interface EnsembleConfig {
+  method: string;
+  metaLearner: string;
+  votingStrategy: string;
+  nFolds: number;
+  useProba: boolean;
+  passthrough: boolean;
+  nEstimators: number;
+  subsampleRatio: number;
+  boostingType: string;
+  learningRate: number;
+}
+
 const AI = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [selectedModel, setSelectedModel] = useState("lstm");
@@ -153,6 +200,8 @@ const AI = () => {
   const [isAutoTuning, setIsAutoTuning] = useState(false);
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [bestResult, setBestResult] = useState<SearchResult | null>(null);
+  const [isEnsembleTraining, setIsEnsembleTraining] = useState(false);
+  const [ensembleAccuracy, setEnsembleAccuracy] = useState<number | null>(null);
   
   const [autoTuneConfig, setAutoTuneConfig] = useState<AutoTuneConfig>({
     searchMethod: "bayesian",
@@ -171,6 +220,30 @@ const AI = () => {
     tuneDropout: true,
     tuneL2: false,
     tuneOptimizer: false,
+  });
+
+  const [ensembleModels, setEnsembleModels] = useState<EnsembleModel[]>([
+    { id: "lstm", name: "LSTM Predictor", weight: 0.25, enabled: true, accuracy: 78.5 },
+    { id: "transformer", name: "Transformer Trend", weight: 0.30, enabled: true, accuracy: 82.3 },
+    { id: "xgboost", name: "XGBoost Classifier", weight: 0.20, enabled: true, accuracy: 75.8 },
+    { id: "lightgbm", name: "LightGBM", weight: 0.15, enabled: true, accuracy: 79.2 },
+    { id: "rf", name: "Random Forest", weight: 0.10, enabled: false, accuracy: 73.2 },
+    { id: "gradient_boost", name: "Gradient Boosting", weight: 0.0, enabled: false, accuracy: 77.4 },
+    { id: "neural_ode", name: "Neural ODE", weight: 0.0, enabled: false, accuracy: 80.1 },
+    { id: "hybrid_meta", name: "Hybrid Meta-Model", weight: 0.0, enabled: false, accuracy: 84.7 },
+  ]);
+
+  const [ensembleConfig, setEnsembleConfig] = useState<EnsembleConfig>({
+    method: "stacking",
+    metaLearner: "ridge",
+    votingStrategy: "soft",
+    nFolds: 5,
+    useProba: true,
+    passthrough: false,
+    nEstimators: 100,
+    subsampleRatio: 0.8,
+    boostingType: "gradient",
+    learningRate: 0.1,
   });
   
   const [config, setConfig] = useState<TuningConfig>({
@@ -355,6 +428,80 @@ const AI = () => {
     }
   };
 
+  const updateEnsembleConfig = <K extends keyof EnsembleConfig>(key: K, value: EnsembleConfig[K]) => {
+    setEnsembleConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const updateModelWeight = (modelId: string, weight: number) => {
+    setEnsembleModels(prev => prev.map(m => 
+      m.id === modelId ? { ...m, weight } : m
+    ));
+  };
+
+  const toggleModelEnabled = (modelId: string) => {
+    setEnsembleModels(prev => prev.map(m => 
+      m.id === modelId ? { ...m, enabled: !m.enabled } : m
+    ));
+  };
+
+  const normalizeWeights = () => {
+    const enabledModels = ensembleModels.filter(m => m.enabled);
+    const totalWeight = enabledModels.reduce((sum, m) => sum + m.weight, 0);
+    if (totalWeight === 0) {
+      const equalWeight = 1 / enabledModels.length;
+      setEnsembleModels(prev => prev.map(m => 
+        m.enabled ? { ...m, weight: Number(equalWeight.toFixed(2)) } : { ...m, weight: 0 }
+      ));
+    } else {
+      setEnsembleModels(prev => prev.map(m => 
+        m.enabled ? { ...m, weight: Number((m.weight / totalWeight).toFixed(2)) } : { ...m, weight: 0 }
+      ));
+    }
+    toast.success("Weights normalized to sum = 1.0");
+  };
+
+  const autoAssignWeights = () => {
+    const enabledModels = ensembleModels.filter(m => m.enabled);
+    const totalAccuracy = enabledModels.reduce((sum, m) => sum + m.accuracy, 0);
+    setEnsembleModels(prev => prev.map(m => 
+      m.enabled ? { ...m, weight: Number((m.accuracy / totalAccuracy).toFixed(2)) } : { ...m, weight: 0 }
+    ));
+    toast.success("Weights auto-assigned based on accuracy");
+  };
+
+  const startEnsembleTraining = () => {
+    const enabledModels = ensembleModels.filter(m => m.enabled);
+    if (enabledModels.length < 2) {
+      toast.error("Select at least 2 models for ensemble");
+      return;
+    }
+    
+    setIsEnsembleTraining(true);
+    setEnsembleAccuracy(null);
+    toast.info(`Training ${ENSEMBLE_METHODS.find(m => m.id === ensembleConfig.method)?.name} ensemble...`);
+    
+    // Simulate ensemble training
+    setTimeout(() => {
+      const baseAccuracy = enabledModels.reduce((sum, m) => sum + m.weight * m.accuracy, 0);
+      const ensembleBonus = ensembleConfig.method === "stacking" ? 3.5 : 
+                           ensembleConfig.method === "boosting" ? 4.2 :
+                           ensembleConfig.method === "blending" ? 2.8 : 2.0;
+      const finalAccuracy = Math.min(95, baseAccuracy + ensembleBonus + (Math.random() - 0.5) * 2);
+      setEnsembleAccuracy(Number(finalAccuracy.toFixed(2)));
+      setIsEnsembleTraining(false);
+      toast.success(`Ensemble training complete! Accuracy: ${finalAccuracy.toFixed(2)}%`);
+    }, 3000);
+  };
+
+  const stopEnsembleTraining = () => {
+    setIsEnsembleTraining(false);
+    toast.info("Ensemble training stopped");
+  };
+
+  const getTotalWeight = () => {
+    return ensembleModels.filter(m => m.enabled).reduce((sum, m) => sum + m.weight, 0);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -411,18 +558,22 @@ const AI = () => {
       </div>
 
       <Tabs defaultValue="models" className="w-full">
-        <TabsList className="grid w-full grid-cols-5 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-6 md:w-auto md:inline-grid">
           <TabsTrigger value="models">Models</TabsTrigger>
+          <TabsTrigger value="ensemble">
+            <GitMerge className="w-3 h-3 mr-1" />
+            Ensemble
+          </TabsTrigger>
           <TabsTrigger value="optimizer">
             <Settings2 className="w-3 h-3 mr-1" />
             Optimizer
           </TabsTrigger>
-          <TabsTrigger value="tuning">Hyperparameter Tuning</TabsTrigger>
+          <TabsTrigger value="tuning">Hyperparameters</TabsTrigger>
           <TabsTrigger value="autotune">
             <Target className="w-3 h-3 mr-1" />
             Auto Tuning
           </TabsTrigger>
-          <TabsTrigger value="results">Training Results</TabsTrigger>
+          <TabsTrigger value="results">Results</TabsTrigger>
         </TabsList>
 
         {/* Models Tab */}
@@ -534,6 +685,379 @@ const AI = () => {
               </div>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Ensemble Tab */}
+        <TabsContent value="ensemble" className="space-y-4 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <GitMerge className="w-5 h-5 text-primary" />
+              Ensemble Learning Configuration
+            </h2>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" onClick={normalizeWeights}>
+                <RotateCcw className="w-4 h-4 mr-1" />
+                Normalize
+              </Button>
+              <Button variant="outline" size="sm" onClick={autoAssignWeights}>
+                <Zap className="w-4 h-4 mr-1" />
+                Auto-Assign
+              </Button>
+              <Button 
+                size="sm" 
+                onClick={isEnsembleTraining ? stopEnsembleTraining : startEnsembleTraining}
+                variant={isEnsembleTraining ? "destructive" : "default"}
+              >
+                {isEnsembleTraining ? (
+                  <>
+                    <Pause className="w-4 h-4 mr-1" />
+                    Stop Training
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-1" />
+                    Train Ensemble
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Ensemble Method */}
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-accent" />
+                Ensemble Method
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Method</Label>
+                  <Select value={ensembleConfig.method} onValueChange={(v) => updateEnsembleConfig("method", v)}>
+                    <SelectTrigger className="bg-secondary border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ENSEMBLE_METHODS.map(method => (
+                        <SelectItem key={method.id} value={method.id}>
+                          <div className="flex flex-col">
+                            <span>{method.name}</span>
+                            <span className="text-xs text-muted-foreground">{method.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {(ensembleConfig.method === "stacking" || ensembleConfig.method === "blending") && (
+                  <>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Meta-Learner</Label>
+                      <Select value={ensembleConfig.metaLearner} onValueChange={(v) => updateEnsembleConfig("metaLearner", v)}>
+                        <SelectTrigger className="bg-secondary border-border">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {META_LEARNERS.map(learner => (
+                            <SelectItem key={learner.id} value={learner.id}>
+                              <div className="flex flex-col">
+                                <span>{learner.name}</span>
+                                <span className="text-xs text-muted-foreground">{learner.description}</span>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">CV Folds: {ensembleConfig.nFolds}</Label>
+                      <Slider
+                        value={[ensembleConfig.nFolds]}
+                        min={2}
+                        max={10}
+                        step={1}
+                        onValueChange={([v]) => updateEnsembleConfig("nFolds", v)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm text-foreground">Use Probabilities</Label>
+                      <Switch
+                        checked={ensembleConfig.useProba}
+                        onCheckedChange={(v) => updateEnsembleConfig("useProba", v)}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <Label className="text-sm text-foreground">Passthrough Features</Label>
+                      <Switch
+                        checked={ensembleConfig.passthrough}
+                        onCheckedChange={(v) => updateEnsembleConfig("passthrough", v)}
+                      />
+                    </div>
+                  </>
+                )}
+
+                {ensembleConfig.method === "voting" && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Voting Strategy</Label>
+                    <Select value={ensembleConfig.votingStrategy} onValueChange={(v) => updateEnsembleConfig("votingStrategy", v)}>
+                      <SelectTrigger className="bg-secondary border-border">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {VOTING_STRATEGIES.map(strategy => (
+                          <SelectItem key={strategy.id} value={strategy.id}>
+                            <div className="flex flex-col">
+                              <span>{strategy.name}</span>
+                              <span className="text-xs text-muted-foreground">{strategy.description}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {ensembleConfig.method === "bagging" && (
+                  <>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">N Estimators: {ensembleConfig.nEstimators}</Label>
+                      <Slider
+                        value={[ensembleConfig.nEstimators]}
+                        min={10}
+                        max={500}
+                        step={10}
+                        onValueChange={([v]) => updateEnsembleConfig("nEstimators", v)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Subsample Ratio: {(ensembleConfig.subsampleRatio * 100).toFixed(0)}%</Label>
+                      <Slider
+                        value={[ensembleConfig.subsampleRatio]}
+                        min={0.5}
+                        max={1.0}
+                        step={0.05}
+                        onValueChange={([v]) => updateEnsembleConfig("subsampleRatio", v)}
+                        className="mt-2"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {ensembleConfig.method === "boosting" && (
+                  <>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Boosting Type</Label>
+                      <Select value={ensembleConfig.boostingType} onValueChange={(v) => updateEnsembleConfig("boostingType", v)}>
+                        <SelectTrigger className="bg-secondary border-border">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gradient">Gradient Boosting</SelectItem>
+                          <SelectItem value="adaptive">AdaBoost</SelectItem>
+                          <SelectItem value="xgb">XGBoost Style</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">N Estimators: {ensembleConfig.nEstimators}</Label>
+                      <Slider
+                        value={[ensembleConfig.nEstimators]}
+                        min={10}
+                        max={500}
+                        step={10}
+                        onValueChange={([v]) => updateEnsembleConfig("nEstimators", v)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Learning Rate: {ensembleConfig.learningRate}</Label>
+                      <Slider
+                        value={[ensembleConfig.learningRate]}
+                        min={0.01}
+                        max={1.0}
+                        step={0.01}
+                        onValueChange={([v]) => updateEnsembleConfig("learningRate", v)}
+                        className="mt-2"
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            </Card>
+
+            {/* Model Selection & Weights */}
+            <Card className="p-4 border-border bg-card lg:col-span-2">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Brain className="w-4 h-4 text-warning" />
+                  Model Selection & Weights
+                </h3>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground">Total Weight:</span>
+                  <Badge 
+                    variant={Math.abs(getTotalWeight() - 1) < 0.01 ? "default" : "destructive"}
+                    className={Math.abs(getTotalWeight() - 1) < 0.01 ? "bg-success" : ""}
+                  >
+                    {getTotalWeight().toFixed(2)}
+                  </Badge>
+                </div>
+              </div>
+              <div className="space-y-3">
+                {ensembleModels.map((model) => (
+                  <div
+                    key={model.id}
+                    className={`p-3 rounded-lg border transition-all ${
+                      model.enabled 
+                        ? "bg-secondary/50 border-primary/30" 
+                        : "bg-secondary/20 border-border opacity-60"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={model.enabled}
+                        onCheckedChange={() => toggleModelEnabled(model.id)}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="font-medium text-foreground text-sm">{model.name}</span>
+                          <Badge variant="outline" className="text-xs">
+                            {model.accuracy}% acc
+                          </Badge>
+                        </div>
+                        {model.enabled && (
+                          <div className="flex items-center gap-3">
+                            <span className="text-xs text-muted-foreground w-16">
+                              Weight: {model.weight.toFixed(2)}
+                            </span>
+                            <Slider
+                              value={[model.weight]}
+                              min={0}
+                              max={1}
+                              step={0.01}
+                              onValueChange={([v]) => updateModelWeight(model.id, v)}
+                              className="flex-1"
+                              disabled={!model.enabled}
+                            />
+                            <span className="text-xs font-mono w-12 text-right">
+                              {(model.weight * 100).toFixed(0)}%
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              {/* Weight Distribution Visualization */}
+              <div className="mt-4 pt-4 border-t border-border">
+                <h4 className="text-sm font-medium text-foreground mb-2">Weight Distribution</h4>
+                <div className="h-6 bg-secondary rounded-lg overflow-hidden flex">
+                  {ensembleModels.filter(m => m.enabled && m.weight > 0).map((model, idx) => {
+                    const colors = [
+                      "bg-primary", "bg-success", "bg-warning", "bg-accent", 
+                      "bg-destructive", "bg-primary/70", "bg-success/70", "bg-warning/70"
+                    ];
+                    return (
+                      <div
+                        key={model.id}
+                        className={`${colors[idx % colors.length]} h-full transition-all`}
+                        style={{ width: `${model.weight * 100}%` }}
+                        title={`${model.name}: ${(model.weight * 100).toFixed(1)}%`}
+                      />
+                    );
+                  })}
+                </div>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {ensembleModels.filter(m => m.enabled && m.weight > 0).map((model, idx) => {
+                    const colors = [
+                      "bg-primary", "bg-success", "bg-warning", "bg-accent", 
+                      "bg-destructive", "bg-primary/70", "bg-success/70", "bg-warning/70"
+                    ];
+                    return (
+                      <div key={model.id} className="flex items-center gap-1 text-xs">
+                        <div className={`w-2 h-2 rounded-full ${colors[idx % colors.length]}`} />
+                        <span className="text-muted-foreground">{model.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </Card>
+          </div>
+
+          {/* Ensemble Result */}
+          {ensembleAccuracy !== null && (
+            <Card className="p-6 border-border bg-card">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-foreground flex items-center gap-2 mb-2">
+                    <CheckCircle className="w-5 h-5 text-success" />
+                    Ensemble Training Complete
+                  </h3>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">Method</p>
+                      <p className="font-medium text-foreground">
+                        {ENSEMBLE_METHODS.find(m => m.id === ensembleConfig.method)?.name}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Base Models</p>
+                      <p className="font-medium text-foreground">
+                        {ensembleModels.filter(m => m.enabled).length} models
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Ensemble Accuracy</p>
+                      <p className="font-bold text-success text-xl">{ensembleAccuracy}%</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Improvement</p>
+                      <p className="font-medium text-success">
+                        +{(ensembleAccuracy - Math.max(...ensembleModels.filter(m => m.enabled).map(m => m.accuracy))).toFixed(2)}%
+                      </p>
+                    </div>
+                  </div>
+                </div>
+                <Button variant="outline" size="sm">
+                  <Save className="w-4 h-4 mr-1" />
+                  Deploy Ensemble
+                </Button>
+              </div>
+            </Card>
+          )}
+
+          {/* Ensemble Info */}
+          <Card className="p-4 border-border bg-card">
+            <h3 className="font-semibold text-foreground mb-3">Ensemble Methods Guide</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <h4 className="font-medium text-foreground mb-1">Stacking</h4>
+                <p className="text-xs text-muted-foreground">
+                  Trains a meta-learner on cross-validated predictions from base models. 
+                  Best for combining diverse model types.
+                </p>
+              </div>
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <h4 className="font-medium text-foreground mb-1">Bagging</h4>
+                <p className="text-xs text-muted-foreground">
+                  Bootstrap aggregating trains multiple instances on random subsets. 
+                  Reduces variance and prevents overfitting.
+                </p>
+              </div>
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <h4 className="font-medium text-foreground mb-1">Boosting</h4>
+                <p className="text-xs text-muted-foreground">
+                  Sequential training where each model focuses on previous errors. 
+                  Great for reducing bias and improving accuracy.
+                </p>
+              </div>
+            </div>
+          </Card>
         </TabsContent>
 
         {/* Optimizer Tab */}
