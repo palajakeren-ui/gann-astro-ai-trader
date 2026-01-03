@@ -37,6 +37,15 @@ interface TradingModeConfig {
   trailingStopDistance: number;
   autoDeleverage: boolean;
   hedgingEnabled: boolean;
+  // Risk Management fields
+  riskPerTrade: number;
+  takeProfitRatio: number;
+  stopLossRatio: number;
+  maxDrawdown: number;
+  dailyLossLimit: number;
+  weeklyLossLimit: number;
+  breakEvenOnProfit: boolean;
+  liquidationAlert: number;
 }
 
 interface ManualLeverageConfig {
@@ -59,6 +68,14 @@ const TradingMode = () => {
       trailingStopDistance: 1,
       autoDeleverage: false,
       hedgingEnabled: false,
+      riskPerTrade: 2.0,
+      takeProfitRatio: 2.0,
+      stopLossRatio: 1.0,
+      maxDrawdown: 15,
+      dailyLossLimit: 5,
+      weeklyLossLimit: 15,
+      breakEvenOnProfit: true,
+      liquidationAlert: 0,
     },
     {
       id: "futures-1",
@@ -72,6 +89,14 @@ const TradingMode = () => {
       trailingStopDistance: 0.5,
       autoDeleverage: true,
       hedgingEnabled: true,
+      riskPerTrade: 1.5,
+      takeProfitRatio: 3.0,
+      stopLossRatio: 1.0,
+      maxDrawdown: 10,
+      dailyLossLimit: 3,
+      weeklyLossLimit: 10,
+      breakEvenOnProfit: true,
+      liquidationAlert: 80,
     },
   ]);
 
@@ -117,6 +142,14 @@ const TradingMode = () => {
       trailingStopDistance: 1,
       autoDeleverage: type === "futures",
       hedgingEnabled: type === "futures",
+      riskPerTrade: type === "spot" ? 2.0 : 1.5,
+      takeProfitRatio: type === "spot" ? 2.0 : 3.0,
+      stopLossRatio: 1.0,
+      maxDrawdown: type === "spot" ? 15 : 10,
+      dailyLossLimit: type === "spot" ? 5 : 3,
+      weeklyLossLimit: type === "spot" ? 15 : 10,
+      breakEvenOnProfit: true,
+      liquidationAlert: type === "futures" ? 80 : 0,
     };
     setActiveModes(prev => [...prev, newMode]);
     toast.success(`New ${type} configuration added`);
@@ -297,9 +330,10 @@ const TradingMode = () => {
                     </Button>
                   </div>
                   
+                  {/* Trading Settings */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label className="text-xs">Max Position Size</Label>
+                      <Label className="text-xs">Max Position Size ($)</Label>
                       <Input 
                         type="number" 
                         value={mode.maxPositionSize}
@@ -316,13 +350,83 @@ const TradingMode = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
+                  {/* Risk Management Section */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs font-semibold text-success mb-3 flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Risk Management
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Risk Per Trade (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.riskPerTrade}
+                          step="0.1"
+                          onChange={(e) => handleUpdateMode(mode.id, { riskPerTrade: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Take Profit Ratio</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.takeProfitRatio}
+                          step="0.1"
+                          onChange={(e) => handleUpdateMode(mode.id, { takeProfitRatio: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Stop Loss Ratio</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.stopLossRatio}
+                          step="0.1"
+                          onChange={(e) => handleUpdateMode(mode.id, { stopLossRatio: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Max Drawdown (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.maxDrawdown}
+                          step="1"
+                          onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Daily Loss Limit (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.dailyLossLimit}
+                          step="0.5"
+                          onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Weekly Loss Limit (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.weeklyLossLimit}
+                          step="1"
+                          onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border">
                     <div className="flex items-center gap-2">
                       <Switch 
                         checked={mode.trailingStop}
                         onCheckedChange={(checked) => handleUpdateMode(mode.id, { trailingStop: checked })}
                       />
                       <Label className="text-xs">Trailing Stop</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={mode.breakEvenOnProfit}
+                        onCheckedChange={(checked) => handleUpdateMode(mode.id, { breakEvenOnProfit: checked })}
+                      />
+                      <Label className="text-xs">Break-Even 50%</Label>
                     </div>
                   </div>
                 </Card>
@@ -354,6 +458,7 @@ const TradingMode = () => {
                     </Button>
                   </div>
                   
+                  {/* Trading Settings */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
                       <Label className="text-xs">Leverage</Label>
@@ -381,7 +486,7 @@ const TradingMode = () => {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs">Max Position Size</Label>
+                      <Label className="text-xs">Max Position Size ($)</Label>
                       <Input 
                         type="number" 
                         value={mode.maxPositionSize}
@@ -398,7 +503,79 @@ const TradingMode = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-3 pt-3 border-t border-border">
+                  {/* Risk Management Section */}
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <p className="text-xs font-semibold text-primary mb-3 flex items-center gap-1">
+                      <Shield className="w-3 h-3" /> Risk Management
+                    </p>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Risk Per Trade (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.riskPerTrade}
+                          step="0.1"
+                          onChange={(e) => handleUpdateMode(mode.id, { riskPerTrade: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Take Profit Ratio</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.takeProfitRatio}
+                          step="0.1"
+                          onChange={(e) => handleUpdateMode(mode.id, { takeProfitRatio: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Stop Loss Ratio</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.stopLossRatio}
+                          step="0.1"
+                          onChange={(e) => handleUpdateMode(mode.id, { stopLossRatio: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Max Drawdown (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.maxDrawdown}
+                          step="1"
+                          onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Daily Loss Limit (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.dailyLossLimit}
+                          step="0.5"
+                          onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Weekly Loss Limit (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.weeklyLossLimit}
+                          step="1"
+                          onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
+                        />
+                      </div>
+                      <div className="space-y-2 col-span-2">
+                        <Label className="text-xs">Liquidation Alert (%)</Label>
+                        <Input 
+                          type="number" 
+                          value={mode.liquidationAlert}
+                          step="5"
+                          onChange={(e) => handleUpdateMode(mode.id, { liquidationAlert: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-4 gap-2 mt-3 pt-3 border-t border-border">
                     <div className="flex items-center gap-2">
                       <Switch 
                         checked={mode.trailingStop}
@@ -419,6 +596,13 @@ const TradingMode = () => {
                         onCheckedChange={(checked) => handleUpdateMode(mode.id, { hedgingEnabled: checked })}
                       />
                       <Label className="text-xs">Hedge</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Switch 
+                        checked={mode.breakEvenOnProfit}
+                        onCheckedChange={(checked) => handleUpdateMode(mode.id, { breakEvenOnProfit: checked })}
+                      />
+                      <Label className="text-xs">BE 50%</Label>
                     </div>
                   </div>
                 </Card>
