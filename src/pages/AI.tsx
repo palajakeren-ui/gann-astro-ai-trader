@@ -107,10 +107,71 @@ interface TuningResult {
   valAccuracy: number;
 }
 
+// Auto Tuning Search Methods
+const SEARCH_METHODS = [
+  { id: "grid", name: "Grid Search", description: "Exhaustive search over parameter grid" },
+  { id: "random", name: "Random Search", description: "Random sampling from parameter space" },
+  { id: "bayesian", name: "Bayesian Optimization", description: "Sequential model-based optimization" },
+  { id: "hyperband", name: "Hyperband", description: "Adaptive resource allocation" },
+];
+
+interface AutoTuneConfig {
+  searchMethod: string;
+  maxTrials: number;
+  parallelTrials: number;
+  earlyStopping: boolean;
+  minImprovement: number;
+  // Grid Search params
+  learningRateRange: [number, number];
+  learningRateSteps: number;
+  batchSizes: number[];
+  // Bayesian params
+  acquisitionFunction: string;
+  explorationRatio: number;
+  nInitialPoints: number;
+  // Hyperparameters to tune
+  tuneLearningRate: boolean;
+  tuneBatchSize: boolean;
+  tuneDropout: boolean;
+  tuneL2: boolean;
+  tuneOptimizer: boolean;
+}
+
+interface SearchResult {
+  trial: number;
+  params: Record<string, number | string>;
+  valAccuracy: number;
+  valLoss: number;
+  trainTime: number;
+  status: "completed" | "running" | "pending";
+}
+
 const AI = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [selectedModel, setSelectedModel] = useState("lstm");
   const [tuningResults, setTuningResults] = useState<TuningResult[]>([]);
+  const [isAutoTuning, setIsAutoTuning] = useState(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [bestResult, setBestResult] = useState<SearchResult | null>(null);
+  
+  const [autoTuneConfig, setAutoTuneConfig] = useState<AutoTuneConfig>({
+    searchMethod: "bayesian",
+    maxTrials: 20,
+    parallelTrials: 2,
+    earlyStopping: true,
+    minImprovement: 0.001,
+    learningRateRange: [0.0001, 0.1],
+    learningRateSteps: 5,
+    batchSizes: [16, 32, 64, 128],
+    acquisitionFunction: "ei",
+    explorationRatio: 0.15,
+    nInitialPoints: 5,
+    tuneLearningRate: true,
+    tuneBatchSize: true,
+    tuneDropout: true,
+    tuneL2: false,
+    tuneOptimizer: false,
+  });
   
   const [config, setConfig] = useState<TuningConfig>({
     optimizer: "adam",
@@ -147,6 +208,10 @@ const AI = () => {
     { id: "xgboost", name: "XGBoost Classifier", accuracy: 75.8, predictions: 1450, status: "Active" },
     { id: "rf", name: "Random Forest", accuracy: 73.2, predictions: 1120, status: "Active" },
     { id: "mlp", name: "MLP Ensemble", accuracy: 76.9, predictions: 890, status: "Training" },
+    { id: "neural_ode", name: "Neural ODE", accuracy: 80.1, predictions: 720, status: "Active" },
+    { id: "gradient_boost", name: "Gradient Boosting", accuracy: 77.4, predictions: 1380, status: "Active" },
+    { id: "lightgbm", name: "LightGBM", accuracy: 79.2, predictions: 1520, status: "Active" },
+    { id: "hybrid_meta", name: "Hybrid Meta-Model", accuracy: 84.7, predictions: 650, status: "Active" },
   ];
 
   const updateConfig = <K extends keyof TuningConfig>(key: K, value: TuningConfig[K]) => {
@@ -220,6 +285,76 @@ const AI = () => {
     toast.success("Configuration saved successfully");
   };
 
+  const updateAutoTuneConfig = <K extends keyof AutoTuneConfig>(key: K, value: AutoTuneConfig[K]) => {
+    setAutoTuneConfig(prev => ({ ...prev, [key]: value }));
+  };
+
+  const startAutoTuning = () => {
+    setIsAutoTuning(true);
+    setSearchResults([]);
+    setBestResult(null);
+    toast.info(`Starting ${SEARCH_METHODS.find(m => m.id === autoTuneConfig.searchMethod)?.name}...`);
+    
+    let trial = 0;
+    const interval = setInterval(() => {
+      trial++;
+      const lr = Math.pow(10, -1 - Math.random() * 3);
+      const batchSize = autoTuneConfig.batchSizes[Math.floor(Math.random() * autoTuneConfig.batchSizes.length)];
+      const dropout = 0.1 + Math.random() * 0.4;
+      
+      const baseAcc = 70 + Math.random() * 15;
+      const lrBonus = lr > 0.001 && lr < 0.01 ? 5 : 0;
+      const batchBonus = batchSize === 32 || batchSize === 64 ? 3 : 0;
+      const valAccuracy = Math.min(95, baseAcc + lrBonus + batchBonus + (Math.random() - 0.5) * 5);
+      const valLoss = 0.5 - (valAccuracy - 70) / 50 + Math.random() * 0.1;
+      
+      const newResult: SearchResult = {
+        trial,
+        params: {
+          learning_rate: Number(lr.toFixed(6)),
+          batch_size: batchSize,
+          dropout: Number(dropout.toFixed(3)),
+          optimizer: OPTIMIZERS[Math.floor(Math.random() * OPTIMIZERS.length)].id,
+        },
+        valAccuracy: Number(valAccuracy.toFixed(2)),
+        valLoss: Number(Math.max(0.01, valLoss).toFixed(4)),
+        trainTime: Number((5 + Math.random() * 20).toFixed(1)),
+        status: "completed",
+      };
+      
+      setSearchResults(prev => {
+        const updated = [...prev, newResult];
+        const best = updated.reduce((a, b) => a.valAccuracy > b.valAccuracy ? a : b);
+        setBestResult(best);
+        return updated;
+      });
+      
+      if (trial >= autoTuneConfig.maxTrials) {
+        clearInterval(interval);
+        setIsAutoTuning(false);
+        toast.success("Auto-tuning completed!");
+      }
+    }, 800);
+  };
+
+  const stopAutoTuning = () => {
+    setIsAutoTuning(false);
+    toast.info("Auto-tuning stopped");
+  };
+
+  const applyBestConfig = () => {
+    if (bestResult) {
+      setConfig(prev => ({
+        ...prev,
+        learningRate: bestResult.params.learning_rate as number,
+        batchSize: bestResult.params.batch_size as number,
+        dropoutRate: bestResult.params.dropout as number,
+        optimizer: bestResult.params.optimizer as string,
+      }));
+      toast.success("Best configuration applied!");
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -276,13 +411,17 @@ const AI = () => {
       </div>
 
       <Tabs defaultValue="models" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-5 md:w-auto md:inline-grid">
           <TabsTrigger value="models">Models</TabsTrigger>
           <TabsTrigger value="optimizer">
             <Settings2 className="w-3 h-3 mr-1" />
             Optimizer
           </TabsTrigger>
           <TabsTrigger value="tuning">Hyperparameter Tuning</TabsTrigger>
+          <TabsTrigger value="autotune">
+            <Target className="w-3 h-3 mr-1" />
+            Auto Tuning
+          </TabsTrigger>
           <TabsTrigger value="results">Training Results</TabsTrigger>
         </TabsList>
 
@@ -851,6 +990,323 @@ const AI = () => {
               </div>
             </Card>
           </div>
+        </TabsContent>
+
+        {/* Auto Tuning Tab */}
+        <TabsContent value="autotune" className="space-y-4 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <Target className="w-5 h-5 text-primary" />
+              Automated Hyperparameter Search
+            </h2>
+            <div className="flex gap-2">
+              <Button 
+                size="sm" 
+                onClick={isAutoTuning ? stopAutoTuning : startAutoTuning}
+                variant={isAutoTuning ? "destructive" : "default"}
+              >
+                {isAutoTuning ? (
+                  <>
+                    <Pause className="w-4 h-4 mr-1" />
+                    Stop Search
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-1" />
+                    Start Auto-Tuning
+                  </>
+                )}
+              </Button>
+              {bestResult && (
+                <Button size="sm" variant="outline" onClick={applyBestConfig}>
+                  <CheckCircle className="w-4 h-4 mr-1" />
+                  Apply Best Config
+                </Button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Search Method Configuration */}
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Cpu className="w-4 h-4 text-accent" />
+                Search Method
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Search Algorithm</Label>
+                  <Select value={autoTuneConfig.searchMethod} onValueChange={(v) => updateAutoTuneConfig("searchMethod", v)}>
+                    <SelectTrigger className="bg-secondary border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SEARCH_METHODS.map(method => (
+                        <SelectItem key={method.id} value={method.id}>
+                          <div className="flex flex-col">
+                            <span>{method.name}</span>
+                            <span className="text-xs text-muted-foreground">{method.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Max Trials</Label>
+                    <Input
+                      type="number"
+                      min={5}
+                      max={100}
+                      value={autoTuneConfig.maxTrials}
+                      onChange={(e) => updateAutoTuneConfig("maxTrials", Number(e.target.value))}
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Parallel Trials</Label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={8}
+                      value={autoTuneConfig.parallelTrials}
+                      onChange={(e) => updateAutoTuneConfig("parallelTrials", Number(e.target.value))}
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                </div>
+
+                {autoTuneConfig.searchMethod === "bayesian" && (
+                  <>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Acquisition Function</Label>
+                      <Select value={autoTuneConfig.acquisitionFunction} onValueChange={(v) => updateAutoTuneConfig("acquisitionFunction", v)}>
+                        <SelectTrigger className="bg-secondary border-border">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="ei">Expected Improvement (EI)</SelectItem>
+                          <SelectItem value="pi">Probability of Improvement (PI)</SelectItem>
+                          <SelectItem value="ucb">Upper Confidence Bound (UCB)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Exploration Ratio: {autoTuneConfig.explorationRatio}</Label>
+                      <Slider
+                        value={[autoTuneConfig.explorationRatio]}
+                        min={0.05}
+                        max={0.5}
+                        step={0.05}
+                        onValueChange={([v]) => updateAutoTuneConfig("explorationRatio", v)}
+                        className="mt-2"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-xs text-muted-foreground">Initial Random Points</Label>
+                      <Input
+                        type="number"
+                        min={3}
+                        max={20}
+                        value={autoTuneConfig.nInitialPoints}
+                        onChange={(e) => updateAutoTuneConfig("nInitialPoints", Number(e.target.value))}
+                        className="bg-secondary border-border"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {autoTuneConfig.searchMethod === "grid" && (
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Learning Rate Steps</Label>
+                    <Input
+                      type="number"
+                      min={2}
+                      max={10}
+                      value={autoTuneConfig.learningRateSteps}
+                      onChange={(e) => updateAutoTuneConfig("learningRateSteps", Number(e.target.value))}
+                      className="bg-secondary border-border"
+                    />
+                  </div>
+                )}
+              </div>
+            </Card>
+
+            {/* Parameters to Tune */}
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Layers className="w-4 h-4 text-warning" />
+                Parameters to Tune
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-foreground">Learning Rate</Label>
+                  <Switch
+                    checked={autoTuneConfig.tuneLearningRate}
+                    onCheckedChange={(v) => updateAutoTuneConfig("tuneLearningRate", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-foreground">Batch Size</Label>
+                  <Switch
+                    checked={autoTuneConfig.tuneBatchSize}
+                    onCheckedChange={(v) => updateAutoTuneConfig("tuneBatchSize", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-foreground">Dropout Rate</Label>
+                  <Switch
+                    checked={autoTuneConfig.tuneDropout}
+                    onCheckedChange={(v) => updateAutoTuneConfig("tuneDropout", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-foreground">L2 Regularization</Label>
+                  <Switch
+                    checked={autoTuneConfig.tuneL2}
+                    onCheckedChange={(v) => updateAutoTuneConfig("tuneL2", v)}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-sm text-foreground">Optimizer Type</Label>
+                  <Switch
+                    checked={autoTuneConfig.tuneOptimizer}
+                    onCheckedChange={(v) => updateAutoTuneConfig("tuneOptimizer", v)}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div>
+                    <Label className="text-sm text-foreground">Early Stopping</Label>
+                    <p className="text-xs text-muted-foreground">Stop trials early if no improvement</p>
+                  </div>
+                  <Switch
+                    checked={autoTuneConfig.earlyStopping}
+                    onCheckedChange={(v) => updateAutoTuneConfig("earlyStopping", v)}
+                  />
+                </div>
+              </div>
+            </Card>
+
+            {/* Best Configuration Found */}
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-success" />
+                Best Configuration
+              </h3>
+              {bestResult ? (
+                <div className="space-y-3">
+                  <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="text-sm font-semibold text-success">Trial #{bestResult.trial}</span>
+                      <Badge className="bg-success">{bestResult.valAccuracy}% Acc</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">Val Loss: {bestResult.valLoss}</p>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    {Object.entries(bestResult.params).map(([key, value]) => (
+                      <div key={key} className="flex justify-between">
+                        <span className="text-muted-foreground">{key}:</span>
+                        <span className="font-mono text-foreground">{String(value)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Button className="w-full mt-2" size="sm" onClick={applyBestConfig}>
+                    Apply to Training Config
+                  </Button>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Target className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No results yet</p>
+                  <p className="text-xs">Start auto-tuning to find optimal parameters</p>
+                </div>
+              )}
+            </Card>
+          </div>
+
+          {/* Search Results Table */}
+          {searchResults.length > 0 && (
+            <Card className="p-4 border-border bg-card">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-semibold text-foreground flex items-center gap-2">
+                  <Activity className="w-4 h-4 text-primary" />
+                  Search Results ({searchResults.length}/{autoTuneConfig.maxTrials} trials)
+                </h3>
+                {isAutoTuning && (
+                  <Badge variant="outline" className="animate-pulse border-warning text-warning">
+                    Searching...
+                  </Badge>
+                )}
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Trial</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Learning Rate</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Batch Size</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Dropout</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Optimizer</th>
+                      <th className="text-right py-2 px-2 text-muted-foreground font-medium">Val Acc</th>
+                      <th className="text-right py-2 px-2 text-muted-foreground font-medium">Val Loss</th>
+                      <th className="text-right py-2 px-2 text-muted-foreground font-medium">Time (s)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {searchResults.slice().reverse().slice(0, 10).map((result) => (
+                      <tr 
+                        key={result.trial} 
+                        className={`border-b border-border/50 ${bestResult?.trial === result.trial ? "bg-success/10" : ""}`}
+                      >
+                        <td className="py-2 px-2 font-mono">
+                          #{result.trial}
+                          {bestResult?.trial === result.trial && <span className="ml-1 text-success">★</span>}
+                        </td>
+                        <td className="py-2 px-2 font-mono">{result.params.learning_rate}</td>
+                        <td className="py-2 px-2 font-mono">{result.params.batch_size}</td>
+                        <td className="py-2 px-2 font-mono">{result.params.dropout}</td>
+                        <td className="py-2 px-2 font-mono text-xs">{result.params.optimizer}</td>
+                        <td className="py-2 px-2 text-right font-mono text-success">{result.valAccuracy}%</td>
+                        <td className="py-2 px-2 text-right font-mono">{result.valLoss}</td>
+                        <td className="py-2 px-2 text-right font-mono text-muted-foreground">{result.trainTime}s</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              {searchResults.length > 10 && (
+                <p className="text-xs text-muted-foreground mt-2 text-center">
+                  Showing latest 10 of {searchResults.length} trials
+                </p>
+              )}
+            </Card>
+          )}
+
+          {/* Convergence Chart */}
+          {searchResults.length > 2 && (
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4">Search Convergence</h3>
+              <div className="h-[250px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={searchResults.map((r, idx) => ({
+                    trial: r.trial,
+                    valAccuracy: r.valAccuracy,
+                    bestSoFar: Math.max(...searchResults.slice(0, idx + 1).map(x => x.valAccuracy)),
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" opacity={0.3} />
+                    <XAxis dataKey="trial" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 10 }} domain={['dataMin - 2', 'dataMax + 2']} />
+                    <Tooltip contentStyle={{ backgroundColor: "hsl(var(--card))", border: "1px solid hsl(var(--border))" }} />
+                    <Line type="monotone" dataKey="valAccuracy" stroke="hsl(var(--muted-foreground))" strokeWidth={1} dot={{ r: 3 }} name="Trial Accuracy" />
+                    <Line type="stepAfter" dataKey="bestSoFar" stroke="hsl(var(--success))" strokeWidth={2} dot={false} name="Best So Far" />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Training Results Tab */}
