@@ -6,8 +6,8 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight, Plus, Trash2, Wifi, WifiOff, RefreshCw, Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
-import { useState, useRef } from "react";
+import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight, Plus, Trash2, Wifi, WifiOff, RefreshCw, Loader2, CheckCircle2, XCircle, AlertCircle, RotateCcw, Timer, Zap } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { tradingInstruments as instrumentsData, InstrumentCategory, Instrument } from "@/data/tradingInstruments";
 import AlertAPISettings from "@/components/settings/AlertAPISettings";
@@ -50,7 +50,32 @@ const createInitialWeights = (): TimeframeWeights => {
   }, {} as TimeframeWeights);
 };
 
-// Instruments data is now imported from @/data/tradingInstruments
+// MetaTrader Account Type
+interface MTAccount {
+  id: string;
+  name: string;
+  server: string;
+  login: string;
+  password: string;
+  accountType: 'demo' | 'real';
+  broker: string;
+  timeout: number;
+  enabled: boolean;
+}
+
+// Exchange Account Type
+interface ExchangeAccount {
+  id: string;
+  name: string;
+  exchange: string;
+  type: 'spot' | 'futures';
+  apiKey: string;
+  apiSecret: string;
+  passphrase?: string;
+  endpoint?: string;
+  testnet: boolean;
+  enabled: boolean;
+}
 
 const Settings = () => {
   const [tfWeights, setTfWeights] = useState<TimeframeWeights>(() => createInitialWeights());
@@ -71,6 +96,20 @@ const Settings = () => {
   // Custom instrument input states
   const [newInstrument, setNewInstrument] = useState({ symbol: "", name: "", category: "" });
   const [customInstrumentCategory, setCustomInstrumentCategory] = useState<InstrumentCategory>("forex");
+
+  // Multi-account MetaTrader states
+  const [mt4Accounts, setMt4Accounts] = useState<MTAccount[]>([
+    { id: 'mt4-1', name: 'Main MT4 Account', server: '', login: '', password: '', accountType: 'demo', broker: '', timeout: 30000, enabled: false }
+  ]);
+  const [mt5Accounts, setMt5Accounts] = useState<MTAccount[]>([
+    { id: 'mt5-1', name: 'Main MT5 Account', server: '', login: '', password: '', accountType: 'demo', broker: '', timeout: 30000, enabled: true }
+  ]);
+
+  // Multi-account Exchange states
+  const [exchangeAccounts, setExchangeAccounts] = useState<ExchangeAccount[]>([
+    { id: 'binance-spot-1', name: 'Binance Spot Main', exchange: 'Binance', type: 'spot', apiKey: '', apiSecret: '', endpoint: 'https://api.binance.com', testnet: false, enabled: true },
+    { id: 'binance-futures-1', name: 'Binance Futures Main', exchange: 'Binance', type: 'futures', apiKey: '', apiSecret: '', endpoint: 'https://fapi.binance.com', testnet: false, enabled: true },
+  ]);
 
   const toggleCategory = (category: string) => {
     setOpenCategories(prev => ({ ...prev, [category]: !prev[category] }));
@@ -118,27 +157,9 @@ const Settings = () => {
       exportDate: new Date().toISOString(),
       tfWeights,
       instruments,
-      brokerConfigs: {
-        mt5: { enabled: true },
-        binanceSpot: { enabled: true },
-        binanceFutures: { enabled: true },
-        bybit: { enabled: false },
-        okx: { enabled: false },
-        kucoin: { enabled: false },
-        kraken: { enabled: false },
-        coinbase: { enabled: false },
-        gateio: { enabled: false },
-        bitget: { enabled: false },
-        mexc: { enabled: false },
-        htx: { enabled: false },
-        bitfinex: { enabled: false },
-        gemini: { enabled: false },
-        bitstamp: { enabled: false },
-        cryptocom: { enabled: false },
-        deribit: { enabled: false },
-        phemex: { enabled: false },
-        bingx: { enabled: false },
-      }
+      mt4Accounts: mt4Accounts.map(a => ({ ...a, password: '', apiSecret: '' })),
+      mt5Accounts: mt5Accounts.map(a => ({ ...a, password: '', apiSecret: '' })),
+      exchangeAccounts: exchangeAccounts.map(a => ({ ...a, apiKey: '', apiSecret: '', passphrase: '' })),
     };
     
     const blob = new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" });
@@ -195,6 +216,89 @@ const Settings = () => {
         idx === strategyIdx ? { ...s, weight: newWeight } : s
       ) || []
     }));
+  };
+
+  // MT Account Management
+  const addMTAccount = (type: 'mt4' | 'mt5') => {
+    const newAccount: MTAccount = {
+      id: `${type}-${Date.now()}`,
+      name: `New ${type.toUpperCase()} Account`,
+      server: '',
+      login: '',
+      password: '',
+      accountType: 'demo',
+      broker: '',
+      timeout: 30000,
+      enabled: false
+    };
+    if (type === 'mt4') {
+      setMt4Accounts(prev => [...prev, newAccount]);
+    } else {
+      setMt5Accounts(prev => [...prev, newAccount]);
+    }
+    toast.success(`New ${type.toUpperCase()} account added`);
+  };
+
+  const removeMTAccount = (type: 'mt4' | 'mt5', id: string) => {
+    if (type === 'mt4') {
+      setMt4Accounts(prev => prev.filter(a => a.id !== id));
+    } else {
+      setMt5Accounts(prev => prev.filter(a => a.id !== id));
+    }
+    toast.success('Account removed');
+  };
+
+  const updateMTAccount = (type: 'mt4' | 'mt5', id: string, updates: Partial<MTAccount>) => {
+    if (type === 'mt4') {
+      setMt4Accounts(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    } else {
+      setMt5Accounts(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
+    }
+  };
+
+  // Exchange Account Management
+  const addExchangeAccount = (exchange: string, type: 'spot' | 'futures') => {
+    const exchangeDefaults: Record<string, { endpoint?: string, hasPassphrase?: boolean }> = {
+      'Binance': { endpoint: type === 'spot' ? 'https://api.binance.com' : 'https://fapi.binance.com' },
+      'Bybit': { endpoint: 'https://api.bybit.com' },
+      'OKX': { endpoint: 'https://www.okx.com', hasPassphrase: true },
+      'KuCoin': { endpoint: 'https://api.kucoin.com', hasPassphrase: true },
+      'Gate.io': { endpoint: 'https://api.gateio.ws' },
+      'Bitget': { endpoint: 'https://api.bitget.com', hasPassphrase: true },
+      'MEXC': { endpoint: 'https://api.mexc.com' },
+      'Kraken': { endpoint: 'https://api.kraken.com' },
+      'Coinbase': { endpoint: 'https://api.coinbase.com' },
+      'HTX': { endpoint: 'https://api.huobi.pro' },
+      'Crypto.com': { endpoint: 'https://api.crypto.com' },
+      'BingX': { endpoint: 'https://open-api.bingx.com' },
+      'Deribit': { endpoint: 'https://www.deribit.com' },
+      'Phemex': { endpoint: 'https://api.phemex.com' },
+    };
+
+    const defaults = exchangeDefaults[exchange] || {};
+    const newAccount: ExchangeAccount = {
+      id: `${exchange.toLowerCase()}-${type}-${Date.now()}`,
+      name: `${exchange} ${type.charAt(0).toUpperCase() + type.slice(1)} Account`,
+      exchange,
+      type,
+      apiKey: '',
+      apiSecret: '',
+      passphrase: defaults.hasPassphrase ? '' : undefined,
+      endpoint: defaults.endpoint,
+      testnet: false,
+      enabled: false
+    };
+    setExchangeAccounts(prev => [...prev, newAccount]);
+    toast.success(`New ${exchange} ${type} account added`);
+  };
+
+  const removeExchangeAccount = (id: string) => {
+    setExchangeAccounts(prev => prev.filter(a => a.id !== id));
+    toast.success('Account removed');
+  };
+
+  const updateExchangeAccount = (id: string, updates: Partial<ExchangeAccount>) => {
+    setExchangeAccounts(prev => prev.map(a => a.id === id ? { ...a, ...updates } : a));
   };
 
   return (
@@ -285,7 +389,6 @@ const Settings = () => {
             </div>
           </div>
         </Card>
-
       </div>
 
       {/* Alert API Settings */}
@@ -313,11 +416,11 @@ const Settings = () => {
         </div>
       </Card>
 
-      {/* Crypto Exchange API Configuration - Spot & Futures Separated */}
+      {/* Multi-Account Crypto Exchange Configuration */}
       <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Crypto Exchange API Configuration</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-4">Crypto Exchange Accounts</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Configure Spot and Futures API keys separately for each exchange
+          Manage multiple accounts per exchange for Spot and Futures trading
         </p>
         
         <Tabs defaultValue="spot" className="w-full">
@@ -326,893 +429,488 @@ const Settings = () => {
             <TabsTrigger value="futures" className="text-sm">Futures Trading</TabsTrigger>
           </TabsList>
 
-          {/* SPOT TRADING TAB */}
           <TabsContent value="spot" className="space-y-4">
             <div className="p-3 rounded bg-primary/10 border border-primary/20 mb-4">
-              <span className="text-sm font-semibold text-primary">Spot Trading APIs</span>
-              <p className="text-xs text-muted-foreground mt-1">Configure API credentials for spot/margin trading</p>
+              <span className="text-sm font-semibold text-primary">Spot Trading Accounts</span>
+              <p className="text-xs text-muted-foreground mt-1">Configure multiple accounts for spot/margin trading</p>
             </div>
 
-            {/* Binance Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟡</span>
-                  <span className="font-semibold text-foreground">Binance Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
+            {exchangeAccounts.filter(a => a.type === 'spot').map(account => (
+              <Collapsible key={account.id}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">💰</span>
+                    <div className="text-left">
+                      <span className="font-semibold text-foreground">{account.name}</span>
+                      <p className="text-xs text-muted-foreground">{account.exchange}</p>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
+                  <div className="flex items-center gap-2">
+                    {account.enabled && <Badge className="bg-success text-success-foreground">Active</Badge>}
+                    <Badge variant="outline">Spot</Badge>
+                    <ChevronDown className="w-4 h-4" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Endpoint</Label>
-                    <Input defaultValue="https://api.binance.com" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Account Name</Label>
+                      <Input 
+                        value={account.name}
+                        onChange={(e) => updateExchangeAccount(account.id, { name: e.target.value })}
+                        placeholder="Account Name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>API Key</Label>
+                      <Input 
+                        type="password" 
+                        value={account.apiKey}
+                        onChange={(e) => updateExchangeAccount(account.id, { apiKey: e.target.value })}
+                        placeholder="Enter API Key" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>API Secret</Label>
+                      <Input 
+                        type="password" 
+                        value={account.apiSecret}
+                        onChange={(e) => updateExchangeAccount(account.id, { apiSecret: e.target.value })}
+                        placeholder="Enter API Secret" 
+                      />
+                    </div>
+                    {account.passphrase !== undefined && (
+                      <div className="space-y-2">
+                        <Label>Passphrase</Label>
+                        <Input 
+                          type="password" 
+                          value={account.passphrase}
+                          onChange={(e) => updateExchangeAccount(account.id, { passphrase: e.target.value })}
+                          placeholder="Enter Passphrase" 
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label>Endpoint</Label>
+                      <Input 
+                        value={account.endpoint}
+                        onChange={(e) => updateExchangeAccount(account.id, { endpoint: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-center gap-4 pt-6">
+                      <Switch 
+                        id={`${account.id}-testnet`}
+                        checked={account.testnet}
+                        onCheckedChange={(checked) => updateExchangeAccount(account.id, { testnet: checked })}
+                      />
+                      <Label htmlFor={`${account.id}-testnet`}>Testnet</Label>
+                      <Switch 
+                        id={`${account.id}-enabled`}
+                        checked={account.enabled}
+                        onCheckedChange={(checked) => updateExchangeAccount(account.id, { enabled: checked })}
+                      />
+                      <Label htmlFor={`${account.id}-enabled`}>Enabled</Label>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="binance-spot-testnet" />
-                    <Label htmlFor="binance-spot-testnet">Testnet</Label>
-                    <Switch id="binance-spot-enabled" defaultChecked />
-                    <Label htmlFor="binance-spot-enabled">Enabled</Label>
+                  <div className="mt-4 pt-4 border-t border-border flex justify-end">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeExchangeAccount(account.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Remove Account
+                    </Button>
                   </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
 
-            {/* Bybit Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟠</span>
-                  <span className="font-semibold text-foreground">Bybit Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Endpoint</Label>
-                    <Input defaultValue="https://api.bybit.com" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="bybit-spot-testnet" />
-                    <Label htmlFor="bybit-spot-testnet">Testnet</Label>
-                    <Switch id="bybit-spot-enabled" />
-                    <Label htmlFor="bybit-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* OKX Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">⚫</span>
-                  <span className="font-semibold text-foreground">OKX Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Passphrase</Label>
-                    <Input type="password" placeholder="Enter Passphrase" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="okx-spot-enabled" />
-                    <Label htmlFor="okx-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* KuCoin Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟢</span>
-                  <span className="font-semibold text-foreground">KuCoin Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Passphrase</Label>
-                    <Input type="password" placeholder="Enter Passphrase" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="kucoin-spot-enabled" />
-                    <Label htmlFor="kucoin-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Gate.io Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🔴</span>
-                  <span className="font-semibold text-foreground">Gate.io Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="gateio-spot-enabled" />
-                    <Label htmlFor="gateio-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Bitget Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟦</span>
-                  <span className="font-semibold text-foreground">Bitget Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Passphrase</Label>
-                    <Input type="password" placeholder="Enter Passphrase" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="bitget-spot-enabled" />
-                    <Label htmlFor="bitget-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* MEXC Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">💙</span>
-                  <span className="font-semibold text-foreground">MEXC Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="mexc-spot-enabled" />
-                    <Label htmlFor="mexc-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Kraken Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟣</span>
-                  <span className="font-semibold text-foreground">Kraken Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="kraken-spot-enabled" />
-                    <Label htmlFor="kraken-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Coinbase Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🔵</span>
-                  <span className="font-semibold text-foreground">Coinbase Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="coinbase-spot-sandbox" />
-                    <Label htmlFor="coinbase-spot-sandbox">Sandbox</Label>
-                    <Switch id="coinbase-spot-enabled" />
-                    <Label htmlFor="coinbase-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* HTX Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🔷</span>
-                  <span className="font-semibold text-foreground">HTX (Huobi) Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="htx-spot-enabled" />
-                    <Label htmlFor="htx-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Crypto.com Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">💎</span>
-                  <span className="font-semibold text-foreground">Crypto.com Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="cryptocom-spot-enabled" />
-                    <Label htmlFor="cryptocom-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* BingX Spot */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🌐</span>
-                  <span className="font-semibold text-foreground">BingX Spot</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">Spot</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Spot API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Spot API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="bingx-spot-enabled" />
-                    <Label htmlFor="bingx-spot-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            <div className="flex flex-wrap gap-2 pt-4">
+              {['Binance', 'Bybit', 'OKX', 'KuCoin', 'Gate.io', 'Bitget', 'MEXC', 'Kraken', 'Coinbase', 'HTX', 'Crypto.com', 'BingX'].map(exchange => (
+                <Button 
+                  key={exchange}
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => addExchangeAccount(exchange, 'spot')}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  {exchange}
+                </Button>
+              ))}
+            </div>
           </TabsContent>
 
-          {/* FUTURES TRADING TAB */}
           <TabsContent value="futures" className="space-y-4">
             <div className="p-3 rounded bg-warning/10 border border-warning/20 mb-4">
-              <span className="text-sm font-semibold text-warning">Futures/Derivatives Trading APIs</span>
-              <p className="text-xs text-muted-foreground mt-1">Configure API credentials for perpetual & futures contracts</p>
+              <span className="text-sm font-semibold text-warning">Futures/Derivatives Trading Accounts</span>
+              <p className="text-xs text-muted-foreground mt-1">Configure multiple accounts for perpetual & futures contracts</p>
             </div>
 
-            {/* Binance Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟡</span>
-                  <span className="font-semibold text-foreground">Binance Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
+            {exchangeAccounts.filter(a => a.type === 'futures').map(account => (
+              <Collapsible key={account.id}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">📈</span>
+                    <div className="text-left">
+                      <span className="font-semibold text-foreground">{account.name}</span>
+                      <p className="text-xs text-muted-foreground">{account.exchange}</p>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
+                  <div className="flex items-center gap-2">
+                    {account.enabled && <Badge className="bg-success text-success-foreground">Active</Badge>}
+                    <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
+                    <ChevronDown className="w-4 h-4" />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Endpoint</Label>
-                    <Input defaultValue="https://fapi.binance.com" />
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Account Name</Label>
+                      <Input 
+                        value={account.name}
+                        onChange={(e) => updateExchangeAccount(account.id, { name: e.target.value })}
+                        placeholder="Account Name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>API Key</Label>
+                      <Input 
+                        type="password" 
+                        value={account.apiKey}
+                        onChange={(e) => updateExchangeAccount(account.id, { apiKey: e.target.value })}
+                        placeholder="Enter API Key" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>API Secret</Label>
+                      <Input 
+                        type="password" 
+                        value={account.apiSecret}
+                        onChange={(e) => updateExchangeAccount(account.id, { apiSecret: e.target.value })}
+                        placeholder="Enter API Secret" 
+                      />
+                    </div>
+                    {account.passphrase !== undefined && (
+                      <div className="space-y-2">
+                        <Label>Passphrase</Label>
+                        <Input 
+                          type="password" 
+                          value={account.passphrase}
+                          onChange={(e) => updateExchangeAccount(account.id, { passphrase: e.target.value })}
+                          placeholder="Enter Passphrase" 
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-2">
+                      <Label>Endpoint</Label>
+                      <Input 
+                        value={account.endpoint}
+                        onChange={(e) => updateExchangeAccount(account.id, { endpoint: e.target.value })}
+                      />
+                    </div>
+                    <div className="flex items-center gap-4 pt-6">
+                      <Switch 
+                        id={`${account.id}-testnet`}
+                        checked={account.testnet}
+                        onCheckedChange={(checked) => updateExchangeAccount(account.id, { testnet: checked })}
+                      />
+                      <Label htmlFor={`${account.id}-testnet`}>Testnet</Label>
+                      <Switch 
+                        id={`${account.id}-enabled`}
+                        checked={account.enabled}
+                        onCheckedChange={(checked) => updateExchangeAccount(account.id, { enabled: checked })}
+                      />
+                      <Label htmlFor={`${account.id}-enabled`}>Enabled</Label>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="binance-futures-testnet" />
-                    <Label htmlFor="binance-futures-testnet">Testnet</Label>
-                    <Switch id="binance-futures-enabled" defaultChecked />
-                    <Label htmlFor="binance-futures-enabled">Enabled</Label>
+                  <div className="mt-4 pt-4 border-t border-border flex justify-end">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeExchangeAccount(account.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Remove Account
+                    </Button>
                   </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
 
-            {/* Bybit Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟠</span>
-                  <span className="font-semibold text-foreground">Bybit Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Endpoint</Label>
-                    <Input defaultValue="https://api.bybit.com" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="bybit-futures-testnet" />
-                    <Label htmlFor="bybit-futures-testnet">Testnet</Label>
-                    <Switch id="bybit-futures-enabled" />
-                    <Label htmlFor="bybit-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* OKX Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">⚫</span>
-                  <span className="font-semibold text-foreground">OKX Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Passphrase</Label>
-                    <Input type="password" placeholder="Enter Passphrase" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="okx-futures-enabled" />
-                    <Label htmlFor="okx-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* KuCoin Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟢</span>
-                  <span className="font-semibold text-foreground">KuCoin Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Passphrase</Label>
-                    <Input type="password" placeholder="Enter Passphrase" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="kucoin-futures-enabled" />
-                    <Label htmlFor="kucoin-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Gate.io Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🔴</span>
-                  <span className="font-semibold text-foreground">Gate.io Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="gateio-futures-enabled" />
-                    <Label htmlFor="gateio-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Bitget Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟦</span>
-                  <span className="font-semibold text-foreground">Bitget Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Passphrase</Label>
-                    <Input type="password" placeholder="Enter Passphrase" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="bitget-futures-enabled" />
-                    <Label htmlFor="bitget-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* MEXC Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">💙</span>
-                  <span className="font-semibold text-foreground">MEXC Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="mexc-futures-enabled" />
-                    <Label htmlFor="mexc-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Kraken Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🟣</span>
-                  <span className="font-semibold text-foreground">Kraken Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="kraken-futures-enabled" />
-                    <Label htmlFor="kraken-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Deribit */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">📊</span>
-                  <span className="font-semibold text-foreground">Deribit</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Derivatives</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>Client ID</Label>
-                    <Input type="password" placeholder="Enter Client ID" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Client Secret</Label>
-                    <Input type="password" placeholder="Enter Client Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="deribit-testnet" />
-                    <Label htmlFor="deribit-testnet">Testnet</Label>
-                    <Switch id="deribit-enabled" />
-                    <Label htmlFor="deribit-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* Phemex Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">⚡</span>
-                  <span className="font-semibold text-foreground">Phemex Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="phemex-futures-testnet" />
-                    <Label htmlFor="phemex-futures-testnet">Testnet</Label>
-                    <Switch id="phemex-futures-enabled" />
-                    <Label htmlFor="phemex-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
-
-            {/* BingX Futures */}
-            <Collapsible>
-              <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                <div className="flex items-center gap-3">
-                  <span className="text-xl">🌐</span>
-                  <span className="font-semibold text-foreground">BingX Futures</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="border-warning text-warning">Futures</Badge>
-                  <ChevronDown className="w-4 h-4" />
-                </div>
-              </CollapsibleTrigger>
-              <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label>API Key</Label>
-                    <Input type="password" placeholder="Enter Futures API Key" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>API Secret</Label>
-                    <Input type="password" placeholder="Enter Futures API Secret" />
-                  </div>
-                  <div className="flex items-center gap-4 pt-6">
-                    <Switch id="bingx-futures-demo" />
-                    <Label htmlFor="bingx-futures-demo">Demo</Label>
-                    <Switch id="bingx-futures-enabled" />
-                    <Label htmlFor="bingx-futures-enabled">Enabled</Label>
-                  </div>
-                </div>
-              </CollapsibleContent>
-            </Collapsible>
+            <div className="flex flex-wrap gap-2 pt-4">
+              {['Binance', 'Bybit', 'OKX', 'KuCoin', 'Bitget', 'MEXC', 'Kraken', 'BingX', 'Deribit', 'Phemex'].map(exchange => (
+                <Button 
+                  key={exchange}
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => addExchangeAccount(exchange, 'futures')}
+                >
+                  <Plus className="w-4 h-4 mr-1" />
+                  {exchange}
+                </Button>
+              ))}
+            </div>
           </TabsContent>
         </Tabs>
       </Card>
 
-      {/* MetaTrader Configuration - MT4 & MT5 */}
+      {/* Multi-Account MetaTrader Configuration */}
       <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">MetaTrader Configuration</h2>
+        <h2 className="text-xl font-semibold text-foreground mb-4">MetaTrader Accounts</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Configure MetaTrader 4 and MetaTrader 5 accounts manually
+          Configure multiple MetaTrader 4 and MetaTrader 5 accounts
         </p>
         
         <Tabs defaultValue="mt5" className="w-full">
           <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="mt4" className="text-sm">MetaTrader 4</TabsTrigger>
-            <TabsTrigger value="mt5" className="text-sm">MetaTrader 5</TabsTrigger>
+            <TabsTrigger value="mt4" className="text-sm">MetaTrader 4 ({mt4Accounts.length})</TabsTrigger>
+            <TabsTrigger value="mt5" className="text-sm">MetaTrader 5 ({mt5Accounts.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="mt4" className="space-y-4">
             <div className="p-3 rounded bg-blue-500/10 border border-blue-500/20 mb-4">
-              <span className="text-sm font-semibold text-blue-400">MetaTrader 4</span>
+              <span className="text-sm font-semibold text-blue-400">MetaTrader 4 Accounts</span>
               <p className="text-xs text-muted-foreground mt-1">Legacy platform - widely supported by brokers</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="mt4-server" className="text-foreground">Server Address</Label>
-                <Input id="mt4-server" placeholder="broker-mt4.server.com:443" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt4-login" className="text-foreground">Login ID</Label>
-                <Input id="mt4-login" type="number" placeholder="12345678" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt4-password" className="text-foreground">Password</Label>
-                <Input id="mt4-password" type="password" placeholder="••••••••" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt4-account" className="text-foreground">Account Type</Label>
-                <select id="mt4-account" className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="demo">Demo</option>
-                  <option value="real">Real</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt4-broker" className="text-foreground">Broker Name</Label>
-                <Input id="mt4-broker" placeholder="e.g., IC Markets, FXCM" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt4-timeout" className="text-foreground">Connection Timeout (ms)</Label>
-                <Input id="mt4-timeout" type="number" placeholder="30000" defaultValue="30000" />
-              </div>
-            </div>
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-              <Label htmlFor="mt4-enabled" className="text-foreground">Enable MetaTrader 4</Label>
-              <Switch id="mt4-enabled" />
-            </div>
+
+            {mt4Accounts.map(account => (
+              <Collapsible key={account.id}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">📊</span>
+                    <div className="text-left">
+                      <span className="font-semibold text-foreground">{account.name}</span>
+                      <p className="text-xs text-muted-foreground">{account.broker || 'No broker set'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {account.enabled && <Badge className="bg-success text-success-foreground">Active</Badge>}
+                    <Badge variant="outline" className="border-blue-400 text-blue-400">{account.accountType}</Badge>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Account Name</Label>
+                      <Input 
+                        value={account.name}
+                        onChange={(e) => updateMTAccount('mt4', account.id, { name: e.target.value })}
+                        placeholder="Account Name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Server Address</Label>
+                      <Input 
+                        value={account.server}
+                        onChange={(e) => updateMTAccount('mt4', account.id, { server: e.target.value })}
+                        placeholder="broker-mt4.server.com:443" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Login ID</Label>
+                      <Input 
+                        type="number"
+                        value={account.login}
+                        onChange={(e) => updateMTAccount('mt4', account.id, { login: e.target.value })}
+                        placeholder="12345678" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Password</Label>
+                      <Input 
+                        type="password"
+                        value={account.password}
+                        onChange={(e) => updateMTAccount('mt4', account.id, { password: e.target.value })}
+                        placeholder="••••••••" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Account Type</Label>
+                      <select 
+                        className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm"
+                        value={account.accountType}
+                        onChange={(e) => updateMTAccount('mt4', account.id, { accountType: e.target.value as 'demo' | 'real' })}
+                      >
+                        <option value="demo">Demo</option>
+                        <option value="real">Real</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Broker Name</Label>
+                      <Input 
+                        value={account.broker}
+                        onChange={(e) => updateMTAccount('mt4', account.id, { broker: e.target.value })}
+                        placeholder="e.g., IC Markets, FXCM" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Connection Timeout (ms)</Label>
+                      <Input 
+                        type="number"
+                        value={account.timeout}
+                        onChange={(e) => updateMTAccount('mt4', account.id, { timeout: parseInt(e.target.value) || 30000 })}
+                        placeholder="30000" 
+                      />
+                    </div>
+                    <div className="flex items-center gap-4 pt-6">
+                      <Switch 
+                        id={`${account.id}-enabled`}
+                        checked={account.enabled}
+                        onCheckedChange={(checked) => updateMTAccount('mt4', account.id, { enabled: checked })}
+                      />
+                      <Label htmlFor={`${account.id}-enabled`}>Enabled</Label>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border flex justify-end">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeMTAccount('mt4', account.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Remove Account
+                    </Button>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+
+            <Button variant="outline" onClick={() => addMTAccount('mt4')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add MT4 Account
+            </Button>
           </TabsContent>
 
           <TabsContent value="mt5" className="space-y-4">
             <div className="p-3 rounded bg-purple-500/10 border border-purple-500/20 mb-4">
-              <span className="text-sm font-semibold text-purple-400">MetaTrader 5</span>
+              <span className="text-sm font-semibold text-purple-400">MetaTrader 5 Accounts</span>
               <p className="text-xs text-muted-foreground mt-1">Modern platform with multi-asset support</p>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="mt5-server" className="text-foreground">Server Address</Label>
-                <Input id="mt5-server" placeholder="broker-mt5.server.com:443" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-login" className="text-foreground">Login ID</Label>
-                <Input id="mt5-login" type="number" placeholder="12345678" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-password" className="text-foreground">Password</Label>
-                <Input id="mt5-password" type="password" placeholder="••••••••" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-account" className="text-foreground">Account Type</Label>
-                <select id="mt5-account" className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
-                  <option value="demo">Demo</option>
-                  <option value="real">Real</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-broker" className="text-foreground">Broker Name</Label>
-                <Input id="mt5-broker" placeholder="e.g., Pepperstone, XM" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="mt5-timeout" className="text-foreground">Connection Timeout (ms)</Label>
-                <Input id="mt5-timeout" type="number" placeholder="30000" defaultValue="30000" />
-              </div>
-            </div>
-            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-              <Label htmlFor="mt5-enabled" className="text-foreground">Enable MetaTrader 5</Label>
-              <Switch id="mt5-enabled" defaultChecked />
-            </div>
+
+            {mt5Accounts.map(account => (
+              <Collapsible key={account.id}>
+                <CollapsibleTrigger className="flex items-center justify-between w-full p-4 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <span className="text-xl">📈</span>
+                    <div className="text-left">
+                      <span className="font-semibold text-foreground">{account.name}</span>
+                      <p className="text-xs text-muted-foreground">{account.broker || 'No broker set'}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {account.enabled && <Badge className="bg-success text-success-foreground">Active</Badge>}
+                    <Badge variant="outline" className="border-purple-400 text-purple-400">{account.accountType}</Badge>
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="p-4 border border-t-0 border-border rounded-b-lg">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Account Name</Label>
+                      <Input 
+                        value={account.name}
+                        onChange={(e) => updateMTAccount('mt5', account.id, { name: e.target.value })}
+                        placeholder="Account Name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Server Address</Label>
+                      <Input 
+                        value={account.server}
+                        onChange={(e) => updateMTAccount('mt5', account.id, { server: e.target.value })}
+                        placeholder="broker-mt5.server.com:443" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Login ID</Label>
+                      <Input 
+                        type="number"
+                        value={account.login}
+                        onChange={(e) => updateMTAccount('mt5', account.id, { login: e.target.value })}
+                        placeholder="12345678" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Password</Label>
+                      <Input 
+                        type="password"
+                        value={account.password}
+                        onChange={(e) => updateMTAccount('mt5', account.id, { password: e.target.value })}
+                        placeholder="••••••••" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Account Type</Label>
+                      <select 
+                        className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm"
+                        value={account.accountType}
+                        onChange={(e) => updateMTAccount('mt5', account.id, { accountType: e.target.value as 'demo' | 'real' })}
+                      >
+                        <option value="demo">Demo</option>
+                        <option value="real">Real</option>
+                      </select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Broker Name</Label>
+                      <Input 
+                        value={account.broker}
+                        onChange={(e) => updateMTAccount('mt5', account.id, { broker: e.target.value })}
+                        placeholder="e.g., Pepperstone, XM" 
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Connection Timeout (ms)</Label>
+                      <Input 
+                        type="number"
+                        value={account.timeout}
+                        onChange={(e) => updateMTAccount('mt5', account.id, { timeout: parseInt(e.target.value) || 30000 })}
+                        placeholder="30000" 
+                      />
+                    </div>
+                    <div className="flex items-center gap-4 pt-6">
+                      <Switch 
+                        id={`${account.id}-enabled`}
+                        checked={account.enabled}
+                        onCheckedChange={(checked) => updateMTAccount('mt5', account.id, { enabled: checked })}
+                      />
+                      <Label htmlFor={`${account.id}-enabled`}>Enabled</Label>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-border flex justify-end">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => removeMTAccount('mt5', account.id)}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Remove Account
+                    </Button>
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            ))}
+
+            <Button variant="outline" onClick={() => addMTAccount('mt5')}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add MT5 Account
+            </Button>
           </TabsContent>
         </Tabs>
       </Card>
 
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">FIX Protocol Connector</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="fix-host" className="text-foreground">FIX Gateway Host</Label>
-            <Input id="fix-host" placeholder="fix.broker.com" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fix-port" className="text-foreground">Port</Label>
-            <Input id="fix-port" type="number" placeholder="9876" defaultValue="9876" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fix-sender" className="text-foreground">Sender Comp ID</Label>
-            <Input id="fix-sender" placeholder="SENDER_ID" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="fix-target" className="text-foreground">Target Comp ID</Label>
-            <Input id="fix-target" placeholder="TARGET_ID" />
-          </div>
-        </div>
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-          <Label htmlFor="fix-enabled" className="text-foreground">Enable FIX Connector</Label>
-          <Switch id="fix-enabled" />
-        </div>
+        <FixConnectorManager />
       </Card>
 
-      {/* Real-Time Connection Status */}
-      <ConnectionStatusPanel />
+      {/* Real-Time Connection Status with Auto-Reconnect */}
+      <ConnectionStatusPanel 
+        mt4Accounts={mt4Accounts}
+        mt5Accounts={mt5Accounts}
+        exchangeAccounts={exchangeAccounts}
+      />
 
       {/* Add Custom Instrument */}
       <Card className="p-6 border-border bg-card">
@@ -1238,165 +936,108 @@ const Settings = () => {
             </select>
           </div>
           <div className="space-y-2">
-            <Label className="text-foreground">Symbol *</Label>
+            <Label className="text-foreground">Symbol</Label>
             <Input
               placeholder="e.g., BTCUSDT"
               value={newInstrument.symbol}
-              onChange={(e) => setNewInstrument(prev => ({ ...prev, symbol: e.target.value }))}
+              onChange={(e) => setNewInstrument({ ...newInstrument, symbol: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-foreground">Name *</Label>
+            <Label className="text-foreground">Name</Label>
             <Input
-              placeholder="e.g., Bitcoin"
+              placeholder="e.g., Bitcoin/Tether"
               value={newInstrument.name}
-              onChange={(e) => setNewInstrument(prev => ({ ...prev, name: e.target.value }))}
+              onChange={(e) => setNewInstrument({ ...newInstrument, name: e.target.value })}
             />
           </div>
           <div className="space-y-2">
-            <Label className="text-foreground">Sub-Category</Label>
+            <Label className="text-foreground">Category (Optional)</Label>
             <Input
-              placeholder="e.g., Layer 1, Major, etc."
+              placeholder="e.g., Major, Altcoin"
               value={newInstrument.category}
-              onChange={(e) => setNewInstrument(prev => ({ ...prev, category: e.target.value }))}
+              onChange={(e) => setNewInstrument({ ...newInstrument, category: e.target.value })}
             />
           </div>
           <Button onClick={addCustomInstrument} className="h-10">
             <Plus className="w-4 h-4 mr-2" />
-            Add Instrument
+            Add
           </Button>
         </div>
       </Card>
 
-      {/* Trading Instruments Configuration */}
+      {/* Trading Instruments */}
       <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Trading Instruments</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Select the instruments you want to trade across Forex, Commodities, Indices, and Crypto
-        </p>
-        
-        <div className="mb-4">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold text-foreground">Trading Instruments</h2>
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search instruments..."
               value={instrumentSearch}
               onChange={(e) => setInstrumentSearch(e.target.value)}
-              className="pl-10"
+              className="pl-9 w-64"
             />
           </div>
         </div>
 
         <Tabs value={activeInstrumentTab} onValueChange={(v) => setActiveInstrumentTab(v as InstrumentCategory)}>
-          <TabsList className="grid grid-cols-6 mb-4">
-            <TabsTrigger value="forex">Forex ({instruments.forex.filter(i => i.enabled).length})</TabsTrigger>
-            <TabsTrigger value="commodities">Commodities ({instruments.commodities.filter(i => i.enabled).length})</TabsTrigger>
-            <TabsTrigger value="indices">Indices ({instruments.indices.filter(i => i.enabled).length})</TabsTrigger>
-            <TabsTrigger value="crypto">Crypto ({instruments.crypto.filter(i => i.enabled).length})</TabsTrigger>
-            <TabsTrigger value="stocks">Stocks ({instruments.stocks.filter(i => i.enabled).length})</TabsTrigger>
-            <TabsTrigger value="bonds">Bonds ({instruments.bonds.filter(i => i.enabled).length})</TabsTrigger>
+          <TabsList className="mb-4">
+            <TabsTrigger value="forex">Forex</TabsTrigger>
+            <TabsTrigger value="commodities">Commodities</TabsTrigger>
+            <TabsTrigger value="indices">Indices</TabsTrigger>
+            <TabsTrigger value="crypto">Crypto</TabsTrigger>
+            <TabsTrigger value="stocks">Stocks</TabsTrigger>
+            <TabsTrigger value="bonds">Bonds</TabsTrigger>
           </TabsList>
 
-          {(["forex", "commodities", "indices", "crypto", "stocks", "bonds"] as const).map((category) => {
-            const categoryItems = filteredInstruments(category);
-            const subCategories = [...new Set(categoryItems.map(i => i.category))];
-            
-            return (
-              <TabsContent key={category} value={category}>
-                <div className="space-y-4">
-                  {subCategories.map((subCat) => (
-                    <Collapsible 
-                      key={subCat} 
-                      open={openCategories[`${category}-${subCat}`] !== false}
-                      onOpenChange={() => toggleCategory(`${category}-${subCat}`)}
+          {(Object.keys(instruments) as InstrumentCategory[]).map((category) => (
+            <TabsContent key={category} value={category}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                {filteredInstruments(category).map((instrument) => (
+                  <div
+                    key={instrument.symbol}
+                    className="flex items-center justify-between p-3 rounded bg-secondary/50 border border-border"
+                  >
+                    <div className="flex items-center gap-3">
+                      <Switch
+                        checked={instrument.enabled}
+                        onCheckedChange={() => toggleInstrument(category, instrument.symbol)}
+                      />
+                      <div>
+                        <span className="font-mono text-sm text-foreground">{instrument.symbol}</span>
+                        <p className="text-xs text-muted-foreground">{instrument.name}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                      onClick={() => removeInstrument(category, instrument.symbol)}
                     >
-                      <CollapsibleTrigger className="flex items-center justify-between w-full p-3 bg-secondary/50 rounded-lg hover:bg-secondary/70 transition-colors">
-                        <div className="flex items-center gap-2">
-                          {openCategories[`${category}-${subCat}`] !== false ? (
-                            <ChevronDown className="w-4 h-4" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4" />
-                          )}
-                          <span className="font-semibold text-foreground">{subCat}</span>
-                          <Badge variant="outline" className="ml-2">
-                            {categoryItems.filter(i => i.category === subCat && i.enabled).length}/{categoryItems.filter(i => i.category === subCat).length}
-                          </Badge>
-                        </div>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent className="pt-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                          {categoryItems.filter(i => i.category === subCat).map((inst) => (
-                            <div
-                              key={inst.symbol}
-                              className={`flex items-center justify-between p-3 rounded-lg border transition-colors ${
-                                inst.enabled
-                                  ? "bg-primary/10 border-primary/30"
-                                  : "bg-secondary/50 border-border"
-                              }`}
-                            >
-                              <div className="flex flex-col flex-1">
-                                <span className="font-mono text-sm font-semibold text-foreground">{inst.symbol}</span>
-                                <span className="text-xs text-muted-foreground">{inst.name}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Switch
-                                  checked={inst.enabled}
-                                  onCheckedChange={() => toggleInstrument(category, inst.symbol)}
-                                />
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                  onClick={() => removeInstrument(category, inst.symbol)}
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))}
-                </div>
-                {filteredInstruments(category).length === 0 && (
-                  <p className="text-center text-muted-foreground py-8">No instruments found</p>
-                )}
-              </TabsContent>
-            );
-          })}
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </TabsContent>
+          ))}
         </Tabs>
       </Card>
 
-      {/* FIX Protocol Connectors */}
-      <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">FIX Protocol Connectors</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          Configure multiple FIX protocol connections for institutional trading
-        </p>
-        
-        <FixConnectorManager />
-      </Card>
-
-      {/* Removed: Trading Mode Configuration - now in Trading Mode page */}
-
-      {/* Import/Export Settings */}
+      {/* Backup & Restore Settings */}
       <Card className="p-6 border-border bg-card">
         <h2 className="text-xl font-semibold text-foreground mb-4">Backup & Restore Settings</h2>
         <p className="text-sm text-muted-foreground mb-4">
-          Export your current configuration to a file or import a previously saved configuration
+          Export your settings for backup or import previously saved configurations
         </p>
         
-        <div className="flex flex-col sm:flex-row gap-4">
-          <Button onClick={handleExportSettings} variant="outline" className="flex-1">
+        <div className="flex gap-4">
+          <Button onClick={handleExportSettings}>
             <Download className="w-4 h-4 mr-2" />
             Export Settings
           </Button>
-          <Button
-            onClick={() => fileInputRef.current?.click()}
-            variant="outline"
-            className="flex-1"
-          >
+          <Button variant="outline" onClick={() => fileInputRef.current?.click()}>
             <Upload className="w-4 h-4 mr-2" />
             Import Settings
           </Button>
@@ -1414,10 +1055,8 @@ const Settings = () => {
           <ul className="text-xs text-muted-foreground space-y-1">
             <li>• Strategy weights for all timeframes</li>
             <li>• Trading instruments configuration</li>
-            <li>• Broker connection settings (excluding API keys for security)</li>
-            <li>• Risk management parameters</li>
+            <li>• Account configurations (excluding sensitive API keys)</li>
             <li>• FIX Protocol connector configurations</li>
-            <li>• Trading mode settings (Spot/Futures)</li>
           </ul>
         </div>
       </Card>
@@ -1432,8 +1071,8 @@ const Settings = () => {
   );
 };
 
-// Connection Status Panel Component with Real-Time Status
-type ConnectionStatus = 'connected' | 'disconnected' | 'testing' | 'error';
+// Connection Status Panel Component with Auto-Reconnect
+type ConnectionStatus = 'connected' | 'disconnected' | 'testing' | 'error' | 'reconnecting';
 
 interface Connection {
   id: string;
@@ -1442,36 +1081,157 @@ interface Connection {
   status: ConnectionStatus;
   lastCheck: Date | null;
   latency: number | null;
+  autoReconnect: boolean;
+  retryCount: number;
+  maxRetries: number;
+  retryInterval: number;
+  nextRetry: Date | null;
 }
 
-const ConnectionStatusPanel = () => {
-  const [connections, setConnections] = useState<Connection[]>([
-    { id: 'mt4', name: 'MetaTrader 4', category: 'metatrader', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'mt5', name: 'MetaTrader 5', category: 'metatrader', status: 'connected', lastCheck: new Date(), latency: 45 },
-    { id: 'binance-spot', name: 'Binance Spot', category: 'exchange', status: 'connected', lastCheck: new Date(), latency: 32 },
-    { id: 'binance-futures', name: 'Binance Futures', category: 'exchange', status: 'connected', lastCheck: new Date(), latency: 28 },
-    { id: 'bybit-spot', name: 'Bybit Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'bybit-futures', name: 'Bybit Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'okx-spot', name: 'OKX Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'okx-futures', name: 'OKX Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'kucoin-spot', name: 'KuCoin Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'gateio-spot', name: 'Gate.io Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'bitget-spot', name: 'Bitget Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'bitget-futures', name: 'Bitget Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'mexc-spot', name: 'MEXC Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'kraken-spot', name: 'Kraken Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'coinbase-spot', name: 'Coinbase Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'htx-spot', name: 'HTX (Huobi) Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'cryptocom-spot', name: 'Crypto.com Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'bingx-spot', name: 'BingX Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'bingx-futures', name: 'BingX Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'deribit', name: 'Deribit', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'phemex-futures', name: 'Phemex Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
-    { id: 'fix-primary', name: 'FIX Primary', category: 'fix', status: 'disconnected', lastCheck: null, latency: null },
-  ]);
+interface ConnectionStatusPanelProps {
+  mt4Accounts: MTAccount[];
+  mt5Accounts: MTAccount[];
+  exchangeAccounts: ExchangeAccount[];
+}
 
+const ConnectionStatusPanel = ({ mt4Accounts, mt5Accounts, exchangeAccounts }: ConnectionStatusPanelProps) => {
+  const [connections, setConnections] = useState<Connection[]>([]);
   const [testing, setTesting] = useState<string | null>(null);
   const [refreshingAll, setRefreshingAll] = useState(false);
+  const [globalAutoReconnect, setGlobalAutoReconnect] = useState(true);
+  const [defaultRetryInterval, setDefaultRetryInterval] = useState(30);
+  const [defaultMaxRetries, setDefaultMaxRetries] = useState(5);
+
+  // Initialize connections from accounts
+  useEffect(() => {
+    const mtConnections: Connection[] = [
+      ...mt4Accounts.filter(a => a.enabled).map(a => ({
+        id: a.id,
+        name: a.name,
+        category: 'metatrader',
+        status: 'disconnected' as ConnectionStatus,
+        lastCheck: null,
+        latency: null,
+        autoReconnect: true,
+        retryCount: 0,
+        maxRetries: defaultMaxRetries,
+        retryInterval: defaultRetryInterval,
+        nextRetry: null,
+      })),
+      ...mt5Accounts.filter(a => a.enabled).map(a => ({
+        id: a.id,
+        name: a.name,
+        category: 'metatrader',
+        status: 'disconnected' as ConnectionStatus,
+        lastCheck: null,
+        latency: null,
+        autoReconnect: true,
+        retryCount: 0,
+        maxRetries: defaultMaxRetries,
+        retryInterval: defaultRetryInterval,
+        nextRetry: null,
+      })),
+    ];
+
+    const exchangeConns: Connection[] = exchangeAccounts.filter(a => a.enabled).map(a => ({
+      id: a.id,
+      name: a.name,
+      category: 'exchange',
+      status: 'disconnected' as ConnectionStatus,
+      lastCheck: null,
+      latency: null,
+      autoReconnect: true,
+      retryCount: 0,
+      maxRetries: defaultMaxRetries,
+      retryInterval: defaultRetryInterval,
+      nextRetry: null,
+    }));
+
+    const fixConn: Connection = {
+      id: 'fix-primary',
+      name: 'FIX Primary',
+      category: 'fix',
+      status: 'disconnected',
+      lastCheck: null,
+      latency: null,
+      autoReconnect: true,
+      retryCount: 0,
+      maxRetries: defaultMaxRetries,
+      retryInterval: defaultRetryInterval,
+      nextRetry: null,
+    };
+
+    setConnections([...mtConnections, ...exchangeConns, fixConn]);
+  }, [mt4Accounts, mt5Accounts, exchangeAccounts, defaultMaxRetries, defaultRetryInterval]);
+
+  // Auto-reconnect logic
+  useEffect(() => {
+    if (!globalAutoReconnect) return;
+
+    const interval = setInterval(() => {
+      const now = new Date();
+      setConnections(prev => prev.map(conn => {
+        if (
+          conn.autoReconnect && 
+          (conn.status === 'error' || conn.status === 'disconnected') && 
+          conn.retryCount < conn.maxRetries &&
+          conn.nextRetry &&
+          now >= conn.nextRetry
+        ) {
+          // Trigger reconnection
+          simulateReconnect(conn.id);
+        }
+        return conn;
+      }));
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [globalAutoReconnect]);
+
+  const simulateReconnect = useCallback((id: string) => {
+    setConnections(prev => prev.map(c => 
+      c.id === id ? { ...c, status: 'reconnecting' as const } : c
+    ));
+
+    setTimeout(() => {
+      const success = Math.random() > 0.4;
+      const latency = success ? Math.floor(Math.random() * 100) + 20 : null;
+      
+      setConnections(prev => prev.map(c => {
+        if (c.id !== id) return c;
+        
+        if (success) {
+          toast.success(`${c.name} reconnected successfully`);
+          return { 
+            ...c, 
+            status: 'connected' as const, 
+            lastCheck: new Date(),
+            latency,
+            retryCount: 0,
+            nextRetry: null
+          };
+        } else {
+          const newRetryCount = c.retryCount + 1;
+          const nextRetry = newRetryCount < c.maxRetries 
+            ? new Date(Date.now() + c.retryInterval * 1000)
+            : null;
+          
+          if (newRetryCount >= c.maxRetries) {
+            toast.error(`${c.name} max retries reached. Manual intervention required.`);
+          }
+          
+          return { 
+            ...c, 
+            status: 'error' as const, 
+            lastCheck: new Date(),
+            latency: null,
+            retryCount: newRetryCount,
+            nextRetry
+          };
+        }
+      }));
+    }, 2000);
+  }, []);
 
   const testConnection = (id: string) => {
     setTesting(id);
@@ -1479,32 +1239,62 @@ const ConnectionStatusPanel = () => {
       c.id === id ? { ...c, status: 'testing' as const } : c
     ));
 
-    // Simulate connection test
     setTimeout(() => {
       const success = Math.random() > 0.3;
       const latency = success ? Math.floor(Math.random() * 100) + 20 : null;
-      setConnections(prev => prev.map(c => 
-        c.id === id ? { 
-          ...c, 
-          status: success ? 'connected' as const : 'error' as const, 
-          lastCheck: new Date(),
-          latency 
-        } : c
-      ));
+      setConnections(prev => prev.map(c => {
+        if (c.id !== id) return c;
+        
+        if (success) {
+          return { 
+            ...c, 
+            status: 'connected' as const, 
+            lastCheck: new Date(),
+            latency,
+            retryCount: 0,
+            nextRetry: null
+          };
+        } else {
+          const nextRetry = c.autoReconnect && globalAutoReconnect
+            ? new Date(Date.now() + c.retryInterval * 1000)
+            : null;
+          return { 
+            ...c, 
+            status: 'error' as const, 
+            lastCheck: new Date(),
+            latency: null,
+            nextRetry
+          };
+        }
+      }));
       setTesting(null);
+      
+      const conn = connections.find(c => c.id === id);
       if (success) {
-        toast.success(`${connections.find(c => c.id === id)?.name} connected successfully`);
+        toast.success(`${conn?.name} connected successfully`);
       } else {
-        toast.error(`Failed to connect to ${connections.find(c => c.id === id)?.name}`);
+        toast.error(`Failed to connect to ${conn?.name}`);
       }
     }, 1500);
   };
 
+  const toggleAutoReconnect = (id: string) => {
+    setConnections(prev => prev.map(c => 
+      c.id === id ? { ...c, autoReconnect: !c.autoReconnect } : c
+    ));
+  };
+
+  const updateRetrySettings = (id: string, settings: { retryInterval?: number; maxRetries?: number }) => {
+    setConnections(prev => prev.map(c => 
+      c.id === id ? { ...c, ...settings } : c
+    ));
+  };
+
   const refreshAllConnections = () => {
     setRefreshingAll(true);
-    const connectedIds = connections.filter(c => c.status === 'connected' || c.status === 'error').map(c => c.id);
+    const enabledIds = connections.map(c => c.id);
     
-    connectedIds.forEach((id, index) => {
+    enabledIds.forEach((id, index) => {
       setTimeout(() => {
         testConnection(id);
       }, index * 500);
@@ -1513,10 +1303,21 @@ const ConnectionStatusPanel = () => {
     setTimeout(() => {
       setRefreshingAll(false);
       toast.success('Connection status refreshed');
-    }, connectedIds.length * 500 + 1000);
+    }, enabledIds.length * 500 + 1000);
   };
 
-  const getStatusIcon = (status: string) => {
+  const resetRetryCount = (id: string) => {
+    setConnections(prev => prev.map(c => 
+      c.id === id ? { 
+        ...c, 
+        retryCount: 0, 
+        nextRetry: new Date(Date.now() + c.retryInterval * 1000) 
+      } : c
+    ));
+    toast.info('Retry counter reset');
+  };
+
+  const getStatusIcon = (status: ConnectionStatus) => {
     switch (status) {
       case 'connected':
         return <CheckCircle2 className="w-4 h-4 text-success" />;
@@ -1524,6 +1325,8 @@ const ConnectionStatusPanel = () => {
         return <WifiOff className="w-4 h-4 text-muted-foreground" />;
       case 'testing':
         return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
+      case 'reconnecting':
+        return <RotateCcw className="w-4 h-4 text-warning animate-spin" />;
       case 'error':
         return <XCircle className="w-4 h-4 text-destructive" />;
       default:
@@ -1531,13 +1334,13 @@ const ConnectionStatusPanel = () => {
     }
   };
 
-  const getStatusBadge = (status: string, latency: number | null) => {
-    switch (status) {
+  const getStatusBadge = (conn: Connection) => {
+    switch (conn.status) {
       case 'connected':
         return (
           <Badge variant="outline" className="border-success text-success bg-success/10">
             <Wifi className="w-3 h-3 mr-1" />
-            Connected {latency && `(${latency}ms)`}
+            Connected {conn.latency && `(${conn.latency}ms)`}
           </Badge>
         );
       case 'disconnected':
@@ -1554,11 +1357,18 @@ const ConnectionStatusPanel = () => {
             Testing...
           </Badge>
         );
+      case 'reconnecting':
+        return (
+          <Badge variant="outline" className="border-warning text-warning bg-warning/10">
+            <RotateCcw className="w-3 h-3 mr-1 animate-spin" />
+            Reconnecting... ({conn.retryCount}/{conn.maxRetries})
+          </Badge>
+        );
       case 'error':
         return (
           <Badge variant="outline" className="border-destructive text-destructive bg-destructive/10">
             <XCircle className="w-3 h-3 mr-1" />
-            Error
+            Error {conn.autoReconnect && conn.retryCount < conn.maxRetries && `(retry ${conn.retryCount}/${conn.maxRetries})`}
           </Badge>
         );
       default:
@@ -1582,135 +1392,232 @@ const ConnectionStatusPanel = () => {
             {connectedCount} of {totalCount} connections active
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={refreshAllConnections}
-          disabled={refreshingAll}
-        >
-          <RefreshCw className={`w-4 h-4 mr-2 ${refreshingAll ? 'animate-spin' : ''}`} />
-          Refresh All
-        </Button>
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
+            <Switch 
+              id="global-auto-reconnect"
+              checked={globalAutoReconnect}
+              onCheckedChange={setGlobalAutoReconnect}
+            />
+            <Label htmlFor="global-auto-reconnect" className="text-sm flex items-center gap-1">
+              <Zap className="w-4 h-4" />
+              Auto-Reconnect
+            </Label>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshAllConnections}
+            disabled={refreshingAll}
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${refreshingAll ? 'animate-spin' : ''}`} />
+            Refresh All
+          </Button>
+        </div>
       </div>
+
+      {/* Global Retry Settings */}
+      {globalAutoReconnect && (
+        <div className="mb-6 p-4 rounded-lg bg-secondary/50 border border-border">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <Timer className="w-4 h-4" />
+            Default Retry Settings
+          </h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Retry Interval (seconds)</Label>
+              <Input 
+                type="number"
+                min="5"
+                max="300"
+                value={defaultRetryInterval}
+                onChange={(e) => setDefaultRetryInterval(parseInt(e.target.value) || 30)}
+                className="h-8"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-xs">Max Retries</Label>
+              <Input 
+                type="number"
+                min="1"
+                max="20"
+                value={defaultMaxRetries}
+                onChange={(e) => setDefaultMaxRetries(parseInt(e.target.value) || 5)}
+                className="h-8"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MetaTrader Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-purple-500" />
-          MetaTrader
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {metatraderConnections.map(conn => (
-            <div key={conn.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
-              <div className="flex items-center gap-3">
-                {getStatusIcon(conn.status)}
-                <div>
-                  <span className="text-foreground font-medium text-sm">{conn.name}</span>
-                  {conn.lastCheck && (
-                    <p className="text-xs text-muted-foreground">
-                      Last: {conn.lastCheck.toLocaleTimeString()}
-                    </p>
-                  )}
+      {metatraderConnections.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-purple-500" />
+            MetaTrader ({metatraderConnections.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {metatraderConnections.map(conn => (
+              <div key={conn.id} className="p-3 rounded-lg bg-secondary/50 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(conn.status)}
+                    <div>
+                      <span className="text-foreground font-medium text-sm">{conn.name}</span>
+                      {conn.lastCheck && (
+                        <p className="text-xs text-muted-foreground">
+                          Last: {conn.lastCheck.toLocaleTimeString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(conn)}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => testConnection(conn.id)}
+                      disabled={testing === conn.id || conn.status === 'reconnecting'}
+                    >
+                      {testing === conn.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
+                {conn.status === 'error' && conn.autoReconnect && conn.nextRetry && (
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                    <span className="text-xs text-muted-foreground">
+                      Next retry: {Math.max(0, Math.ceil((conn.nextRetry.getTime() - Date.now()) / 1000))}s
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={() => resetRetryCount(conn.id)}>
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Reset
+                    </Button>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge(conn.status, conn.latency)}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => testConnection(conn.id)}
-                  disabled={testing === conn.id}
-                >
-                  {testing === conn.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Exchange Section */}
-      <div className="mb-6">
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-yellow-500" />
-          Crypto Exchanges
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {exchangeConnections.map(conn => (
-            <div key={conn.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
-              <div className="flex items-center gap-3">
-                {getStatusIcon(conn.status)}
-                <div>
-                  <span className="text-foreground font-medium text-sm">{conn.name}</span>
-                  {conn.lastCheck && (
-                    <p className="text-xs text-muted-foreground">
-                      {conn.latency}ms
-                    </p>
-                  )}
+      {exchangeConnections.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-yellow-500" />
+            Crypto Exchanges ({exchangeConnections.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            {exchangeConnections.map(conn => (
+              <div key={conn.id} className="p-3 rounded-lg bg-secondary/50 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(conn.status)}
+                    <div>
+                      <span className="text-foreground font-medium text-sm">{conn.name}</span>
+                      {conn.latency && (
+                        <p className="text-xs text-muted-foreground">
+                          {conn.latency}ms
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => testConnection(conn.id)}
+                    disabled={testing === conn.id || conn.status === 'reconnecting'}
+                  >
+                    {testing === conn.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <RefreshCw className="w-4 h-4" />
+                    )}
+                  </Button>
                 </div>
+                {conn.status === 'error' && conn.autoReconnect && conn.nextRetry && (
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                    <span className="text-xs text-muted-foreground">
+                      Retry in {Math.max(0, Math.ceil((conn.nextRetry.getTime() - Date.now()) / 1000))}s
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={() => resetRetryCount(conn.id)}>
+                      <RotateCcw className="w-3 h-3" />
+                    </Button>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => testConnection(conn.id)}
-                  disabled={testing === conn.id}
-                >
-                  {testing === conn.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* FIX Section */}
-      <div>
-        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-blue-500" />
-          FIX Protocol
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {fixConnections.map(conn => (
-            <div key={conn.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
-              <div className="flex items-center gap-3">
-                {getStatusIcon(conn.status)}
-                <div>
-                  <span className="text-foreground font-medium text-sm">{conn.name}</span>
-                  {conn.lastCheck && (
-                    <p className="text-xs text-muted-foreground">
-                      Last: {conn.lastCheck.toLocaleTimeString()}
-                    </p>
-                  )}
+      {fixConnections.length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-blue-500" />
+            FIX Protocol
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {fixConnections.map(conn => (
+              <div key={conn.id} className="p-3 rounded-lg bg-secondary/50 border border-border">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-3">
+                    {getStatusIcon(conn.status)}
+                    <div>
+                      <span className="text-foreground font-medium text-sm">{conn.name}</span>
+                      {conn.lastCheck && (
+                        <p className="text-xs text-muted-foreground">
+                          Last: {conn.lastCheck.toLocaleTimeString()}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(conn)}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => testConnection(conn.id)}
+                      disabled={testing === conn.id || conn.status === 'reconnecting'}
+                    >
+                      {testing === conn.id ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <RefreshCw className="w-4 h-4" />
+                      )}
+                    </Button>
+                  </div>
                 </div>
+                {conn.status === 'error' && conn.autoReconnect && conn.nextRetry && (
+                  <div className="flex items-center justify-between mt-2 pt-2 border-t border-border">
+                    <span className="text-xs text-muted-foreground">
+                      Next retry: {Math.max(0, Math.ceil((conn.nextRetry.getTime() - Date.now()) / 1000))}s
+                    </span>
+                    <Button variant="ghost" size="sm" onClick={() => resetRetryCount(conn.id)}>
+                      <RotateCcw className="w-3 h-3 mr-1" />
+                      Reset
+                    </Button>
+                  </div>
+                )}
               </div>
-              <div className="flex items-center gap-2">
-                {getStatusBadge(conn.status, conn.latency)}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => testConnection(conn.id)}
-                  disabled={testing === conn.id}
-                >
-                  {testing === conn.id ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="w-4 h-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-      </div>
+      )}
+
+      {connections.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <WifiOff className="w-12 h-12 mx-auto mb-3 opacity-50" />
+          <p>No enabled accounts to monitor</p>
+          <p className="text-sm">Enable accounts in the sections above to see connection status</p>
+        </div>
+      )}
     </Card>
   );
 };
@@ -1935,7 +1842,5 @@ const FixConnectorManager = () => {
     </div>
   );
 };
-
-// Removed: TradingModeSettings component - now in Trading Mode page
 
 export default Settings;
