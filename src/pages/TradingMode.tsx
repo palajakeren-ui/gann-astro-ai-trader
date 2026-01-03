@@ -28,8 +28,10 @@ type RiskManagementType = "dynamic" | "fixed";
 
 interface DynamicRiskSettings {
   riskPerTrade: number;
-  takeProfitRatio: number;
-  stopLossRatio: number;
+  kellyFraction: number;
+  adaptiveSizing: boolean;
+  volatilityAdjustment: boolean;
+  drawdownProtection: boolean;
   maxDrawdown: number;
   dailyLossLimit: number;
   weeklyLossLimit: number;
@@ -38,12 +40,11 @@ interface DynamicRiskSettings {
 }
 
 interface FixedRiskSettings {
-  fixedAmount: number;
-  fixedStopLoss: number;
-  fixedTakeProfit: number;
-  maxPositions: number;
-  usePercentageTP: boolean;
-  usePercentageSL: boolean;
+  riskPerTrade: number;
+  maxDrawdown: number;
+  riskRewardRatio: number;
+  fixedLotSize: number;
+  maxOpenPositions: number;
 }
 
 interface TradingModeConfig {
@@ -53,29 +54,32 @@ interface TradingModeConfig {
   enabled: boolean;
   leverage: number;
   marginMode: "cross" | "isolated";
-  maxPositionSize: number;
+  openLotSize: number;
   trailingStop: boolean;
   trailingStopDistance: number;
   autoDeleverage: boolean;
   hedgingEnabled: boolean;
+  // For Futures - link to instrument for auto leverage
+  selectedInstrument: string;
   // Risk Management Type
   riskType: RiskManagementType;
   // Dynamic Risk fields
   riskPerTrade: number;
-  takeProfitRatio: number;
-  stopLossRatio: number;
+  kellyFraction: number;
+  adaptiveSizing: boolean;
+  volatilityAdjustment: boolean;
+  drawdownProtection: boolean;
   maxDrawdown: number;
   dailyLossLimit: number;
   weeklyLossLimit: number;
   breakEvenOnProfit: boolean;
   liquidationAlert: number;
   // Fixed Risk fields
-  fixedAmount: number;
-  fixedStopLoss: number;
-  fixedTakeProfit: number;
-  maxPositions: number;
-  usePercentageTP: boolean;
-  usePercentageSL: boolean;
+  fixedRiskPerTrade: number;
+  fixedMaxDrawdown: number;
+  riskRewardRatio: number;
+  fixedLotSize: number;
+  maxOpenPositions: number;
 }
 
 interface ManualLeverageConfig {
@@ -102,26 +106,28 @@ const TradingMode = () => {
       enabled: true,
       leverage: 1,
       marginMode: "cross",
-      maxPositionSize: 10000,
+      openLotSize: 0.01,
       trailingStop: false,
       trailingStopDistance: 1,
       autoDeleverage: false,
       hedgingEnabled: false,
+      selectedInstrument: "",
       riskType: "dynamic",
       riskPerTrade: 2.0,
-      takeProfitRatio: 2.0,
-      stopLossRatio: 1.0,
+      kellyFraction: 0.5,
+      adaptiveSizing: true,
+      volatilityAdjustment: true,
+      drawdownProtection: true,
       maxDrawdown: 15,
       dailyLossLimit: 5,
       weeklyLossLimit: 15,
       breakEvenOnProfit: true,
       liquidationAlert: 0,
-      fixedAmount: 100,
-      fixedStopLoss: 50,
-      fixedTakeProfit: 100,
-      maxPositions: 5,
-      usePercentageTP: false,
-      usePercentageSL: false,
+      fixedRiskPerTrade: 2.0,
+      fixedMaxDrawdown: 20,
+      riskRewardRatio: 2.0,
+      fixedLotSize: 0.01,
+      maxOpenPositions: 5,
     },
     {
       id: "futures-1",
@@ -130,26 +136,28 @@ const TradingMode = () => {
       enabled: true,
       leverage: 10,
       marginMode: "isolated",
-      maxPositionSize: 50000,
+      openLotSize: 0.1,
       trailingStop: true,
       trailingStopDistance: 0.5,
       autoDeleverage: true,
       hedgingEnabled: true,
+      selectedInstrument: "BTC/USDT",
       riskType: "dynamic",
       riskPerTrade: 1.5,
-      takeProfitRatio: 3.0,
-      stopLossRatio: 1.0,
+      kellyFraction: 0.5,
+      adaptiveSizing: true,
+      volatilityAdjustment: true,
+      drawdownProtection: true,
       maxDrawdown: 10,
       dailyLossLimit: 3,
       weeklyLossLimit: 10,
       breakEvenOnProfit: true,
       liquidationAlert: 80,
-      fixedAmount: 200,
-      fixedStopLoss: 100,
-      fixedTakeProfit: 300,
-      maxPositions: 3,
-      usePercentageTP: false,
-      usePercentageSL: false,
+      fixedRiskPerTrade: 2.0,
+      fixedMaxDrawdown: 20,
+      riskRewardRatio: 2.0,
+      fixedLotSize: 0.1,
+      maxOpenPositions: 3,
     },
   ]);
 
@@ -190,29 +198,46 @@ const TradingMode = () => {
       enabled: false,
       leverage: type === "spot" ? 1 : 5,
       marginMode: "isolated",
-      maxPositionSize: type === "spot" ? 5000 : 25000,
+      openLotSize: type === "spot" ? 0.01 : 0.1,
       trailingStop: false,
       trailingStopDistance: 1,
       autoDeleverage: type === "futures",
       hedgingEnabled: type === "futures",
+      selectedInstrument: type === "futures" ? "BTC/USDT" : "",
       riskType: "dynamic",
       riskPerTrade: type === "spot" ? 2.0 : 1.5,
-      takeProfitRatio: type === "spot" ? 2.0 : 3.0,
-      stopLossRatio: 1.0,
+      kellyFraction: 0.5,
+      adaptiveSizing: true,
+      volatilityAdjustment: true,
+      drawdownProtection: true,
       maxDrawdown: type === "spot" ? 15 : 10,
       dailyLossLimit: type === "spot" ? 5 : 3,
       weeklyLossLimit: type === "spot" ? 15 : 10,
       breakEvenOnProfit: true,
       liquidationAlert: type === "futures" ? 80 : 0,
-      fixedAmount: type === "spot" ? 100 : 200,
-      fixedStopLoss: type === "spot" ? 50 : 100,
-      fixedTakeProfit: type === "spot" ? 100 : 300,
-      maxPositions: type === "spot" ? 5 : 3,
-      usePercentageTP: false,
-      usePercentageSL: false,
+      fixedRiskPerTrade: 2.0,
+      fixedMaxDrawdown: 20,
+      riskRewardRatio: 2.0,
+      fixedLotSize: type === "spot" ? 0.01 : 0.1,
+      maxOpenPositions: type === "spot" ? 5 : 3,
     };
     setActiveModes(prev => [...prev, newMode]);
     toast.success(`New ${type} configuration added`);
+  };
+
+  // Auto-sync leverage from manual leverage when instrument changes
+  const handleInstrumentChange = (modeId: string, instrument: string) => {
+    const leverageConfig = manualLeverages.find(l => l.instrument === instrument);
+    if (leverageConfig) {
+      handleUpdateMode(modeId, { 
+        selectedInstrument: instrument, 
+        leverage: leverageConfig.leverage,
+        marginMode: leverageConfig.marginMode 
+      });
+      toast.success(`Leverage synced: ${leverageConfig.leverage}x ${leverageConfig.marginMode}`);
+    } else {
+      handleUpdateMode(modeId, { selectedInstrument: instrument });
+    }
   };
 
   const exportConfig = () => {
@@ -452,11 +477,12 @@ const TradingMode = () => {
                   {/* Trading Settings */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                      <Label className="text-xs">Max Position Size ($)</Label>
+                      <Label className="text-xs">Open Position Lot Size</Label>
                       <Input 
                         type="number" 
-                        value={mode.maxPositionSize}
-                        onChange={(e) => handleUpdateMode(mode.id, { maxPositionSize: Number(e.target.value) })}
+                        value={mode.openLotSize}
+                        step="0.01"
+                        onChange={(e) => handleUpdateMode(mode.id, { openLotSize: Number(e.target.value) })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -492,113 +518,123 @@ const TradingMode = () => {
                     </div>
                     
                     {mode.riskType === "dynamic" ? (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-xs">Risk Per Trade (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.riskPerTrade}
-                            step="0.1"
-                            onChange={(e) => handleUpdateMode(mode.id, { riskPerTrade: Number(e.target.value) })}
-                          />
+                      <div className="space-y-3">
+                        <div className="p-2 rounded bg-primary/10 border border-primary/20">
+                          <p className="text-xs text-muted-foreground">Automatically adjusts based on market conditions</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Take Profit Ratio</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.takeProfitRatio}
-                            step="0.1"
-                            onChange={(e) => handleUpdateMode(mode.id, { takeProfitRatio: Number(e.target.value) })}
-                          />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="text-xs">Kelly Criterion Fraction</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.kellyFraction}
+                              step="0.1"
+                              onChange={(e) => handleUpdateMode(mode.id, { kellyFraction: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Max Drawdown (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.maxDrawdown}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Daily Loss Limit (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.dailyLossLimit}
+                              step="0.5"
+                              onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Weekly Loss Limit (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.weeklyLossLimit}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Stop Loss Ratio</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.stopLossRatio}
-                            step="0.1"
-                            onChange={(e) => handleUpdateMode(mode.id, { stopLossRatio: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Max Drawdown (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.maxDrawdown}
-                            step="1"
-                            onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Daily Loss Limit (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.dailyLossLimit}
-                            step="0.5"
-                            onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Weekly Loss Limit (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.weeklyLossLimit}
-                            step="1"
-                            onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
-                          />
+                        <div className="grid grid-cols-3 gap-2 pt-2">
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={mode.adaptiveSizing}
+                              onCheckedChange={(checked) => handleUpdateMode(mode.id, { adaptiveSizing: checked })}
+                            />
+                            <Label className="text-xs">Adaptive Sizing</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={mode.volatilityAdjustment}
+                              onCheckedChange={(checked) => handleUpdateMode(mode.id, { volatilityAdjustment: checked })}
+                            />
+                            <Label className="text-xs">Volatility Adj</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={mode.drawdownProtection}
+                              onCheckedChange={(checked) => handleUpdateMode(mode.id, { drawdownProtection: checked })}
+                            />
+                            <Label className="text-xs">DD Protection</Label>
+                          </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-xs">Fixed Amount ($)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.fixedAmount}
-                            step="10"
-                            onChange={(e) => handleUpdateMode(mode.id, { fixedAmount: Number(e.target.value) })}
-                          />
+                      <div className="space-y-3">
+                        <div className="p-2 rounded bg-secondary/50 border border-border">
+                          <p className="text-xs text-muted-foreground">Static risk parameters for consistent exposure</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Max Positions</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.maxPositions}
-                            step="1"
-                            onChange={(e) => handleUpdateMode(mode.id, { maxPositions: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Fixed Stop Loss ($)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.fixedStopLoss}
-                            step="5"
-                            onChange={(e) => handleUpdateMode(mode.id, { fixedStopLoss: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Fixed Take Profit ($)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.fixedTakeProfit}
-                            step="5"
-                            onChange={(e) => handleUpdateMode(mode.id, { fixedTakeProfit: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={mode.usePercentageSL}
-                            onCheckedChange={(checked) => handleUpdateMode(mode.id, { usePercentageSL: checked })}
-                          />
-                          <Label className="text-xs">SL as %</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={mode.usePercentageTP}
-                            onCheckedChange={(checked) => handleUpdateMode(mode.id, { usePercentageTP: checked })}
-                          />
-                          <Label className="text-xs">TP as %</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="text-xs">Risk Per Trade (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.fixedRiskPerTrade}
+                              step="0.1"
+                              onChange={(e) => handleUpdateMode(mode.id, { fixedRiskPerTrade: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Max Drawdown (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.fixedMaxDrawdown}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { fixedMaxDrawdown: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Risk-to-Reward Ratio</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.riskRewardRatio}
+                              step="0.1"
+                              onChange={(e) => handleUpdateMode(mode.id, { riskRewardRatio: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Fixed Lot Size</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.fixedLotSize}
+                              step="0.01"
+                              onChange={(e) => handleUpdateMode(mode.id, { fixedLotSize: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2 col-span-2">
+                            <Label className="text-xs">Max Open Positions</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.maxOpenPositions}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { maxOpenPositions: Number(e.target.value) })}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
@@ -649,8 +685,23 @@ const TradingMode = () => {
                     </Button>
                   </div>
                   
-                  {/* Trading Settings */}
+                  {/* Trading Settings with Instrument Selection */}
                   <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2 col-span-2">
+                      <Label className="text-xs">Trading Instrument (Auto-sync leverage)</Label>
+                      <select 
+                        className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm"
+                        value={mode.selectedInstrument}
+                        onChange={(e) => handleInstrumentChange(mode.id, e.target.value)}
+                      >
+                        <option value="">Select Instrument...</option>
+                        {manualLeverages.map((l) => (
+                          <option key={l.instrument} value={l.instrument}>
+                            {l.instrument} ({l.leverage}x - {l.marginMode})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                     <div className="space-y-2">
                       <Label className="text-xs">Leverage</Label>
                       <div className="flex items-center gap-2">
@@ -677,11 +728,12 @@ const TradingMode = () => {
                       </select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs">Max Position Size ($)</Label>
+                      <Label className="text-xs">Open Position Lot Size</Label>
                       <Input 
                         type="number" 
-                        value={mode.maxPositionSize}
-                        onChange={(e) => handleUpdateMode(mode.id, { maxPositionSize: Number(e.target.value) })}
+                        value={mode.openLotSize}
+                        step="0.01"
+                        onChange={(e) => handleUpdateMode(mode.id, { openLotSize: Number(e.target.value) })}
                       />
                     </div>
                     <div className="space-y-2">
@@ -717,131 +769,141 @@ const TradingMode = () => {
                     </div>
                     
                     {mode.riskType === "dynamic" ? (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-xs">Risk Per Trade (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.riskPerTrade}
-                            step="0.1"
-                            onChange={(e) => handleUpdateMode(mode.id, { riskPerTrade: Number(e.target.value) })}
-                          />
+                      <div className="space-y-3">
+                        <div className="p-2 rounded bg-primary/10 border border-primary/20">
+                          <p className="text-xs text-muted-foreground">Automatically adjusts based on market conditions</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Take Profit Ratio</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.takeProfitRatio}
-                            step="0.1"
-                            onChange={(e) => handleUpdateMode(mode.id, { takeProfitRatio: Number(e.target.value) })}
-                          />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="text-xs">Kelly Criterion Fraction</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.kellyFraction}
+                              step="0.1"
+                              onChange={(e) => handleUpdateMode(mode.id, { kellyFraction: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Max Drawdown (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.maxDrawdown}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Daily Loss Limit (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.dailyLossLimit}
+                              step="0.5"
+                              onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Weekly Loss Limit (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.weeklyLossLimit}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2 col-span-2">
+                            <Label className="text-xs">Liquidation Alert (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.liquidationAlert}
+                              step="5"
+                              onChange={(e) => handleUpdateMode(mode.id, { liquidationAlert: Number(e.target.value) })}
+                            />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Stop Loss Ratio</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.stopLossRatio}
-                            step="0.1"
-                            onChange={(e) => handleUpdateMode(mode.id, { stopLossRatio: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Max Drawdown (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.maxDrawdown}
-                            step="1"
-                            onChange={(e) => handleUpdateMode(mode.id, { maxDrawdown: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Daily Loss Limit (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.dailyLossLimit}
-                            step="0.5"
-                            onChange={(e) => handleUpdateMode(mode.id, { dailyLossLimit: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Weekly Loss Limit (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.weeklyLossLimit}
-                            step="1"
-                            onChange={(e) => handleUpdateMode(mode.id, { weeklyLossLimit: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2 col-span-2">
-                          <Label className="text-xs">Liquidation Alert (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.liquidationAlert}
-                            step="5"
-                            onChange={(e) => handleUpdateMode(mode.id, { liquidationAlert: Number(e.target.value) })}
-                          />
+                        <div className="grid grid-cols-3 gap-2 pt-2">
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={mode.adaptiveSizing}
+                              onCheckedChange={(checked) => handleUpdateMode(mode.id, { adaptiveSizing: checked })}
+                            />
+                            <Label className="text-xs">Adaptive Sizing</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={mode.volatilityAdjustment}
+                              onCheckedChange={(checked) => handleUpdateMode(mode.id, { volatilityAdjustment: checked })}
+                            />
+                            <Label className="text-xs">Volatility Adj</Label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch 
+                              checked={mode.drawdownProtection}
+                              onCheckedChange={(checked) => handleUpdateMode(mode.id, { drawdownProtection: checked })}
+                            />
+                            <Label className="text-xs">DD Protection</Label>
+                          </div>
                         </div>
                       </div>
                     ) : (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="text-xs">Fixed Amount ($)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.fixedAmount}
-                            step="10"
-                            onChange={(e) => handleUpdateMode(mode.id, { fixedAmount: Number(e.target.value) })}
-                          />
+                      <div className="space-y-3">
+                        <div className="p-2 rounded bg-secondary/50 border border-border">
+                          <p className="text-xs text-muted-foreground">Static risk parameters for consistent exposure</p>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Max Positions</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.maxPositions}
-                            step="1"
-                            onChange={(e) => handleUpdateMode(mode.id, { maxPositions: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Fixed Stop Loss ($)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.fixedStopLoss}
-                            step="5"
-                            onChange={(e) => handleUpdateMode(mode.id, { fixedStopLoss: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs">Fixed Take Profit ($)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.fixedTakeProfit}
-                            step="5"
-                            onChange={(e) => handleUpdateMode(mode.id, { fixedTakeProfit: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="space-y-2 col-span-2">
-                          <Label className="text-xs">Liquidation Alert (%)</Label>
-                          <Input 
-                            type="number" 
-                            value={mode.liquidationAlert}
-                            step="5"
-                            onChange={(e) => handleUpdateMode(mode.id, { liquidationAlert: Number(e.target.value) })}
-                          />
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={mode.usePercentageSL}
-                            onCheckedChange={(checked) => handleUpdateMode(mode.id, { usePercentageSL: checked })}
-                          />
-                          <Label className="text-xs">SL as %</Label>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Switch 
-                            checked={mode.usePercentageTP}
-                            onCheckedChange={(checked) => handleUpdateMode(mode.id, { usePercentageTP: checked })}
-                          />
-                          <Label className="text-xs">TP as %</Label>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="text-xs">Risk Per Trade (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.fixedRiskPerTrade}
+                              step="0.1"
+                              onChange={(e) => handleUpdateMode(mode.id, { fixedRiskPerTrade: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Max Drawdown (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.fixedMaxDrawdown}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { fixedMaxDrawdown: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Risk-to-Reward Ratio</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.riskRewardRatio}
+                              step="0.1"
+                              onChange={(e) => handleUpdateMode(mode.id, { riskRewardRatio: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Fixed Lot Size</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.fixedLotSize}
+                              step="0.01"
+                              onChange={(e) => handleUpdateMode(mode.id, { fixedLotSize: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Max Open Positions</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.maxOpenPositions}
+                              step="1"
+                              onChange={(e) => handleUpdateMode(mode.id, { maxOpenPositions: Number(e.target.value) })}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-xs">Liquidation Alert (%)</Label>
+                            <Input 
+                              type="number" 
+                              value={mode.liquidationAlert}
+                              step="5"
+                              onChange={(e) => handleUpdateMode(mode.id, { liquidationAlert: Number(e.target.value) })}
+                            />
+                          </div>
                         </div>
                       </div>
                     )}
