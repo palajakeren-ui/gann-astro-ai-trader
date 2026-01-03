@@ -25,11 +25,15 @@ import {
   Plus,
   X,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Sparkles,
+  Bell
 } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
 import { BacktestSimulator } from "@/components/hft/BacktestSimulator";
+import { StrategyOptimizer } from "@/components/hft/StrategyOptimizer";
+import { StrategyAlerts } from "@/components/hft/StrategyAlerts";
 // Generate mock latency data
 const generateLatencyData = () => {
   return Array.from({ length: 60 }, (_, i) => ({
@@ -380,9 +384,17 @@ const HFT = () => {
       </div>
 
       <Tabs defaultValue="dashboard" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-4 md:grid-cols-8 md:w-auto md:inline-grid">
           <TabsTrigger value="dashboard" className="text-xs md:text-sm">Dashboard</TabsTrigger>
           <TabsTrigger value="strategies" className="text-xs md:text-sm">Strategies</TabsTrigger>
+          <TabsTrigger value="alerts" className="text-xs md:text-sm">
+            <Bell className="w-3 h-3 mr-1" />
+            Alerts
+          </TabsTrigger>
+          <TabsTrigger value="optimizer" className="text-xs md:text-sm">
+            <Sparkles className="w-3 h-3 mr-1" />
+            Optimizer
+          </TabsTrigger>
           <TabsTrigger value="orderbook" className="text-xs md:text-sm">Order Book</TabsTrigger>
           <TabsTrigger value="config" className="text-xs md:text-sm">Configuration</TabsTrigger>
           <TabsTrigger value="backtest" className="text-xs md:text-sm">
@@ -509,6 +521,26 @@ const HFT = () => {
               </Card>
             ))}
           </div>
+        </TabsContent>
+
+        {/* Real-Time Alerts Tab */}
+        <TabsContent value="alerts" className="space-y-4 mt-4">
+          <StrategyAlerts config={config} isRunning={isRunning} />
+        </TabsContent>
+
+        {/* Strategy Optimizer Tab */}
+        <TabsContent value="optimizer" className="space-y-4 mt-4">
+          <Card className="p-4 border-border bg-card">
+            <h3 className="text-lg font-semibold text-foreground mb-2 flex items-center gap-2">
+              <Sparkles className="w-5 h-5 text-accent" />
+              Strategy Combination Optimizer
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              Find optimal parameter combinations when using multiple W.D. Gann and Ehlers strategies together.
+              Use manual mode to set custom weights or auto mode for genetic algorithm optimization.
+            </p>
+          </Card>
+          <StrategyOptimizer config={config} updateConfig={updateConfig} />
         </TabsContent>
 
         {/* Order Book Tab */}
