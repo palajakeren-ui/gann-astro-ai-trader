@@ -25,7 +25,14 @@ import {
   AlertTriangle,
   GitMerge,
   Plus,
-  Trash2
+  Trash2,
+  Download,
+  Upload,
+  FileJson,
+  FileCode,
+  FolderOpen,
+  Copy,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
@@ -193,6 +200,28 @@ interface EnsembleConfig {
   learningRate: number;
 }
 
+// Export formats
+const EXPORT_FORMATS = [
+  { id: "json", name: "JSON", description: "JavaScript Object Notation - portable config format", extension: ".json" },
+  { id: "onnx", name: "ONNX", description: "Open Neural Network Exchange - cross-platform inference", extension: ".onnx" },
+  { id: "pickle", name: "Pickle", description: "Python serialization format", extension: ".pkl" },
+  { id: "h5", name: "HDF5/Keras", description: "Keras/TensorFlow model format", extension: ".h5" },
+  { id: "pt", name: "PyTorch", description: "PyTorch state dict format", extension: ".pt" },
+  { id: "safetensors", name: "SafeTensors", description: "Safe, fast tensor serialization", extension: ".safetensors" },
+];
+
+interface ExportedModel {
+  id: string;
+  name: string;
+  type: "single" | "ensemble";
+  format: string;
+  exportedAt: string;
+  size: string;
+  accuracy: number;
+  version: string;
+  config: Record<string, unknown>;
+}
+
 const AI = () => {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [selectedModel, setSelectedModel] = useState("lstm");
@@ -202,6 +231,36 @@ const AI = () => {
   const [bestResult, setBestResult] = useState<SearchResult | null>(null);
   const [isEnsembleTraining, setIsEnsembleTraining] = useState(false);
   const [ensembleAccuracy, setEnsembleAccuracy] = useState<number | null>(null);
+  const [exportFormat, setExportFormat] = useState("json");
+  const [exportIncludeWeights, setExportIncludeWeights] = useState(true);
+  const [exportIncludeConfig, setExportIncludeConfig] = useState(true);
+  const [exportOptimizeForInference, setExportOptimizeForInference] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
+  const [exportedModels, setExportedModels] = useState<ExportedModel[]>([
+    {
+      id: "exp_001",
+      name: "LSTM Predictor v2.1",
+      type: "single",
+      format: "onnx",
+      exportedAt: "2024-01-15T10:30:00Z",
+      size: "12.4 MB",
+      accuracy: 78.5,
+      version: "2.1.0",
+      config: { layers: 3, hiddenSize: 256 }
+    },
+    {
+      id: "exp_002",
+      name: "Stacking Ensemble",
+      type: "ensemble",
+      format: "json",
+      exportedAt: "2024-01-14T15:45:00Z",
+      size: "45.2 MB",
+      accuracy: 85.3,
+      version: "1.0.0",
+      config: { method: "stacking", baseModels: 4 }
+    },
+  ]);
   
   const [autoTuneConfig, setAutoTuneConfig] = useState<AutoTuneConfig>({
     searchMethod: "bayesian",
@@ -502,6 +561,118 @@ const AI = () => {
     return ensembleModels.filter(m => m.enabled).reduce((sum, m) => sum + m.weight, 0);
   };
 
+  const exportModel = (modelType: "single" | "ensemble") => {
+    const selectedModelData = models.find(m => m.id === selectedModel);
+    if (!selectedModelData && modelType === "single") {
+      toast.error("Select a model to export");
+      return;
+    }
+
+    setIsExporting(true);
+    toast.info(`Exporting ${modelType === "ensemble" ? "ensemble" : selectedModelData?.name} as ${exportFormat.toUpperCase()}...`);
+
+    setTimeout(() => {
+      const newExport: ExportedModel = {
+        id: `exp_${Date.now()}`,
+        name: modelType === "ensemble" 
+          ? `${ENSEMBLE_METHODS.find(m => m.id === ensembleConfig.method)?.name} Ensemble`
+          : selectedModelData!.name,
+        type: modelType,
+        format: exportFormat,
+        exportedAt: new Date().toISOString(),
+        size: modelType === "ensemble" ? `${(Math.random() * 50 + 20).toFixed(1)} MB` : `${(Math.random() * 15 + 5).toFixed(1)} MB`,
+        accuracy: modelType === "ensemble" ? (ensembleAccuracy || 85) : selectedModelData!.accuracy,
+        version: "1.0.0",
+        config: modelType === "ensemble" 
+          ? { method: ensembleConfig.method, baseModels: ensembleModels.filter(m => m.enabled).length }
+          : { optimizer: config.optimizer, learningRate: config.learningRate }
+      };
+
+      setExportedModels(prev => [newExport, ...prev]);
+      setIsExporting(false);
+
+      // Generate download
+      const exportData = {
+        modelName: newExport.name,
+        type: newExport.type,
+        format: exportFormat,
+        version: newExport.version,
+        exportedAt: newExport.exportedAt,
+        includeWeights: exportIncludeWeights,
+        includeConfig: exportIncludeConfig,
+        optimizedForInference: exportOptimizeForInference,
+        config: exportIncludeConfig ? (modelType === "ensemble" ? ensembleConfig : config) : null,
+        weights: exportIncludeWeights ? { placeholder: "binary_weights_data" } : null,
+        models: modelType === "ensemble" ? ensembleModels.filter(m => m.enabled).map(m => ({
+          id: m.id,
+          name: m.name,
+          weight: m.weight,
+          accuracy: m.accuracy
+        })) : null
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${newExport.name.replace(/\s+/g, "_").toLowerCase()}_v${newExport.version}${EXPORT_FORMATS.find(f => f.id === exportFormat)?.extension || ".json"}`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Model exported successfully!`);
+    }, 2000);
+  };
+
+  const importModel = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    toast.info(`Importing ${file.name}...`);
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const content = e.target?.result as string;
+        const modelData = JSON.parse(content);
+        
+        setTimeout(() => {
+          const importedModel: ExportedModel = {
+            id: `imp_${Date.now()}`,
+            name: modelData.modelName || file.name.replace(/\.[^/.]+$/, ""),
+            type: modelData.type || "single",
+            format: file.name.split(".").pop() || "json",
+            exportedAt: new Date().toISOString(),
+            size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
+            accuracy: modelData.accuracy || 0,
+            version: modelData.version || "imported",
+            config: modelData.config || {}
+          };
+
+          setExportedModels(prev => [importedModel, ...prev]);
+          setIsImporting(false);
+          toast.success(`Model "${importedModel.name}" imported successfully!`);
+        }, 1500);
+      } catch {
+        setIsImporting(false);
+        toast.error("Failed to parse model file");
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = "";
+  };
+
+  const deleteExportedModel = (modelId: string) => {
+    setExportedModels(prev => prev.filter(m => m.id !== modelId));
+    toast.success("Model removed from exports");
+  };
+
+  const deployModel = (model: ExportedModel) => {
+    toast.success(`Deploying ${model.name} to production...`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -558,20 +729,24 @@ const AI = () => {
       </div>
 
       <Tabs defaultValue="models" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 md:w-auto md:inline-grid">
+        <TabsList className="grid w-full grid-cols-7 md:w-auto md:inline-grid">
           <TabsTrigger value="models">Models</TabsTrigger>
           <TabsTrigger value="ensemble">
             <GitMerge className="w-3 h-3 mr-1" />
             Ensemble
           </TabsTrigger>
+          <TabsTrigger value="export">
+            <Download className="w-3 h-3 mr-1" />
+            Export/Import
+          </TabsTrigger>
           <TabsTrigger value="optimizer">
             <Settings2 className="w-3 h-3 mr-1" />
             Optimizer
           </TabsTrigger>
-          <TabsTrigger value="tuning">Hyperparameters</TabsTrigger>
+          <TabsTrigger value="tuning">Hyperparams</TabsTrigger>
           <TabsTrigger value="autotune">
             <Target className="w-3 h-3 mr-1" />
-            Auto Tuning
+            Auto Tune
           </TabsTrigger>
           <TabsTrigger value="results">Results</TabsTrigger>
         </TabsList>
@@ -1054,6 +1229,313 @@ const AI = () => {
                 <p className="text-xs text-muted-foreground">
                   Sequential training where each model focuses on previous errors. 
                   Great for reducing bias and improving accuracy.
+                </p>
+              </div>
+            </div>
+          </Card>
+        </TabsContent>
+
+        {/* Export/Import Tab */}
+        <TabsContent value="export" className="space-y-4 mt-4">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-semibold text-foreground flex items-center gap-2">
+              <Download className="w-5 h-5 text-primary" />
+              Model Export & Import
+            </h2>
+            <div className="flex gap-2">
+              <label className="cursor-pointer">
+                <input
+                  type="file"
+                  accept=".json,.onnx,.pkl,.h5,.pt,.safetensors"
+                  onChange={importModel}
+                  className="hidden"
+                />
+                <Button variant="outline" size="sm" asChild disabled={isImporting}>
+                  <span>
+                    <Upload className="w-4 h-4 mr-1" />
+                    {isImporting ? "Importing..." : "Import Model"}
+                  </span>
+                </Button>
+              </label>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Export Configuration */}
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <FileJson className="w-4 h-4 text-accent" />
+                Export Configuration
+              </h3>
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Export Format</Label>
+                  <Select value={exportFormat} onValueChange={setExportFormat}>
+                    <SelectTrigger className="bg-secondary border-border">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {EXPORT_FORMATS.map(format => (
+                        <SelectItem key={format.id} value={format.id}>
+                          <div className="flex flex-col">
+                            <span>{format.name}</span>
+                            <span className="text-xs text-muted-foreground">{format.description}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm text-foreground">Include Weights</Label>
+                      <p className="text-xs text-muted-foreground">Export trained weights</p>
+                    </div>
+                    <Switch
+                      checked={exportIncludeWeights}
+                      onCheckedChange={setExportIncludeWeights}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm text-foreground">Include Config</Label>
+                      <p className="text-xs text-muted-foreground">Export hyperparameters</p>
+                    </div>
+                    <Switch
+                      checked={exportIncludeConfig}
+                      onCheckedChange={setExportIncludeConfig}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <Label className="text-sm text-foreground">Optimize for Inference</Label>
+                      <p className="text-xs text-muted-foreground">Remove training artifacts</p>
+                    </div>
+                    <Switch
+                      checked={exportOptimizeForInference}
+                      onCheckedChange={setExportOptimizeForInference}
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-4 space-y-2">
+                  <Button 
+                    className="w-full" 
+                    onClick={() => exportModel("single")}
+                    disabled={isExporting}
+                  >
+                    <Download className="w-4 h-4 mr-1" />
+                    {isExporting ? "Exporting..." : "Export Selected Model"}
+                  </Button>
+                  <Button 
+                    className="w-full" 
+                    variant="outline"
+                    onClick={() => exportModel("ensemble")}
+                    disabled={isExporting || !ensembleAccuracy}
+                  >
+                    <GitMerge className="w-4 h-4 mr-1" />
+                    Export Ensemble
+                  </Button>
+                </div>
+              </div>
+            </Card>
+
+            {/* Current Model Info */}
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <Brain className="w-4 h-4 text-warning" />
+                Selected Model
+              </h3>
+              {models.find(m => m.id === selectedModel) ? (
+                <div className="space-y-4">
+                  <div className="p-4 bg-secondary/50 rounded-lg border border-border">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-semibold text-foreground">
+                        {models.find(m => m.id === selectedModel)?.name}
+                      </span>
+                      <Badge className="bg-success">
+                        {models.find(m => m.id === selectedModel)?.accuracy}%
+                      </Badge>
+                    </div>
+                    <div className="space-y-1 text-sm text-muted-foreground">
+                      <p>Status: {models.find(m => m.id === selectedModel)?.status}</p>
+                      <p>Predictions: {models.find(m => m.id === selectedModel)?.predictions}</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 text-sm">
+                    <h4 className="font-medium text-foreground">Export Preview</h4>
+                    <div className="p-3 bg-secondary/30 rounded-lg font-mono text-xs overflow-x-auto">
+                      <pre className="text-muted-foreground">
+{`{
+  "model": "${models.find(m => m.id === selectedModel)?.name}",
+  "format": "${exportFormat}",
+  "includeWeights": ${exportIncludeWeights},
+  "includeConfig": ${exportIncludeConfig},
+  "optimized": ${exportOptimizeForInference}
+}`}
+                      </pre>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Brain className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No model selected</p>
+                  <p className="text-xs">Select a model from the Models tab</p>
+                </div>
+              )}
+            </Card>
+
+            {/* Format Info */}
+            <Card className="p-4 border-border bg-card">
+              <h3 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                <FileCode className="w-4 h-4 text-success" />
+                Format Details
+              </h3>
+              <div className="space-y-3">
+                {EXPORT_FORMATS.map(format => (
+                  <div 
+                    key={format.id}
+                    className={`p-3 rounded-lg border transition-all ${
+                      exportFormat === format.id 
+                        ? "bg-primary/10 border-primary/30" 
+                        : "bg-secondary/30 border-border"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-foreground text-sm">{format.name}</span>
+                      <Badge variant="outline" className="text-xs">{format.extension}</Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{format.description}</p>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          </div>
+
+          {/* Exported Models List */}
+          <Card className="p-4 border-border bg-card">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold text-foreground flex items-center gap-2">
+                <FolderOpen className="w-4 h-4 text-primary" />
+                Exported Models ({exportedModels.length})
+              </h3>
+            </div>
+            {exportedModels.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Name</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Type</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Format</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Size</th>
+                      <th className="text-right py-2 px-2 text-muted-foreground font-medium">Accuracy</th>
+                      <th className="text-left py-2 px-2 text-muted-foreground font-medium">Exported</th>
+                      <th className="text-right py-2 px-2 text-muted-foreground font-medium">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {exportedModels.map((model) => (
+                      <tr key={model.id} className="border-b border-border/50 hover:bg-secondary/30">
+                        <td className="py-2 px-2">
+                          <div className="flex items-center gap-2">
+                            {model.type === "ensemble" ? (
+                              <GitMerge className="w-4 h-4 text-accent" />
+                            ) : (
+                              <Brain className="w-4 h-4 text-primary" />
+                            )}
+                            <span className="font-medium text-foreground">{model.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 px-2">
+                          <Badge variant="outline" className="text-xs">
+                            {model.type}
+                          </Badge>
+                        </td>
+                        <td className="py-2 px-2 font-mono text-xs uppercase">{model.format}</td>
+                        <td className="py-2 px-2 text-muted-foreground">{model.size}</td>
+                        <td className="py-2 px-2 text-right font-mono text-success">{model.accuracy}%</td>
+                        <td className="py-2 px-2 text-muted-foreground text-xs">
+                          {new Date(model.exportedAt).toLocaleDateString()}
+                        </td>
+                        <td className="py-2 px-2">
+                          <div className="flex justify-end gap-1">
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Download">
+                              <Download className="w-3 h-3" />
+                            </Button>
+                            <Button variant="ghost" size="sm" className="h-7 w-7 p-0" title="Copy Config">
+                              <Copy className="w-3 h-3" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 w-7 p-0"
+                              title="Deploy"
+                              onClick={() => deployModel(model)}
+                            >
+                              <ExternalLink className="w-3 h-3" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                              title="Delete"
+                              onClick={() => deleteExportedModel(model.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <FolderOpen className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                <p className="text-sm">No exported models yet</p>
+                <p className="text-xs">Export a model to see it here</p>
+              </div>
+            )}
+          </Card>
+
+          {/* Deployment Guide */}
+          <Card className="p-4 border-border bg-card">
+            <h3 className="font-semibold text-foreground mb-3">Deployment Guide</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <h4 className="font-medium text-foreground mb-1 flex items-center gap-1">
+                  <FileJson className="w-3 h-3" />
+                  JSON Export
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Best for configuration sharing and version control. 
+                  Load with any JSON parser and reconstruct model in Python/JS.
+                </p>
+              </div>
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <h4 className="font-medium text-foreground mb-1 flex items-center gap-1">
+                  <FileCode className="w-3 h-3" />
+                  ONNX Export
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  Cross-platform inference format. Run on ONNX Runtime, 
+                  TensorRT, or deploy to edge devices with optimized speed.
+                </p>
+              </div>
+              <div className="p-3 bg-secondary/50 rounded-lg">
+                <h4 className="font-medium text-foreground mb-1 flex items-center gap-1">
+                  <Layers className="w-3 h-3" />
+                  Native Formats
+                </h4>
+                <p className="text-xs text-muted-foreground">
+                  PyTorch (.pt), Keras (.h5), or SafeTensors for framework-specific 
+                  deployment and continued training.
                 </p>
               </div>
             </div>
