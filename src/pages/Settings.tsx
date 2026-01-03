@@ -6,7 +6,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight, Plus, Trash2 } from "lucide-react";
+import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight, Plus, Trash2, Wifi, WifiOff, RefreshCw, Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { useState, useRef } from "react";
 import { toast } from "sonner";
 import { tradingInstruments as instrumentsData, InstrumentCategory, Instrument } from "@/data/tradingInstruments";
@@ -1090,31 +1090,99 @@ const Settings = () => {
         </Tabs>
       </Card>
 
-      {/* MetaTrader 5 Configuration */}
+      {/* MetaTrader Configuration - MT4 & MT5 */}
       <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">MetaTrader 5 Configuration</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="mt5-server" className="text-foreground">Server Address</Label>
-            <Input id="mt5-server" placeholder="broker.server.com:443" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="mt5-login" className="text-foreground">Login ID</Label>
-            <Input id="mt5-login" type="number" placeholder="12345678" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="mt5-password" className="text-foreground">Password</Label>
-            <Input id="mt5-password" type="password" placeholder="••••••••" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="mt5-account" className="text-foreground">Account Type</Label>
-            <Input id="mt5-account" placeholder="Real / Demo" defaultValue="Demo" />
-          </div>
-        </div>
-        <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-          <Label htmlFor="mt5-enabled" className="text-foreground">Enable MetaTrader 5</Label>
-          <Switch id="mt5-enabled" defaultChecked />
-        </div>
+        <h2 className="text-xl font-semibold text-foreground mb-4">MetaTrader Configuration</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          Configure MetaTrader 4 and MetaTrader 5 accounts manually
+        </p>
+        
+        <Tabs defaultValue="mt5" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="mt4" className="text-sm">MetaTrader 4</TabsTrigger>
+            <TabsTrigger value="mt5" className="text-sm">MetaTrader 5</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="mt4" className="space-y-4">
+            <div className="p-3 rounded bg-blue-500/10 border border-blue-500/20 mb-4">
+              <span className="text-sm font-semibold text-blue-400">MetaTrader 4</span>
+              <p className="text-xs text-muted-foreground mt-1">Legacy platform - widely supported by brokers</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mt4-server" className="text-foreground">Server Address</Label>
+                <Input id="mt4-server" placeholder="broker-mt4.server.com:443" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt4-login" className="text-foreground">Login ID</Label>
+                <Input id="mt4-login" type="number" placeholder="12345678" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt4-password" className="text-foreground">Password</Label>
+                <Input id="mt4-password" type="password" placeholder="••••••••" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt4-account" className="text-foreground">Account Type</Label>
+                <select id="mt4-account" className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="demo">Demo</option>
+                  <option value="real">Real</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt4-broker" className="text-foreground">Broker Name</Label>
+                <Input id="mt4-broker" placeholder="e.g., IC Markets, FXCM" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt4-timeout" className="text-foreground">Connection Timeout (ms)</Label>
+                <Input id="mt4-timeout" type="number" placeholder="30000" defaultValue="30000" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+              <Label htmlFor="mt4-enabled" className="text-foreground">Enable MetaTrader 4</Label>
+              <Switch id="mt4-enabled" />
+            </div>
+          </TabsContent>
+
+          <TabsContent value="mt5" className="space-y-4">
+            <div className="p-3 rounded bg-purple-500/10 border border-purple-500/20 mb-4">
+              <span className="text-sm font-semibold text-purple-400">MetaTrader 5</span>
+              <p className="text-xs text-muted-foreground mt-1">Modern platform with multi-asset support</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="mt5-server" className="text-foreground">Server Address</Label>
+                <Input id="mt5-server" placeholder="broker-mt5.server.com:443" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-login" className="text-foreground">Login ID</Label>
+                <Input id="mt5-login" type="number" placeholder="12345678" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-password" className="text-foreground">Password</Label>
+                <Input id="mt5-password" type="password" placeholder="••••••••" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-account" className="text-foreground">Account Type</Label>
+                <select id="mt5-account" className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm">
+                  <option value="demo">Demo</option>
+                  <option value="real">Real</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-broker" className="text-foreground">Broker Name</Label>
+                <Input id="mt5-broker" placeholder="e.g., Pepperstone, XM" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="mt5-timeout" className="text-foreground">Connection Timeout (ms)</Label>
+                <Input id="mt5-timeout" type="number" placeholder="30000" defaultValue="30000" />
+              </div>
+            </div>
+            <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
+              <Label htmlFor="mt5-enabled" className="text-foreground">Enable MetaTrader 5</Label>
+              <Switch id="mt5-enabled" defaultChecked />
+            </div>
+          </TabsContent>
+        </Tabs>
       </Card>
 
       <Card className="p-6 border-border bg-card">
@@ -1143,47 +1211,8 @@ const Settings = () => {
         </div>
       </Card>
 
-      <Card className="p-6 border-border bg-card">
-        <h2 className="text-xl font-semibold text-foreground mb-4">Connection Status</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {[
-            { name: "MetaTrader 5", status: "Connected", color: "success" },
-            { name: "Binance Spot", status: "Connected", color: "success" },
-            { name: "Binance Futures", status: "Connected", color: "success" },
-            { name: "Bybit", status: "Disconnected", color: "muted" },
-            { name: "OKX", status: "Disconnected", color: "muted" },
-            { name: "KuCoin", status: "Disconnected", color: "muted" },
-            { name: "Kraken", status: "Disconnected", color: "muted" },
-            { name: "Coinbase", status: "Disconnected", color: "muted" },
-            { name: "Gate.io", status: "Disconnected", color: "muted" },
-            { name: "Bitget", status: "Disconnected", color: "muted" },
-            { name: "MEXC", status: "Disconnected", color: "muted" },
-            { name: "HTX (Huobi)", status: "Disconnected", color: "muted" },
-            { name: "Bitfinex", status: "Disconnected", color: "muted" },
-            { name: "Gemini", status: "Disconnected", color: "muted" },
-            { name: "Bitstamp", status: "Disconnected", color: "muted" },
-            { name: "Crypto.com", status: "Disconnected", color: "muted" },
-            { name: "Deribit", status: "Disconnected", color: "muted" },
-            { name: "Phemex", status: "Disconnected", color: "muted" },
-            { name: "BingX", status: "Disconnected", color: "muted" },
-            { name: "FIX Connector", status: "Disconnected", color: "muted" },
-          ].map((conn, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50">
-              <span className="text-foreground font-medium text-sm">{conn.name}</span>
-              <Badge 
-                variant="outline"
-                className={
-                  conn.color === "success" 
-                    ? "border-success text-success bg-success/10" 
-                    : "border-muted-foreground text-muted-foreground"
-                }
-              >
-                {conn.status}
-              </Badge>
-            </div>
-          ))}
-        </div>
-      </Card>
+      {/* Real-Time Connection Status */}
+      <ConnectionStatusPanel />
 
       {/* Add Custom Instrument */}
       <Card className="p-6 border-border bg-card">
@@ -1400,6 +1429,289 @@ const Settings = () => {
         </Button>
       </div>
     </div>
+  );
+};
+
+// Connection Status Panel Component with Real-Time Status
+type ConnectionStatus = 'connected' | 'disconnected' | 'testing' | 'error';
+
+interface Connection {
+  id: string;
+  name: string;
+  category: string;
+  status: ConnectionStatus;
+  lastCheck: Date | null;
+  latency: number | null;
+}
+
+const ConnectionStatusPanel = () => {
+  const [connections, setConnections] = useState<Connection[]>([
+    { id: 'mt4', name: 'MetaTrader 4', category: 'metatrader', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'mt5', name: 'MetaTrader 5', category: 'metatrader', status: 'connected', lastCheck: new Date(), latency: 45 },
+    { id: 'binance-spot', name: 'Binance Spot', category: 'exchange', status: 'connected', lastCheck: new Date(), latency: 32 },
+    { id: 'binance-futures', name: 'Binance Futures', category: 'exchange', status: 'connected', lastCheck: new Date(), latency: 28 },
+    { id: 'bybit-spot', name: 'Bybit Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'bybit-futures', name: 'Bybit Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'okx-spot', name: 'OKX Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'okx-futures', name: 'OKX Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'kucoin-spot', name: 'KuCoin Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'gateio-spot', name: 'Gate.io Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'bitget-spot', name: 'Bitget Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'bitget-futures', name: 'Bitget Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'mexc-spot', name: 'MEXC Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'kraken-spot', name: 'Kraken Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'coinbase-spot', name: 'Coinbase Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'htx-spot', name: 'HTX (Huobi) Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'cryptocom-spot', name: 'Crypto.com Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'bingx-spot', name: 'BingX Spot', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'bingx-futures', name: 'BingX Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'deribit', name: 'Deribit', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'phemex-futures', name: 'Phemex Futures', category: 'exchange', status: 'disconnected', lastCheck: null, latency: null },
+    { id: 'fix-primary', name: 'FIX Primary', category: 'fix', status: 'disconnected', lastCheck: null, latency: null },
+  ]);
+
+  const [testing, setTesting] = useState<string | null>(null);
+  const [refreshingAll, setRefreshingAll] = useState(false);
+
+  const testConnection = (id: string) => {
+    setTesting(id);
+    setConnections(prev => prev.map(c => 
+      c.id === id ? { ...c, status: 'testing' as const } : c
+    ));
+
+    // Simulate connection test
+    setTimeout(() => {
+      const success = Math.random() > 0.3;
+      const latency = success ? Math.floor(Math.random() * 100) + 20 : null;
+      setConnections(prev => prev.map(c => 
+        c.id === id ? { 
+          ...c, 
+          status: success ? 'connected' as const : 'error' as const, 
+          lastCheck: new Date(),
+          latency 
+        } : c
+      ));
+      setTesting(null);
+      if (success) {
+        toast.success(`${connections.find(c => c.id === id)?.name} connected successfully`);
+      } else {
+        toast.error(`Failed to connect to ${connections.find(c => c.id === id)?.name}`);
+      }
+    }, 1500);
+  };
+
+  const refreshAllConnections = () => {
+    setRefreshingAll(true);
+    const connectedIds = connections.filter(c => c.status === 'connected' || c.status === 'error').map(c => c.id);
+    
+    connectedIds.forEach((id, index) => {
+      setTimeout(() => {
+        testConnection(id);
+      }, index * 500);
+    });
+
+    setTimeout(() => {
+      setRefreshingAll(false);
+      toast.success('Connection status refreshed');
+    }, connectedIds.length * 500 + 1000);
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'connected':
+        return <CheckCircle2 className="w-4 h-4 text-success" />;
+      case 'disconnected':
+        return <WifiOff className="w-4 h-4 text-muted-foreground" />;
+      case 'testing':
+        return <Loader2 className="w-4 h-4 text-primary animate-spin" />;
+      case 'error':
+        return <XCircle className="w-4 h-4 text-destructive" />;
+      default:
+        return <AlertCircle className="w-4 h-4 text-warning" />;
+    }
+  };
+
+  const getStatusBadge = (status: string, latency: number | null) => {
+    switch (status) {
+      case 'connected':
+        return (
+          <Badge variant="outline" className="border-success text-success bg-success/10">
+            <Wifi className="w-3 h-3 mr-1" />
+            Connected {latency && `(${latency}ms)`}
+          </Badge>
+        );
+      case 'disconnected':
+        return (
+          <Badge variant="outline" className="border-muted-foreground text-muted-foreground">
+            <WifiOff className="w-3 h-3 mr-1" />
+            Disconnected
+          </Badge>
+        );
+      case 'testing':
+        return (
+          <Badge variant="outline" className="border-primary text-primary">
+            <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+            Testing...
+          </Badge>
+        );
+      case 'error':
+        return (
+          <Badge variant="outline" className="border-destructive text-destructive bg-destructive/10">
+            <XCircle className="w-3 h-3 mr-1" />
+            Error
+          </Badge>
+        );
+      default:
+        return null;
+    }
+  };
+
+  const metatraderConnections = connections.filter(c => c.category === 'metatrader');
+  const exchangeConnections = connections.filter(c => c.category === 'exchange');
+  const fixConnections = connections.filter(c => c.category === 'fix');
+
+  const connectedCount = connections.filter(c => c.status === 'connected').length;
+  const totalCount = connections.length;
+
+  return (
+    <Card className="p-6 border-border bg-card">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h2 className="text-xl font-semibold text-foreground">Real-Time Connection Status</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            {connectedCount} of {totalCount} connections active
+          </p>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refreshAllConnections}
+          disabled={refreshingAll}
+        >
+          <RefreshCw className={`w-4 h-4 mr-2 ${refreshingAll ? 'animate-spin' : ''}`} />
+          Refresh All
+        </Button>
+      </div>
+
+      {/* MetaTrader Section */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-purple-500" />
+          MetaTrader
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {metatraderConnections.map(conn => (
+            <div key={conn.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
+              <div className="flex items-center gap-3">
+                {getStatusIcon(conn.status)}
+                <div>
+                  <span className="text-foreground font-medium text-sm">{conn.name}</span>
+                  {conn.lastCheck && (
+                    <p className="text-xs text-muted-foreground">
+                      Last: {conn.lastCheck.toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {getStatusBadge(conn.status, conn.latency)}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => testConnection(conn.id)}
+                  disabled={testing === conn.id}
+                >
+                  {testing === conn.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Exchange Section */}
+      <div className="mb-6">
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-yellow-500" />
+          Crypto Exchanges
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {exchangeConnections.map(conn => (
+            <div key={conn.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
+              <div className="flex items-center gap-3">
+                {getStatusIcon(conn.status)}
+                <div>
+                  <span className="text-foreground font-medium text-sm">{conn.name}</span>
+                  {conn.lastCheck && (
+                    <p className="text-xs text-muted-foreground">
+                      {conn.latency}ms
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => testConnection(conn.id)}
+                  disabled={testing === conn.id}
+                >
+                  {testing === conn.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* FIX Section */}
+      <div>
+        <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-blue-500" />
+          FIX Protocol
+        </h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {fixConnections.map(conn => (
+            <div key={conn.id} className="flex items-center justify-between p-3 rounded-lg bg-secondary/50 border border-border">
+              <div className="flex items-center gap-3">
+                {getStatusIcon(conn.status)}
+                <div>
+                  <span className="text-foreground font-medium text-sm">{conn.name}</span>
+                  {conn.lastCheck && (
+                    <p className="text-xs text-muted-foreground">
+                      Last: {conn.lastCheck.toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {getStatusBadge(conn.status, conn.latency)}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => testConnection(conn.id)}
+                  disabled={testing === conn.id}
+                >
+                  {testing === conn.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="w-4 h-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </Card>
   );
 };
 
