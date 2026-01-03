@@ -286,14 +286,16 @@ const Settings = () => {
           </div>
         </Card>
 
-        {/* Risk Management - Separated into Dynamic and Fixed */}
+        {/* Risk Management - Separated into Dynamic, Fixed, Spot, and Futures */}
         <Card className="p-4 md:p-6 border-border bg-card">
           <h2 className="text-lg md:text-xl font-semibold text-foreground mb-4">Risk Management</h2>
           
           <Tabs defaultValue="dynamic" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 mb-4">
-              <TabsTrigger value="dynamic" className="text-sm">Dynamic Risk</TabsTrigger>
-              <TabsTrigger value="fixed" className="text-sm">Fixed Risk</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 mb-4">
+              <TabsTrigger value="dynamic" className="text-sm">Dynamic</TabsTrigger>
+              <TabsTrigger value="fixed" className="text-sm">Fixed</TabsTrigger>
+              <TabsTrigger value="spot" className="text-sm">Spot</TabsTrigger>
+              <TabsTrigger value="futures" className="text-sm">Futures</TabsTrigger>
             </TabsList>
             
             <TabsContent value="dynamic" className="space-y-4">
@@ -350,6 +352,110 @@ const Settings = () => {
               <div className="space-y-2">
                 <Label htmlFor="max-positions" className="text-foreground text-sm">Max Open Positions</Label>
                 <Input id="max-positions" type="number" defaultValue="5" step="1" />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="spot" className="space-y-4">
+              <div className="p-3 rounded bg-success/10 border border-success/20 mb-4">
+                <span className="text-sm font-semibold text-success">Spot Trading Risk</span>
+                <p className="text-xs text-muted-foreground mt-1">Risk parameters for spot trading</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Risk Per Trade (%)</Label>
+                  <Input type="number" defaultValue="2.0" step="0.1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Max Position Size ($)</Label>
+                  <Input type="number" defaultValue="10000" step="100" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Take Profit Ratio</Label>
+                  <Input type="number" defaultValue="2.0" step="0.1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Stop Loss Ratio</Label>
+                  <Input type="number" defaultValue="1.0" step="0.1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Max Drawdown (%)</Label>
+                  <Input type="number" defaultValue="15" step="1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Daily Loss Limit (%)</Label>
+                  <Input type="number" defaultValue="5" step="0.5" />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-between py-2 border-t border-border mt-4 pt-4">
+                <Label className="text-foreground text-sm">Enable Trailing Stop</Label>
+                <Switch />
+              </div>
+              <div className="flex items-center justify-between py-2">
+                <Label className="text-foreground text-sm">Break-Even on 50% Profit</Label>
+                <Switch defaultChecked />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="futures" className="space-y-4">
+              <div className="p-3 rounded bg-primary/10 border border-primary/20 mb-4">
+                <span className="text-sm font-semibold text-primary">Futures Trading Risk</span>
+                <p className="text-xs text-muted-foreground mt-1">Risk parameters for futures/derivatives trading</p>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Risk Per Trade (%)</Label>
+                  <Input type="number" defaultValue="1.5" step="0.1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Max Position Size ($)</Label>
+                  <Input type="number" defaultValue="50000" step="1000" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Take Profit Ratio</Label>
+                  <Input type="number" defaultValue="3.0" step="0.1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Stop Loss Ratio</Label>
+                  <Input type="number" defaultValue="1.0" step="0.1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Max Drawdown (%)</Label>
+                  <Input type="number" defaultValue="10" step="1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Max Leverage</Label>
+                  <Input type="number" defaultValue="10" step="1" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Daily Loss Limit (%)</Label>
+                  <Input type="number" defaultValue="3" step="0.5" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-foreground text-sm">Weekly Loss Limit (%)</Label>
+                  <Input type="number" defaultValue="10" step="1" />
+                </div>
+              </div>
+              
+              <div className="border-t border-border mt-4 pt-4 space-y-3">
+                <div className="flex items-center justify-between py-2">
+                  <Label className="text-foreground text-sm">Enable Trailing Stop</Label>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <Label className="text-foreground text-sm">Auto-Deleverage</Label>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <Label className="text-foreground text-sm">Enable Hedging</Label>
+                  <Switch defaultChecked />
+                </div>
+                <div className="flex items-center justify-between py-2">
+                  <Label className="text-foreground text-sm">Liquidation Alert (%)</Label>
+                  <Input type="number" defaultValue="80" step="5" className="w-24" />
+                </div>
               </div>
             </TabsContent>
           </Tabs>

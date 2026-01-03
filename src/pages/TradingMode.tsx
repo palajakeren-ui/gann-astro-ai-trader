@@ -33,14 +33,16 @@ interface TradingModeConfig {
   leverage: number;
   marginMode: "cross" | "isolated";
   maxPositionSize: number;
-  riskPerTrade: number;
-  maxDrawdown: number;
-  takeProfitRatio: number;
-  stopLossRatio: number;
   trailingStop: boolean;
   trailingStopDistance: number;
   autoDeleverage: boolean;
   hedgingEnabled: boolean;
+}
+
+interface ManualLeverageConfig {
+  instrument: string;
+  leverage: number;
+  marginMode: "cross" | "isolated";
 }
 
 const TradingMode = () => {
@@ -53,10 +55,6 @@ const TradingMode = () => {
       leverage: 1,
       marginMode: "cross",
       maxPositionSize: 10000,
-      riskPerTrade: 2,
-      maxDrawdown: 15,
-      takeProfitRatio: 2,
-      stopLossRatio: 1,
       trailingStop: false,
       trailingStopDistance: 1,
       autoDeleverage: false,
@@ -70,10 +68,6 @@ const TradingMode = () => {
       leverage: 10,
       marginMode: "isolated",
       maxPositionSize: 50000,
-      riskPerTrade: 1.5,
-      maxDrawdown: 10,
-      takeProfitRatio: 3,
-      stopLossRatio: 1,
       trailingStop: true,
       trailingStopDistance: 0.5,
       autoDeleverage: true,
@@ -81,28 +75,17 @@ const TradingMode = () => {
     },
   ]);
 
-  const [riskSettings, setRiskSettings] = useState({
-    dynamicEnabled: true,
-    kellyFraction: 0.5,
-    volatilityAdjustment: true,
-    drawdownProtection: true,
-    adaptiveSizing: true,
-    maxOpenPositions: 5,
-    maxCorrelatedPositions: 3,
-    dailyLossLimit: 5,
-    weeklyLossLimit: 10,
-  });
+  const [manualLeverages, setManualLeverages] = useState<ManualLeverageConfig[]>([
+    { instrument: "BTC/USDT", leverage: 25, marginMode: "isolated" },
+    { instrument: "ETH/USDT", leverage: 20, marginMode: "isolated" },
+    { instrument: "EUR/USD", leverage: 100, marginMode: "cross" },
+    { instrument: "XAU/USD", leverage: 20, marginMode: "cross" },
+  ]);
 
-  const [leverageSettings, setLeverageSettings] = useState({
-    forexLeverage: "1:100",
-    indicesLeverage: "1:50",
-    commoditiesLeverage: "1:20",
-    cryptoLeverage: 20,
-    btcLeverage: 25,
-    ethLeverage: 20,
-    altcoinLeverage: 10,
-    marginMode: "cross" as "cross" | "isolated",
-    autoDeleverage: true,
+  const [newLeverageInput, setNewLeverageInput] = useState({
+    instrument: "",
+    leverage: 10,
+    marginMode: "isolated" as "cross" | "isolated",
   });
 
   const [isRunning, setIsRunning] = useState(false);
@@ -130,10 +113,6 @@ const TradingMode = () => {
       leverage: type === "spot" ? 1 : 5,
       marginMode: "isolated",
       maxPositionSize: type === "spot" ? 5000 : 25000,
-      riskPerTrade: 2,
-      maxDrawdown: 15,
-      takeProfitRatio: 2,
-      stopLossRatio: 1,
       trailingStop: false,
       trailingStopDistance: 1,
       autoDeleverage: type === "futures",
@@ -141,6 +120,34 @@ const TradingMode = () => {
     };
     setActiveModes(prev => [...prev, newMode]);
     toast.success(`New ${type} configuration added`);
+  };
+
+  const addManualLeverage = () => {
+    if (!newLeverageInput.instrument.trim()) {
+      toast.error("Please enter instrument name");
+      return;
+    }
+    if (manualLeverages.some(l => l.instrument.toLowerCase() === newLeverageInput.instrument.toLowerCase())) {
+      toast.error("Instrument already exists");
+      return;
+    }
+    setManualLeverages(prev => [...prev, { 
+      ...newLeverageInput, 
+      instrument: newLeverageInput.instrument.toUpperCase() 
+    }]);
+    setNewLeverageInput({ instrument: "", leverage: 10, marginMode: "isolated" });
+    toast.success(`Leverage for ${newLeverageInput.instrument.toUpperCase()} added`);
+  };
+
+  const removeManualLeverage = (instrument: string) => {
+    setManualLeverages(prev => prev.filter(l => l.instrument !== instrument));
+    toast.success(`${instrument} removed`);
+  };
+
+  const updateManualLeverage = (instrument: string, updates: Partial<ManualLeverageConfig>) => {
+    setManualLeverages(prev => prev.map(l => 
+      l.instrument === instrument ? { ...l, ...updates } : l
+    ));
   };
 
   const removeMode = (id: string) => {
@@ -226,8 +233,8 @@ const TradingMode = () => {
               <Layers className="w-5 h-5 text-accent" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Max Leverage</p>
-              <p className="text-xl font-bold text-foreground">{leverageSettings.btcLeverage}x</p>
+              <p className="text-xs text-muted-foreground">Leverage Configs</p>
+              <p className="text-xl font-bold text-foreground">{manualLeverages.length}</p>
             </div>
           </div>
         </Card>
@@ -237,18 +244,17 @@ const TradingMode = () => {
               <Shield className="w-5 h-5 text-destructive" />
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">Risk Limit</p>
-              <p className="text-xl font-bold text-foreground">{riskSettings.dailyLossLimit}%</p>
+              <p className="text-xs text-muted-foreground">Max Leverage</p>
+              <p className="text-xl font-bold text-foreground">{Math.max(...manualLeverages.map(l => l.leverage), 1)}x</p>
             </div>
           </div>
         </Card>
       </div>
 
       <Tabs defaultValue="modes" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 mb-4">
+        <TabsList className="grid w-full grid-cols-3 mb-4">
           <TabsTrigger value="modes" className="text-sm">Trading Modes</TabsTrigger>
-          <TabsTrigger value="leverage" className="text-sm">Leverage Config</TabsTrigger>
-          <TabsTrigger value="risk" className="text-sm">Risk Management</TabsTrigger>
+          <TabsTrigger value="leverage" className="text-sm">Manual Leverage</TabsTrigger>
           <TabsTrigger value="advanced" className="text-sm">Advanced</TabsTrigger>
         </TabsList>
 
@@ -301,27 +307,11 @@ const TradingMode = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs">Risk Per Trade (%)</Label>
+                      <Label className="text-xs">Trailing Distance (%)</Label>
                       <Input 
                         type="number" 
-                        value={mode.riskPerTrade}
-                        onChange={(e) => handleUpdateMode(mode.id, { riskPerTrade: Number(e.target.value) })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Take Profit Ratio</Label>
-                      <Input 
-                        type="number" 
-                        value={mode.takeProfitRatio}
-                        onChange={(e) => handleUpdateMode(mode.id, { takeProfitRatio: Number(e.target.value) })}
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs">Stop Loss Ratio</Label>
-                      <Input 
-                        type="number" 
-                        value={mode.stopLossRatio}
-                        onChange={(e) => handleUpdateMode(mode.id, { stopLossRatio: Number(e.target.value) })}
+                        value={mode.trailingStopDistance}
+                        onChange={(e) => handleUpdateMode(mode.id, { trailingStopDistance: Number(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -334,9 +324,6 @@ const TradingMode = () => {
                       />
                       <Label className="text-xs">Trailing Stop</Label>
                     </div>
-                    <Badge variant="outline" className="text-xs">
-                      Max DD: {mode.maxDrawdown}%
-                    </Badge>
                   </div>
                 </Card>
               ))}
@@ -371,15 +358,15 @@ const TradingMode = () => {
                     <div className="space-y-2">
                       <Label className="text-xs">Leverage</Label>
                       <div className="flex items-center gap-2">
-                        <Slider 
-                          value={[mode.leverage]}
-                          onValueChange={(v) => handleUpdateMode(mode.id, { leverage: v[0] })}
+                        <Input 
+                          type="number"
+                          value={mode.leverage}
+                          onChange={(e) => handleUpdateMode(mode.id, { leverage: Number(e.target.value) })}
                           min={1}
                           max={125}
-                          step={1}
                           className="flex-1"
                         />
-                        <span className="text-sm font-mono w-12">{mode.leverage}x</span>
+                        <span className="text-sm font-mono w-8">x</span>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -402,11 +389,11 @@ const TradingMode = () => {
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-xs">Risk Per Trade (%)</Label>
+                      <Label className="text-xs">Trailing Distance (%)</Label>
                       <Input 
                         type="number" 
-                        value={mode.riskPerTrade}
-                        onChange={(e) => handleUpdateMode(mode.id, { riskPerTrade: Number(e.target.value) })}
+                        value={mode.trailingStopDistance}
+                        onChange={(e) => handleUpdateMode(mode.id, { trailingStopDistance: Number(e.target.value) })}
                       />
                     </div>
                   </div>
@@ -440,287 +427,129 @@ const TradingMode = () => {
           </div>
         </TabsContent>
 
-        {/* Leverage Configuration Tab */}
+        {/* Manual Leverage Configuration Tab */}
         <TabsContent value="leverage" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-            {/* MetaTrader Leverage */}
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Settings2 className="w-4 h-4" />
-                MetaTrader 5
-              </h3>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-sm">Forex Leverage</Label>
-                  <Input 
-                    type="text" 
-                    value={leverageSettings.forexLeverage}
-                    onChange={(e) => setLeverageSettings(prev => ({ ...prev, forexLeverage: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Indices Leverage</Label>
-                  <Input 
-                    type="text" 
-                    value={leverageSettings.indicesLeverage}
-                    onChange={(e) => setLeverageSettings(prev => ({ ...prev, indicesLeverage: e.target.value }))}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Commodities Leverage</Label>
-                  <Input 
-                    type="text" 
-                    value={leverageSettings.commoditiesLeverage}
-                    onChange={(e) => setLeverageSettings(prev => ({ ...prev, commoditiesLeverage: e.target.value }))}
-                  />
-                </div>
-              </div>
-            </Card>
-
-            {/* Crypto Exchange Leverage */}
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Zap className="w-4 h-4" />
-                Crypto Exchanges
-              </h3>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-sm">BTC/USDT Leverage</Label>
-                  <div className="flex items-center gap-2">
-                    <Slider 
-                      value={[leverageSettings.btcLeverage]}
-                      onValueChange={(v) => setLeverageSettings(prev => ({ ...prev, btcLeverage: v[0] }))}
-                      min={1}
-                      max={125}
-                      className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-10">{leverageSettings.btcLeverage}x</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">ETH/USDT Leverage</Label>
-                  <div className="flex items-center gap-2">
-                    <Slider 
-                      value={[leverageSettings.ethLeverage]}
-                      onValueChange={(v) => setLeverageSettings(prev => ({ ...prev, ethLeverage: v[0] }))}
-                      min={1}
-                      max={100}
-                      className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-10">{leverageSettings.ethLeverage}x</span>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Altcoins Leverage</Label>
-                  <div className="flex items-center gap-2">
-                    <Slider 
-                      value={[leverageSettings.altcoinLeverage]}
-                      onValueChange={(v) => setLeverageSettings(prev => ({ ...prev, altcoinLeverage: v[0] }))}
-                      min={1}
-                      max={50}
-                      className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-10">{leverageSettings.altcoinLeverage}x</span>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* Margin Mode Settings */}
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Layers className="w-4 h-4" />
-                Margin Mode
-              </h3>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-sm">Default Margin Mode</Label>
-                  <select 
-                    className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm"
-                    value={leverageSettings.marginMode}
-                    onChange={(e) => setLeverageSettings(prev => ({ ...prev, marginMode: e.target.value as "cross" | "isolated" }))}
-                  >
-                    <option value="cross">Cross Margin</option>
-                    <option value="isolated">Isolated Margin</option>
-                  </select>
-                </div>
-                <div className="flex items-center justify-between py-2">
-                  <Label className="text-sm">Auto-Deleverage</Label>
-                  <Switch 
-                    checked={leverageSettings.autoDeleverage}
-                    onCheckedChange={(checked) => setLeverageSettings(prev => ({ ...prev, autoDeleverage: checked }))}
-                  />
-                </div>
-                <div className="p-3 rounded bg-secondary/50">
-                  <p className="text-xs text-muted-foreground">
-                    Cross margin uses entire account balance. Isolated margin limits risk to position margin only.
-                  </p>
-                </div>
-              </div>
-            </Card>
-
-            {/* FIX Protocol Leverage */}
-            <Card className="p-4 border-border bg-primary/5 border-primary/30">
-              <h3 className="text-base font-semibold text-foreground mb-3 flex items-center gap-2">
-                <Activity className="w-4 h-4 text-primary" />
-                FIX Protocol
-              </h3>
-              <div className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="text-sm">Forex Leverage</Label>
-                  <Input type="text" placeholder="1:100" defaultValue="1:100" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Equities Leverage</Label>
-                  <Input type="text" placeholder="1:4" defaultValue="1:4" />
-                </div>
-                <div className="space-y-2">
-                  <Label className="text-sm">Custom Leverage</Label>
-                  <Input type="text" placeholder="Enter custom ratio" />
-                  <p className="text-xs text-muted-foreground">Format: 1:X or Xx</p>
-                </div>
-              </div>
-            </Card>
-          </div>
-        </TabsContent>
-
-        {/* Risk Management Tab */}
-        <TabsContent value="risk" className="space-y-4">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* Dynamic Risk Settings */}
-            <Card className="p-4 border-border bg-card">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-base font-semibold text-foreground flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4" />
-                  Dynamic Risk
-                </h3>
-                <Switch 
-                  checked={riskSettings.dynamicEnabled}
-                  onCheckedChange={(checked) => setRiskSettings(prev => ({ ...prev, dynamicEnabled: checked }))}
+          {/* Add New Leverage */}
+          <Card className="p-4 border-border bg-card">
+            <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
+              <Settings2 className="w-4 h-4" />
+              Add Manual Leverage
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label className="text-sm">Instrument</Label>
+                <Input 
+                  type="text" 
+                  placeholder="e.g., BTC/USDT, EUR/USD"
+                  value={newLeverageInput.instrument}
+                  onChange={(e) => setNewLeverageInput(prev => ({ ...prev, instrument: e.target.value }))}
                 />
               </div>
-              
-              <div className="space-y-4">
-                <div className="p-3 rounded bg-primary/10 border border-primary/20">
-                  <p className="text-xs text-muted-foreground">Automatically adjusts based on market conditions</p>
-                </div>
-                
-                <div className="space-y-2">
-                  <Label className="text-sm">Kelly Criterion Fraction</Label>
-                  <div className="flex items-center gap-2">
-                    <Slider 
-                      value={[riskSettings.kellyFraction * 100]}
-                      onValueChange={(v) => setRiskSettings(prev => ({ ...prev, kellyFraction: v[0] / 100 }))}
-                      min={10}
-                      max={100}
-                      className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-12">{(riskSettings.kellyFraction * 100).toFixed(0)}%</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <Label className="text-sm">Volatility Adjustment</Label>
-                  <Switch 
-                    checked={riskSettings.volatilityAdjustment}
-                    onCheckedChange={(checked) => setRiskSettings(prev => ({ ...prev, volatilityAdjustment: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <Label className="text-sm">Drawdown Protection</Label>
-                  <Switch 
-                    checked={riskSettings.drawdownProtection}
-                    onCheckedChange={(checked) => setRiskSettings(prev => ({ ...prev, drawdownProtection: checked }))}
-                  />
-                </div>
-
-                <div className="flex items-center justify-between py-2">
-                  <Label className="text-sm">Adaptive Position Sizing</Label>
-                  <Switch 
-                    checked={riskSettings.adaptiveSizing}
-                    onCheckedChange={(checked) => setRiskSettings(prev => ({ ...prev, adaptiveSizing: checked }))}
-                  />
-                </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Leverage</Label>
+                <Input 
+                  type="number"
+                  min={1}
+                  max={500}
+                  value={newLeverageInput.leverage}
+                  onChange={(e) => setNewLeverageInput(prev => ({ ...prev, leverage: Number(e.target.value) }))}
+                />
               </div>
-            </Card>
-
-            {/* Fixed Risk Settings */}
-            <Card className="p-4 border-border bg-card">
-              <h3 className="text-base font-semibold text-foreground mb-4 flex items-center gap-2">
-                <Shield className="w-4 h-4" />
-                Fixed Risk Limits
-              </h3>
-              
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label className="text-sm">Max Open Positions</Label>
-                  <Input 
-                    type="number" 
-                    value={riskSettings.maxOpenPositions}
-                    onChange={(e) => setRiskSettings(prev => ({ ...prev, maxOpenPositions: Number(e.target.value) }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Max Correlated Positions</Label>
-                  <Input 
-                    type="number" 
-                    value={riskSettings.maxCorrelatedPositions}
-                    onChange={(e) => setRiskSettings(prev => ({ ...prev, maxCorrelatedPositions: Number(e.target.value) }))}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Daily Loss Limit (%)</Label>
-                  <div className="flex items-center gap-2">
-                    <Slider 
-                      value={[riskSettings.dailyLossLimit]}
-                      onValueChange={(v) => setRiskSettings(prev => ({ ...prev, dailyLossLimit: v[0] }))}
-                      min={1}
-                      max={20}
-                      className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-10">{riskSettings.dailyLossLimit}%</span>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label className="text-sm">Weekly Loss Limit (%)</Label>
-                  <div className="flex items-center gap-2">
-                    <Slider 
-                      value={[riskSettings.weeklyLossLimit]}
-                      onValueChange={(v) => setRiskSettings(prev => ({ ...prev, weeklyLossLimit: v[0] }))}
-                      min={5}
-                      max={50}
-                      className="flex-1"
-                    />
-                    <span className="text-sm font-mono w-10">{riskSettings.weeklyLossLimit}%</span>
-                  </div>
-                </div>
+              <div className="space-y-2">
+                <Label className="text-sm">Margin Mode</Label>
+                <select 
+                  className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm"
+                  value={newLeverageInput.marginMode}
+                  onChange={(e) => setNewLeverageInput(prev => ({ ...prev, marginMode: e.target.value as "cross" | "isolated" }))}
+                >
+                  <option value="cross">Cross Margin</option>
+                  <option value="isolated">Isolated Margin</option>
+                </select>
               </div>
-            </Card>
-          </div>
+              <div className="flex items-end">
+                <Button onClick={addManualLeverage} className="w-full gap-2">
+                  <DollarSign className="w-4 h-4" />
+                  Add Leverage
+                </Button>
+              </div>
+            </div>
+          </Card>
 
-          {/* Risk Summary */}
+          {/* Leverage List */}
           <Card className="p-4 border-border bg-card">
-            <h3 className="text-base font-semibold text-foreground mb-4">Risk Summary</h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3 rounded bg-secondary/50">
-                <p className="text-xs text-muted-foreground">Daily Risk Budget</p>
-                <p className="text-lg font-bold text-foreground">${(100000 * riskSettings.dailyLossLimit / 100).toLocaleString()}</p>
+            <h3 className="text-base font-semibold text-foreground mb-4">Configured Leverage Settings</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              {manualLeverages.map((lev) => (
+                <div key={lev.instrument} className="p-4 rounded-lg bg-secondary/30 border border-border">
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="font-semibold text-foreground">{lev.instrument}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => removeManualLeverage(lev.instrument)}
+                      className="text-destructive hover:text-destructive"
+                    >
+                      <AlertTriangle className="w-4 h-4" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs">Leverage</Label>
+                      <Input 
+                        type="number"
+                        min={1}
+                        max={500}
+                        value={lev.leverage}
+                        onChange={(e) => updateManualLeverage(lev.instrument, { leverage: Number(e.target.value) })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs">Margin Mode</Label>
+                      <select 
+                        className="w-full px-3 py-2 bg-input border border-border rounded-md text-foreground text-sm"
+                        value={lev.marginMode}
+                        onChange={(e) => updateManualLeverage(lev.instrument, { marginMode: e.target.value as "cross" | "isolated" })}
+                      >
+                        <option value="cross">Cross Margin</option>
+                        <option value="isolated">Isolated Margin</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div className="mt-3 pt-3 border-t border-border">
+                    <Badge variant="outline" className="text-xs">
+                      {lev.leverage}x {lev.marginMode}
+                    </Badge>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {manualLeverages.length === 0 && (
+              <div className="text-center py-8 text-muted-foreground">
+                <Settings2 className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No leverage settings configured. Add one above.</p>
               </div>
-              <div className="p-3 rounded bg-secondary/50">
-                <p className="text-xs text-muted-foreground">Weekly Risk Budget</p>
-                <p className="text-lg font-bold text-foreground">${(100000 * riskSettings.weeklyLossLimit / 100).toLocaleString()}</p>
+            )}
+          </Card>
+
+          {/* Quick Reference */}
+          <Card className="p-4 border-border bg-secondary/30">
+            <h3 className="text-base font-semibold text-foreground mb-3">Leverage Reference</h3>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+              <div>
+                <p className="text-muted-foreground">Forex (Retail)</p>
+                <p className="font-semibold">1:30 - 1:500</p>
               </div>
-              <div className="p-3 rounded bg-secondary/50">
-                <p className="text-xs text-muted-foreground">Per-Trade Risk</p>
-                <p className="text-lg font-bold text-foreground">2.0%</p>
+              <div>
+                <p className="text-muted-foreground">Crypto Futures</p>
+                <p className="font-semibold">1x - 125x</p>
               </div>
-              <div className="p-3 rounded bg-secondary/50">
-                <p className="text-xs text-muted-foreground">Max Positions</p>
-                <p className="text-lg font-bold text-foreground">{riskSettings.maxOpenPositions}</p>
+              <div>
+                <p className="text-muted-foreground">Commodities</p>
+                <p className="font-semibold">1:10 - 1:50</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Indices</p>
+                <p className="font-semibold">1:20 - 1:100</p>
               </div>
             </div>
           </Card>
