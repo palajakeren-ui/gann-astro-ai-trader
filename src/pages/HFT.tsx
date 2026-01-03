@@ -21,7 +21,11 @@ import {
   Server,
   Cpu,
   Network,
-  TestTube
+  TestTube,
+  Plus,
+  X,
+  ChevronDown,
+  ChevronUp
 } from "lucide-react";
 import { toast } from "sonner";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts";
@@ -62,8 +66,8 @@ const HFT = () => {
     riskLimitPerTrade: 0.1,
     
     // Latency
-    targetLatency: 1.0, // ms
-    maxLatency: 5.0, // ms
+    targetLatency: 1.0,
+    maxLatency: 5.0,
     coLocation: true,
     directMarketAccess: true,
     
@@ -71,7 +75,7 @@ const HFT = () => {
     spreadBps: 2.0,
     inventoryLimit: 5,
     quoteSize: 0.1,
-    refreshRate: 100, // ms
+    refreshRate: 100,
     
     // Arbitrage
     minSpreadArb: 0.05,
@@ -79,16 +83,14 @@ const HFT = () => {
     
     // Momentum
     signalThreshold: 0.8,
-    holdPeriod: 500, // ms
+    holdPeriod: 500,
 
     // Risk Management
     riskMode: "dynamic" as "dynamic" | "fixed",
-    // Dynamic Risk
     kellyFraction: 0.25,
     volatilityAdjusted: true,
     maxDailyDrawdown: 5.0,
     dynamicPositionScaling: true,
-    // Fixed Risk
     fixedRiskPercent: 1.0,
     fixedLotSize: 0.1,
     fixedStopLoss: 50,
@@ -97,19 +99,118 @@ const HFT = () => {
     // Instrument Configuration
     instrumentMode: "single" as "single" | "multi",
     selectedInstruments: ["BTCUSDT"] as string[],
+    manualInstruments: [] as string[],
 
-    // Strategy Settings
-    useGannStrategy: false,
-    useEhlersStrategy: false,
+    // ========== GANN STRATEGIES ==========
+    // Square of 9
+    useGannSquare9: false,
+    gannSquare9BasePrice: 100,
+    gannSquare9Divisions: 8,
+    gannSquare9TimeMultiplier: 1.0,
+    
+    // Gann Angles/Fan
+    useGannAngles: false,
     gannAngle: 45,
     gannTimeUnit: 1,
+    gannPriceUnit: 1,
+    gannFanAngles: [82.5, 75, 71.25, 63.75, 45, 26.25, 18.75, 15, 7.5],
+    
+    // Gann Time Cycles
+    useGannTimeCycles: false,
+    gannCycleBase: 30,
+    gannCycleMultipliers: [1, 2, 3, 4, 5, 7, 9],
+    gannAnniversaryDates: true,
+    
+    // Gann Support/Resistance
+    useGannSR: false,
+    gannSRDivisions: 8,
+    gannSRPercentages: [12.5, 25, 33.33, 37.5, 50, 62.5, 66.67, 75, 87.5, 100],
+    
+    // Gann Fibonacci
+    useGannFibo: false,
+    gannFiboLevels: [0, 23.6, 38.2, 50, 61.8, 78.6, 100, 127.2, 161.8, 261.8],
+    gannFiboTimeZones: true,
+    
+    // Gann Wave
+    useGannWave: false,
+    gannWaveCount: 5,
+    gannWaveCorrection: 3,
+    
+    // Gann Hexagon
+    useGannHexagon: false,
+    gannHexagonBaseNumber: 1,
+    gannHexagonRings: 7,
+
+    // ========== EHLERS DSP STRATEGIES ==========
+    // MAMA/FAMA
+    useEhlersMAMAFAMA: false,
+    mamaFastLimit: 0.5,
+    mamaSlowLimit: 0.05,
+    
+    // Fisher Transform
+    useEhlersFisher: false,
+    fisherPeriod: 10,
+    fisherSmoothing: 0.33,
+    
+    // Bandpass Filter
+    useEhlersBandpass: false,
+    bandpassPeriod: 20,
+    bandpassBandwidth: 0.3,
+    
+    // Super Smoother
+    useEhlersSuperSmoother: false,
+    superSmootherPeriod: 10,
+    superSmootherPoles: 2,
+    
+    // Roofing Filter
+    useEhlersRoofing: false,
+    roofingHighCutoff: 48,
+    roofingLowCutoff: 10,
+    
+    // Cyber Cycle
+    useEhlersCyberCycle: false,
+    cyberCycleAlpha: 0.07,
+    
+    // Decycler
+    useEhlersDecycler: false,
+    decyclerCutoff: 125,
+    
+    // Instantaneous Trend
+    useEhlersInstaTrend: false,
+    instaTrendAlpha: 0.07,
+    
+    // Dominant Cycle
+    useEhlersDominantCycle: false,
+    dominantCycleMinPeriod: 8,
+    dominantCycleMaxPeriod: 50,
+
+    // Legacy (keep for compatibility)
+    useGannStrategy: false,
+    useEhlersStrategy: false,
     ehlersFilterPeriod: 20,
     ehlersBandwidth: 0.3,
   });
 
+  const [manualInstrumentInput, setManualInstrumentInput] = useState("");
+  const [expandedGannSection, setExpandedGannSection] = useState(false);
+  const [expandedEhlersSection, setExpandedEhlersSection] = useState(false);
+
   const availableInstruments = [
     "BTCUSDT", "ETHUSDT", "BNBUSDT", "XRPUSDT", "ADAUSDT", 
     "DOGEUSDT", "SOLUSDT", "DOTUSDT", "MATICUSDT", "LTCUSDT"
+  ];
+
+  const forexInstruments = [
+    "EURUSD", "GBPUSD", "USDJPY", "AUDUSD", "USDCAD", 
+    "USDCHF", "NZDUSD", "EURGBP", "EURJPY", "GBPJPY"
+  ];
+
+  const commodityInstruments = [
+    "XAUUSD", "XAGUSD", "WTICOUSD", "BRENTOIL", "NATGAS"
+  ];
+
+  const indexInstruments = [
+    "US500", "US30", "US100", "DE40", "UK100", "JP225"
   ];
 
   const latencyData = generateLatencyData();
@@ -155,8 +256,12 @@ const HFT = () => {
     { id: "arbitrage", name: "Statistical Arbitrage", status: "Active", pnl: 890, trades: 1562 },
     { id: "momentum", name: "Momentum Scalping", status: "Paused", pnl: 420, trades: 892 },
     { id: "mean-reversion", name: "Mean Reversion", status: "Active", pnl: 285, trades: 643 },
-    { id: "gann-angles", name: "Gann Angles Strategy", status: config.useGannStrategy ? "Active" : "Inactive", pnl: 560, trades: 428 },
-    { id: "ehlers-dsp", name: "Ehlers DSP Filter", status: config.useEhlersStrategy ? "Active" : "Inactive", pnl: 720, trades: 315 },
+    { id: "gann-square9", name: "Gann Square of 9", status: config.useGannSquare9 ? "Active" : "Inactive", pnl: 560, trades: 428 },
+    { id: "gann-angles", name: "Gann Angles/Fan", status: config.useGannAngles ? "Active" : "Inactive", pnl: 720, trades: 315 },
+    { id: "gann-cycles", name: "Gann Time Cycles", status: config.useGannTimeCycles ? "Active" : "Inactive", pnl: 380, trades: 245 },
+    { id: "ehlers-mama", name: "Ehlers MAMA/FAMA", status: config.useEhlersMAMAFAMA ? "Active" : "Inactive", pnl: 640, trades: 412 },
+    { id: "ehlers-fisher", name: "Ehlers Fisher", status: config.useEhlersFisher ? "Active" : "Inactive", pnl: 520, trades: 328 },
+    { id: "ehlers-bandpass", name: "Ehlers Bandpass", status: config.useEhlersBandpass ? "Active" : "Inactive", pnl: 445, trades: 289 },
   ];
 
   const toggleInstrument = (instrument: string) => {
@@ -168,6 +273,31 @@ const HFT = () => {
         return { ...prev, selectedInstruments: [...current, instrument] };
       }
     });
+  };
+
+  const addManualInstrument = () => {
+    const instrument = manualInstrumentInput.trim().toUpperCase();
+    if (instrument && !config.manualInstruments.includes(instrument) && !config.selectedInstruments.includes(instrument)) {
+      setConfig(prev => ({
+        ...prev,
+        manualInstruments: [...prev.manualInstruments, instrument],
+        selectedInstruments: [...prev.selectedInstruments, instrument]
+      }));
+      setManualInstrumentInput("");
+      toast.success(`Added ${instrument} to instruments`);
+    }
+  };
+
+  const removeManualInstrument = (instrument: string) => {
+    setConfig(prev => ({
+      ...prev,
+      manualInstruments: prev.manualInstruments.filter(i => i !== instrument),
+      selectedInstruments: prev.selectedInstruments.filter(i => i !== instrument)
+    }));
+  };
+
+  const getAllInstruments = () => {
+    return [...availableInstruments, ...forexInstruments, ...commodityInstruments, ...indexInstruments, ...config.manualInstruments];
   };
 
   const toggleHFT = () => {
@@ -627,138 +757,522 @@ const HFT = () => {
 
             {/* Instruments Configuration */}
             <TabsContent value="instruments" className="mt-4">
-              <Card className="p-4 border-border bg-card">
-                <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
-                  <BarChart3 className="w-4 h-4 text-accent" />
-                  Instrument Trading Mode
-                </h4>
-                <div className="space-y-4">
-                  <div className="flex gap-2 mb-4">
-                    <Button 
-                      variant={config.instrumentMode === "single" ? "default" : "outline"}
-                      onClick={() => updateConfig("instrumentMode", "single")}
-                      className="flex-1"
-                    >
-                      Single Instrument
-                    </Button>
-                    <Button 
-                      variant={config.instrumentMode === "multi" ? "default" : "outline"}
-                      onClick={() => updateConfig("instrumentMode", "multi")}
-                      className="flex-1"
-                    >
-                      Multi Instrument
-                    </Button>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
-                    {availableInstruments.map((instrument) => (
-                      <Button
-                        key={instrument}
-                        variant={config.selectedInstruments.includes(instrument) ? "default" : "outline"}
-                        size="sm"
-                        onClick={() => {
-                          if (config.instrumentMode === "single") {
-                            setConfig(prev => ({ ...prev, selectedInstruments: [instrument] }));
-                          } else {
-                            toggleInstrument(instrument);
-                          }
-                        }}
-                        className="text-xs"
+              <div className="space-y-4">
+                <Card className="p-4 border-border bg-card">
+                  <h4 className="font-semibold text-foreground mb-4 flex items-center gap-2">
+                    <BarChart3 className="w-4 h-4 text-accent" />
+                    Instrument Trading Mode
+                  </h4>
+                  <div className="space-y-4">
+                    <div className="flex gap-2 mb-4">
+                      <Button 
+                        variant={config.instrumentMode === "single" ? "default" : "outline"}
+                        onClick={() => updateConfig("instrumentMode", "single")}
+                        className="flex-1"
                       >
-                        {instrument}
+                        Single Instrument
                       </Button>
-                    ))}
-                  </div>
+                      <Button 
+                        variant={config.instrumentMode === "multi" ? "default" : "outline"}
+                        onClick={() => updateConfig("instrumentMode", "multi")}
+                        className="flex-1"
+                      >
+                        Multi Instrument
+                      </Button>
+                    </div>
 
-                  <div className="p-3 bg-secondary/50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">
-                      Active Instruments: <span className="text-foreground font-semibold">{config.selectedInstruments.join(", ")}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {config.instrumentMode === "single" 
-                        ? "Mode: Single - Hanya satu instrumen aktif" 
-                        : "Mode: Multi - Beberapa instrumen bisa aktif bersamaan"}
-                    </p>
+                    {/* Manual Instrument Input */}
+                    <div className="p-4 bg-secondary/30 rounded-lg border border-border">
+                      <Label className="text-foreground text-sm font-semibold mb-2 block">Add Custom Instrument</Label>
+                      <div className="flex gap-2">
+                        <Input 
+                          type="text" 
+                          placeholder="e.g., AAPL, TSLA, GBPJPY..."
+                          value={manualInstrumentInput}
+                          onChange={(e) => setManualInstrumentInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && addManualInstrument()}
+                          className="flex-1"
+                        />
+                        <Button onClick={addManualInstrument} size="sm">
+                          <Plus className="w-4 h-4 mr-1" />
+                          Add
+                        </Button>
+                      </div>
+                      {config.manualInstruments.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {config.manualInstruments.map((instrument) => (
+                            <Badge key={instrument} variant="secondary" className="flex items-center gap-1">
+                              {instrument}
+                              <X 
+                                className="w-3 h-3 cursor-pointer hover:text-destructive" 
+                                onClick={() => removeManualInstrument(instrument)}
+                              />
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Crypto Instruments */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-2 block">Crypto</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {availableInstruments.map((instrument) => (
+                          <Button
+                            key={instrument}
+                            variant={config.selectedInstruments.includes(instrument) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              if (config.instrumentMode === "single") {
+                                setConfig(prev => ({ ...prev, selectedInstruments: [instrument] }));
+                              } else {
+                                toggleInstrument(instrument);
+                              }
+                            }}
+                            className="text-xs"
+                          >
+                            {instrument}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Forex Instruments */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-2 block">Forex</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {forexInstruments.map((instrument) => (
+                          <Button
+                            key={instrument}
+                            variant={config.selectedInstruments.includes(instrument) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              if (config.instrumentMode === "single") {
+                                setConfig(prev => ({ ...prev, selectedInstruments: [instrument] }));
+                              } else {
+                                toggleInstrument(instrument);
+                              }
+                            }}
+                            className="text-xs"
+                          >
+                            {instrument}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Commodity Instruments */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-2 block">Commodities</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-5 gap-2">
+                        {commodityInstruments.map((instrument) => (
+                          <Button
+                            key={instrument}
+                            variant={config.selectedInstruments.includes(instrument) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              if (config.instrumentMode === "single") {
+                                setConfig(prev => ({ ...prev, selectedInstruments: [instrument] }));
+                              } else {
+                                toggleInstrument(instrument);
+                              }
+                            }}
+                            className="text-xs"
+                          >
+                            {instrument}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Index Instruments */}
+                    <div>
+                      <Label className="text-xs text-muted-foreground mb-2 block">Indices</Label>
+                      <div className="grid grid-cols-2 md:grid-cols-6 gap-2">
+                        {indexInstruments.map((instrument) => (
+                          <Button
+                            key={instrument}
+                            variant={config.selectedInstruments.includes(instrument) ? "default" : "outline"}
+                            size="sm"
+                            onClick={() => {
+                              if (config.instrumentMode === "single") {
+                                setConfig(prev => ({ ...prev, selectedInstruments: [instrument] }));
+                              } else {
+                                toggleInstrument(instrument);
+                              }
+                            }}
+                            className="text-xs"
+                          >
+                            {instrument}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="p-3 bg-secondary/50 rounded-lg">
+                      <p className="text-sm text-muted-foreground">
+                        Active Instruments: <span className="text-foreground font-semibold">{config.selectedInstruments.join(", ") || "None"}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {config.instrumentMode === "single" 
+                          ? "Mode: Single - Hanya satu instrumen aktif" 
+                          : "Mode: Multi - Beberapa instrumen bisa aktif bersamaan"}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* Strategy Settings */}
             <TabsContent value="strategies" className="mt-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                {/* GANN STRATEGIES SECTION */}
                 <Card className="p-4 border-border bg-card">
-                  <div className="flex items-center justify-between mb-4">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={() => setExpandedGannSection(!expandedGannSection)}
+                  >
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                       <TrendingUp className="w-4 h-4 text-accent" />
-                      Gann Strategy
+                      W.D. Gann Strategies
                     </h4>
-                    <Switch 
-                      checked={config.useGannStrategy} 
-                      onCheckedChange={(v) => updateConfig("useGannStrategy", v)} 
-                    />
-                  </div>
-                  <div className={`space-y-4 ${!config.useGannStrategy && 'opacity-50'}`}>
-                    <div className="space-y-2">
-                      <Label className="text-foreground text-sm">Gann Angle (°)</Label>
-                      <Input 
-                        type="number" 
-                        value={config.gannAngle}
-                        onChange={(e) => updateConfig("gannAngle", parseInt(e.target.value))}
-                        disabled={!config.useGannStrategy}
-                      />
-                      <p className="text-xs text-muted-foreground">1x1 = 45°, 2x1 = 63.75°, 1x2 = 26.25°</p>
-                    </div>
-                    <div className="space-y-2">
-                      <Label className="text-foreground text-sm">Time Unit</Label>
-                      <Input 
-                        type="number" 
-                        step="0.1"
-                        value={config.gannTimeUnit}
-                        onChange={(e) => updateConfig("gannTimeUnit", parseFloat(e.target.value))}
-                        disabled={!config.useGannStrategy}
-                      />
-                    </div>
-                    <div className="p-2 bg-secondary/50 rounded text-xs text-muted-foreground">
-                      Gann menggunakan price-time squares untuk prediksi support/resistance dan time cycles.
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {[config.useGannSquare9, config.useGannAngles, config.useGannTimeCycles, config.useGannSR, config.useGannFibo, config.useGannWave, config.useGannHexagon].filter(Boolean).length} Active
+                      </Badge>
+                      {expandedGannSection ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                     </div>
                   </div>
+                  
+                  {expandedGannSection && (
+                    <div className="mt-4 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* Square of 9 */}
+                        <div className={`p-3 rounded-lg border ${config.useGannSquare9 ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Square of 9</Label>
+                            <Switch checked={config.useGannSquare9} onCheckedChange={(v) => updateConfig("useGannSquare9", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useGannSquare9 && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Base Price</Label>
+                              <Input type="number" value={config.gannSquare9BasePrice} onChange={(e) => updateConfig("gannSquare9BasePrice", parseFloat(e.target.value))} disabled={!config.useGannSquare9} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Divisions</Label>
+                              <Input type="number" value={config.gannSquare9Divisions} onChange={(e) => updateConfig("gannSquare9Divisions", parseInt(e.target.value))} disabled={!config.useGannSquare9} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Gann Angles/Fan */}
+                        <div className={`p-3 rounded-lg border ${config.useGannAngles ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Gann Angles/Fan</Label>
+                            <Switch checked={config.useGannAngles} onCheckedChange={(v) => updateConfig("useGannAngles", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useGannAngles && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Primary Angle (°)</Label>
+                              <Input type="number" value={config.gannAngle} onChange={(e) => updateConfig("gannAngle", parseInt(e.target.value))} disabled={!config.useGannAngles} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Time Unit</Label>
+                              <Input type="number" step="0.1" value={config.gannTimeUnit} onChange={(e) => updateConfig("gannTimeUnit", parseFloat(e.target.value))} disabled={!config.useGannAngles} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Time Cycles */}
+                        <div className={`p-3 rounded-lg border ${config.useGannTimeCycles ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Time Cycles</Label>
+                            <Switch checked={config.useGannTimeCycles} onCheckedChange={(v) => updateConfig("useGannTimeCycles", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useGannTimeCycles && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Cycle Base (days)</Label>
+                              <Input type="number" value={config.gannCycleBase} onChange={(e) => updateConfig("gannCycleBase", parseInt(e.target.value))} disabled={!config.useGannTimeCycles} className="h-8 text-xs" />
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs text-muted-foreground">Anniversary Dates</Label>
+                              <Switch checked={config.gannAnniversaryDates} onCheckedChange={(v) => updateConfig("gannAnniversaryDates", v)} disabled={!config.useGannTimeCycles} />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Support/Resistance */}
+                        <div className={`p-3 rounded-lg border ${config.useGannSR ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Support/Resistance</Label>
+                            <Switch checked={config.useGannSR} onCheckedChange={(v) => updateConfig("useGannSR", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useGannSR && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Divisions</Label>
+                              <Input type="number" value={config.gannSRDivisions} onChange={(e) => updateConfig("gannSRDivisions", parseInt(e.target.value))} disabled={!config.useGannSR} className="h-8 text-xs" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Levels: 12.5%, 25%, 50%, 75%, 100%</p>
+                          </div>
+                        </div>
+
+                        {/* Fibonacci */}
+                        <div className={`p-3 rounded-lg border ${config.useGannFibo ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Gann Fibonacci</Label>
+                            <Switch checked={config.useGannFibo} onCheckedChange={(v) => updateConfig("useGannFibo", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useGannFibo && 'opacity-50'}`}>
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs text-muted-foreground">Time Zones</Label>
+                              <Switch checked={config.gannFiboTimeZones} onCheckedChange={(v) => updateConfig("gannFiboTimeZones", v)} disabled={!config.useGannFibo} />
+                            </div>
+                            <p className="text-xs text-muted-foreground">23.6%, 38.2%, 50%, 61.8%, 78.6%</p>
+                          </div>
+                        </div>
+
+                        {/* Wave */}
+                        <div className={`p-3 rounded-lg border ${config.useGannWave ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Gann Wave</Label>
+                            <Switch checked={config.useGannWave} onCheckedChange={(v) => updateConfig("useGannWave", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useGannWave && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Wave Count</Label>
+                              <Input type="number" value={config.gannWaveCount} onChange={(e) => updateConfig("gannWaveCount", parseInt(e.target.value))} disabled={!config.useGannWave} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Correction Waves</Label>
+                              <Input type="number" value={config.gannWaveCorrection} onChange={(e) => updateConfig("gannWaveCorrection", parseInt(e.target.value))} disabled={!config.useGannWave} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Hexagon */}
+                        <div className={`p-3 rounded-lg border ${config.useGannHexagon ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Gann Hexagon</Label>
+                            <Switch checked={config.useGannHexagon} onCheckedChange={(v) => updateConfig("useGannHexagon", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useGannHexagon && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Base Number</Label>
+                              <Input type="number" value={config.gannHexagonBaseNumber} onChange={(e) => updateConfig("gannHexagonBaseNumber", parseInt(e.target.value))} disabled={!config.useGannHexagon} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Rings</Label>
+                              <Input type="number" value={config.gannHexagonRings} onChange={(e) => updateConfig("gannHexagonRings", parseInt(e.target.value))} disabled={!config.useGannHexagon} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </Card>
 
+                {/* EHLERS DSP STRATEGIES SECTION */}
                 <Card className="p-4 border-border bg-card">
-                  <div className="flex items-center justify-between mb-4">
+                  <div 
+                    className="flex items-center justify-between cursor-pointer"
+                    onClick={() => setExpandedEhlersSection(!expandedEhlersSection)}
+                  >
                     <h4 className="font-semibold text-foreground flex items-center gap-2">
                       <Activity className="w-4 h-4 text-primary" />
-                      Ehlers DSP Strategy
+                      Ehlers DSP Strategies
                     </h4>
-                    <Switch 
-                      checked={config.useEhlersStrategy} 
-                      onCheckedChange={(v) => updateConfig("useEhlersStrategy", v)} 
-                    />
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {[config.useEhlersMAMAFAMA, config.useEhlersFisher, config.useEhlersBandpass, config.useEhlersSuperSmoother, config.useEhlersRoofing, config.useEhlersCyberCycle, config.useEhlersDecycler, config.useEhlersInstaTrend, config.useEhlersDominantCycle].filter(Boolean).length} Active
+                      </Badge>
+                      {expandedEhlersSection ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </div>
                   </div>
-                  <div className={`space-y-4 ${!config.useEhlersStrategy && 'opacity-50'}`}>
-                    <div className="space-y-2">
-                      <Label className="text-foreground text-sm">Filter Period</Label>
-                      <Input 
-                        type="number" 
-                        value={config.ehlersFilterPeriod}
-                        onChange={(e) => updateConfig("ehlersFilterPeriod", parseInt(e.target.value))}
-                        disabled={!config.useEhlersStrategy}
-                      />
+                  
+                  {expandedEhlersSection && (
+                    <div className="mt-4 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* MAMA/FAMA */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersMAMAFAMA ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">MAMA/FAMA</Label>
+                            <Switch checked={config.useEhlersMAMAFAMA} onCheckedChange={(v) => updateConfig("useEhlersMAMAFAMA", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersMAMAFAMA && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Fast Limit</Label>
+                              <Input type="number" step="0.01" value={config.mamaFastLimit} onChange={(e) => updateConfig("mamaFastLimit", parseFloat(e.target.value))} disabled={!config.useEhlersMAMAFAMA} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Slow Limit</Label>
+                              <Input type="number" step="0.01" value={config.mamaSlowLimit} onChange={(e) => updateConfig("mamaSlowLimit", parseFloat(e.target.value))} disabled={!config.useEhlersMAMAFAMA} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Fisher Transform */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersFisher ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Fisher Transform</Label>
+                            <Switch checked={config.useEhlersFisher} onCheckedChange={(v) => updateConfig("useEhlersFisher", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersFisher && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Period</Label>
+                              <Input type="number" value={config.fisherPeriod} onChange={(e) => updateConfig("fisherPeriod", parseInt(e.target.value))} disabled={!config.useEhlersFisher} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Smoothing</Label>
+                              <Input type="number" step="0.01" value={config.fisherSmoothing} onChange={(e) => updateConfig("fisherSmoothing", parseFloat(e.target.value))} disabled={!config.useEhlersFisher} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Bandpass Filter */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersBandpass ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Bandpass Filter</Label>
+                            <Switch checked={config.useEhlersBandpass} onCheckedChange={(v) => updateConfig("useEhlersBandpass", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersBandpass && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Period</Label>
+                              <Input type="number" value={config.bandpassPeriod} onChange={(e) => updateConfig("bandpassPeriod", parseInt(e.target.value))} disabled={!config.useEhlersBandpass} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Bandwidth</Label>
+                              <Input type="number" step="0.1" value={config.bandpassBandwidth} onChange={(e) => updateConfig("bandpassBandwidth", parseFloat(e.target.value))} disabled={!config.useEhlersBandpass} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Super Smoother */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersSuperSmoother ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Super Smoother</Label>
+                            <Switch checked={config.useEhlersSuperSmoother} onCheckedChange={(v) => updateConfig("useEhlersSuperSmoother", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersSuperSmoother && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Period</Label>
+                              <Input type="number" value={config.superSmootherPeriod} onChange={(e) => updateConfig("superSmootherPeriod", parseInt(e.target.value))} disabled={!config.useEhlersSuperSmoother} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Poles (2 or 3)</Label>
+                              <Input type="number" min={2} max={3} value={config.superSmootherPoles} onChange={(e) => updateConfig("superSmootherPoles", parseInt(e.target.value))} disabled={!config.useEhlersSuperSmoother} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Roofing Filter */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersRoofing ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Roofing Filter</Label>
+                            <Switch checked={config.useEhlersRoofing} onCheckedChange={(v) => updateConfig("useEhlersRoofing", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersRoofing && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">High Cutoff</Label>
+                              <Input type="number" value={config.roofingHighCutoff} onChange={(e) => updateConfig("roofingHighCutoff", parseInt(e.target.value))} disabled={!config.useEhlersRoofing} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Low Cutoff</Label>
+                              <Input type="number" value={config.roofingLowCutoff} onChange={(e) => updateConfig("roofingLowCutoff", parseInt(e.target.value))} disabled={!config.useEhlersRoofing} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Cyber Cycle */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersCyberCycle ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Cyber Cycle</Label>
+                            <Switch checked={config.useEhlersCyberCycle} onCheckedChange={(v) => updateConfig("useEhlersCyberCycle", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersCyberCycle && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Alpha</Label>
+                              <Input type="number" step="0.01" value={config.cyberCycleAlpha} onChange={(e) => updateConfig("cyberCycleAlpha", parseFloat(e.target.value))} disabled={!config.useEhlersCyberCycle} className="h-8 text-xs" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Cycle extraction filter</p>
+                          </div>
+                        </div>
+
+                        {/* Decycler */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersDecycler ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Decycler</Label>
+                            <Switch checked={config.useEhlersDecycler} onCheckedChange={(v) => updateConfig("useEhlersDecycler", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersDecycler && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Cutoff Period</Label>
+                              <Input type="number" value={config.decyclerCutoff} onChange={(e) => updateConfig("decyclerCutoff", parseInt(e.target.value))} disabled={!config.useEhlersDecycler} className="h-8 text-xs" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Removes cycle components</p>
+                          </div>
+                        </div>
+
+                        {/* Instantaneous Trend */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersInstaTrend ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Instantaneous Trend</Label>
+                            <Switch checked={config.useEhlersInstaTrend} onCheckedChange={(v) => updateConfig("useEhlersInstaTrend", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersInstaTrend && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Alpha</Label>
+                              <Input type="number" step="0.01" value={config.instaTrendAlpha} onChange={(e) => updateConfig("instaTrendAlpha", parseFloat(e.target.value))} disabled={!config.useEhlersInstaTrend} className="h-8 text-xs" />
+                            </div>
+                            <p className="text-xs text-muted-foreground">Trend following filter</p>
+                          </div>
+                        </div>
+
+                        {/* Dominant Cycle */}
+                        <div className={`p-3 rounded-lg border ${config.useEhlersDominantCycle ? 'border-primary/50 bg-primary/5' : 'border-border bg-secondary/30'}`}>
+                          <div className="flex items-center justify-between mb-3">
+                            <Label className="text-sm font-medium">Dominant Cycle</Label>
+                            <Switch checked={config.useEhlersDominantCycle} onCheckedChange={(v) => updateConfig("useEhlersDominantCycle", v)} />
+                          </div>
+                          <div className={`space-y-2 ${!config.useEhlersDominantCycle && 'opacity-50'}`}>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Min Period</Label>
+                              <Input type="number" value={config.dominantCycleMinPeriod} onChange={(e) => updateConfig("dominantCycleMinPeriod", parseInt(e.target.value))} disabled={!config.useEhlersDominantCycle} className="h-8 text-xs" />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-muted-foreground">Max Period</Label>
+                              <Input type="number" value={config.dominantCycleMaxPeriod} onChange={(e) => updateConfig("dominantCycleMaxPeriod", parseInt(e.target.value))} disabled={!config.useEhlersDominantCycle} className="h-8 text-xs" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-foreground text-sm">Bandwidth</Label>
-                      <Input 
-                        type="number" 
-                        step="0.1"
-                        value={config.ehlersBandwidth}
-                        onChange={(e) => updateConfig("ehlersBandwidth", parseFloat(e.target.value))}
-                        disabled={!config.useEhlersStrategy}
-                      />
-                    </div>
-                    <div className="p-2 bg-secondary/50 rounded text-xs text-muted-foreground">
-                      Ehlers DSP menggunakan digital signal processing untuk filtering noise dan deteksi cycle.
-                    </div>
+                  )}
+                </Card>
+
+                {/* Active Strategies Summary */}
+                <Card className="p-4 border-border bg-card">
+                  <h4 className="font-semibold text-foreground mb-3">Active Strategies Summary</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {config.useGannSquare9 && <Badge className="bg-accent">Square of 9</Badge>}
+                    {config.useGannAngles && <Badge className="bg-accent">Gann Angles</Badge>}
+                    {config.useGannTimeCycles && <Badge className="bg-accent">Time Cycles</Badge>}
+                    {config.useGannSR && <Badge className="bg-accent">Gann S/R</Badge>}
+                    {config.useGannFibo && <Badge className="bg-accent">Gann Fibo</Badge>}
+                    {config.useGannWave && <Badge className="bg-accent">Gann Wave</Badge>}
+                    {config.useGannHexagon && <Badge className="bg-accent">Hexagon</Badge>}
+                    {config.useEhlersMAMAFAMA && <Badge className="bg-primary">MAMA/FAMA</Badge>}
+                    {config.useEhlersFisher && <Badge className="bg-primary">Fisher</Badge>}
+                    {config.useEhlersBandpass && <Badge className="bg-primary">Bandpass</Badge>}
+                    {config.useEhlersSuperSmoother && <Badge className="bg-primary">Super Smoother</Badge>}
+                    {config.useEhlersRoofing && <Badge className="bg-primary">Roofing</Badge>}
+                    {config.useEhlersCyberCycle && <Badge className="bg-primary">Cyber Cycle</Badge>}
+                    {config.useEhlersDecycler && <Badge className="bg-primary">Decycler</Badge>}
+                    {config.useEhlersInstaTrend && <Badge className="bg-primary">Insta Trend</Badge>}
+                    {config.useEhlersDominantCycle && <Badge className="bg-primary">Dominant Cycle</Badge>}
+                    {![config.useGannSquare9, config.useGannAngles, config.useGannTimeCycles, config.useGannSR, config.useGannFibo, config.useGannWave, config.useGannHexagon, config.useEhlersMAMAFAMA, config.useEhlersFisher, config.useEhlersBandpass, config.useEhlersSuperSmoother, config.useEhlersRoofing, config.useEhlersCyberCycle, config.useEhlersDecycler, config.useEhlersInstaTrend, config.useEhlersDominantCycle].some(Boolean) && (
+                      <span className="text-sm text-muted-foreground">No advanced strategies active. Enable strategies above.</span>
+                    )}
                   </div>
                 </Card>
               </div>
