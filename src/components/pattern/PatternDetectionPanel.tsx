@@ -2,8 +2,20 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Zap, Search, RefreshCw, TrendingUp, TrendingDown, Trash2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { 
+  Zap, 
+  Search, 
+  RefreshCw, 
+  TrendingUp, 
+  TrendingDown, 
+  Trash2,
+  Clock,
+  Target,
+  ChevronDown,
+  ChevronUp,
+  Sparkles
+} from "lucide-react";
 import { DetectedPattern, generateAutoPatterns, getConfidenceColor } from "@/lib/patternUtils";
 
 interface PatternDetectionPanelProps {
@@ -25,6 +37,7 @@ export const PatternDetectionPanel = ({
 }: PatternDetectionPanelProps) => {
   const [isDetecting, setIsDetecting] = useState(false);
   const [lastDetection, setLastDetection] = useState<Date | null>(null);
+  const [expandedPattern, setExpandedPattern] = useState<string | null>(null);
 
   const runAutoDetection = () => {
     setIsDetecting(true);
@@ -36,38 +49,55 @@ export const PatternDetectionPanel = ({
     }, 1500);
   };
 
-  const getSignalBadge = (signal: string) => {
+  const getSignalStyles = (signal: string) => {
     switch (signal) {
       case "Bullish":
-        return (
-          <Badge className="bg-success text-success-foreground">
-            <TrendingUp className="w-3 h-3 mr-1" />
-            Bullish
-          </Badge>
-        );
+        return {
+          bg: "bg-success/10",
+          border: "border-success/30",
+          text: "text-success",
+          icon: TrendingUp,
+        };
       case "Bearish":
-        return (
-          <Badge className="bg-destructive text-destructive-foreground">
-            <TrendingDown className="w-3 h-3 mr-1" />
-            Bearish
-          </Badge>
-        );
+        return {
+          bg: "bg-destructive/10",
+          border: "border-destructive/30",
+          text: "text-destructive",
+          icon: TrendingDown,
+        };
       default:
-        return <Badge variant="outline">Neutral</Badge>;
+        return {
+          bg: "bg-muted",
+          border: "border-border",
+          text: "text-muted-foreground",
+          icon: Target,
+        };
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case "Candlestick": return "bg-blue-500/10 text-blue-500 border-blue-500/30";
+      case "Wave Structure": return "bg-purple-500/10 text-purple-500 border-purple-500/30";
+      case "Time–Price Wave": return "bg-amber-500/10 text-amber-500 border-amber-500/30";
+      case "Harmonic Pattern": return "bg-pink-500/10 text-pink-500 border-pink-500/30";
+      case "Chart Pattern": return "bg-teal-500/10 text-teal-500 border-teal-500/30";
+      default: return "bg-muted text-muted-foreground border-border";
     }
   };
 
   return (
-    <Card className="p-4 border-border bg-card border-l-4 border-l-accent">
+    <Card className="overflow-hidden border-border bg-card">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-accent/20 rounded-lg">
-            <Zap className="w-6 h-6 text-accent" />
+      <div className="flex flex-col gap-4 border-b border-border bg-gradient-to-r from-primary/5 to-accent/5 p-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex items-center gap-4">
+          <div className="rounded-xl bg-gradient-to-br from-primary to-primary/60 p-3 shadow-lg shadow-primary/20">
+            <Zap className="h-6 w-6 text-primary-foreground" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-foreground">Auto Pattern Detection</h3>
-            <p className="text-sm text-muted-foreground">
+            <h3 className="text-lg font-bold text-foreground">Auto Pattern Detection</h3>
+            <p className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Clock className="h-3 w-3" />
               {lastDetection
                 ? `Last scan: ${lastDetection.toLocaleTimeString()}`
                 : "Click to run automatic pattern detection"}
@@ -77,74 +107,139 @@ export const PatternDetectionPanel = ({
         <Button
           onClick={runAutoDetection}
           disabled={isDetecting}
-          className="bg-accent hover:bg-accent/90"
+          size="lg"
+          className="bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 shadow-lg shadow-primary/20"
         >
           {isDetecting ? (
             <>
-              <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
-              Detecting...
+              <RefreshCw className="mr-2 h-5 w-5 animate-spin" />
+              Scanning...
             </>
           ) : (
             <>
-              <Search className="w-4 h-4 mr-2" />
-              Run Auto Detection
+              <Search className="mr-2 h-5 w-5" />
+              Run Detection
             </>
           )}
         </Button>
       </div>
 
-      {/* Patterns Table */}
-      {patterns.length > 0 && (
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pattern Name</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead>Confidence</TableHead>
-                <TableHead>Price Range</TableHead>
-                <TableHead>Time Window</TableHead>
-                <TableHead>Signal</TableHead>
-                <TableHead>Timeframe</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {patterns.map((pattern) => (
-                <TableRow key={pattern.id} className="bg-accent/5">
-                  <TableCell className="font-semibold">{pattern.name}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline">{pattern.type}</Badge>
-                  </TableCell>
-                  <TableCell className={`font-mono ${getConfidenceColor(pattern.confidence)}`}>
-                    {(pattern.confidence * 100).toFixed(0)}%
-                  </TableCell>
-                  <TableCell className="text-sm">{pattern.priceRange}</TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{pattern.timeWindow}</TableCell>
-                  <TableCell>{getSignalBadge(pattern.signal)}</TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{pattern.timeframe}</Badge>
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => onDeletePattern(pattern.id)}
-                    >
-                      <Trash2 className="w-3 h-3" />
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+      {/* Patterns Grid */}
+      {patterns.length > 0 ? (
+        <ScrollArea className="h-[500px]">
+          <div className="grid gap-3 p-4 md:grid-cols-2">
+            {patterns.map((pattern) => {
+              const signalStyles = getSignalStyles(pattern.signal);
+              const SignalIcon = signalStyles.icon;
+              const isExpanded = expandedPattern === pattern.id;
 
-      {patterns.length === 0 && (
-        <div className="text-center py-8 text-muted-foreground">
-          <Search className="w-12 h-12 mx-auto mb-2 opacity-50" />
-          <p>No patterns detected yet. Click "Run Auto Detection" to scan for patterns.</p>
+              return (
+                <Card
+                  key={pattern.id}
+                  className={`group relative overflow-hidden border transition-all duration-200 ${signalStyles.border} ${signalStyles.bg} hover:shadow-md`}
+                >
+                  {/* Pattern Header */}
+                  <div 
+                    className="cursor-pointer p-4"
+                    onClick={() => setExpandedPattern(isExpanded ? null : pattern.id)}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className={`rounded-lg p-2 ${signalStyles.bg}`}>
+                          <SignalIcon className={`h-5 w-5 ${signalStyles.text}`} />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="font-semibold text-foreground line-clamp-1">
+                            {pattern.name}
+                          </h4>
+                          <div className="mt-1 flex flex-wrap items-center gap-2">
+                            <Badge variant="outline" className={`text-xs ${getTypeColor(pattern.type)}`}>
+                              {pattern.type}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {pattern.timeframe}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-end gap-2">
+                        <div className={`text-lg font-bold font-mono ${getConfidenceColor(pattern.confidence)}`}>
+                          {(pattern.confidence * 100).toFixed(0)}%
+                        </div>
+                        {isExpanded ? (
+                          <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Confidence Bar */}
+                    <div className="mt-3">
+                      <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                        <div
+                          className={`h-full rounded-full transition-all duration-500 ${
+                            pattern.confidence >= 0.85
+                              ? "bg-success"
+                              : pattern.confidence >= 0.7
+                              ? "bg-accent"
+                              : "bg-warning"
+                          }`}
+                          style={{ width: `${pattern.confidence * 100}%` }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Details */}
+                  {isExpanded && (
+                    <div className="border-t border-border/50 bg-background/50 p-4">
+                      <div className="grid gap-3 text-sm">
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Price Range</span>
+                          <span className="font-mono text-foreground">{pattern.priceRange}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Time Window</span>
+                          <span className="text-foreground">{pattern.timeWindow}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-muted-foreground">Signal</span>
+                          <Badge className={signalStyles.bg + " " + signalStyles.text}>
+                            <SignalIcon className="mr-1 h-3 w-3" />
+                            {pattern.signal}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-end">
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onDeletePattern(pattern.id);
+                          }}
+                        >
+                          <Trash2 className="mr-2 h-3 w-3" />
+                          Remove
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+                </Card>
+              );
+            })}
+          </div>
+        </ScrollArea>
+      ) : (
+        <div className="flex flex-col items-center justify-center py-16 text-center">
+          <div className="rounded-full bg-muted p-4">
+            <Sparkles className="h-8 w-8 text-muted-foreground" />
+          </div>
+          <h4 className="mt-4 text-lg font-semibold text-foreground">No Patterns Detected</h4>
+          <p className="mt-2 max-w-sm text-sm text-muted-foreground">
+            Click "Run Detection" to scan for candlestick, wave, harmonic, and chart patterns automatically.
+          </p>
         </div>
       )}
     </Card>
