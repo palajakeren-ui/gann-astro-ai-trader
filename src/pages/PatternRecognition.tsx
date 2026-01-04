@@ -21,7 +21,8 @@ import {
   Crosshair,
   AlertTriangle,
   ChevronRight,
-  Sparkles
+  Sparkles,
+  Timer,
 } from "lucide-react";
 import TradingInstrumentSelector from "@/components/TradingInstrumentSelector";
 import useWebSocketPrice from "@/hooks/useWebSocketPrice";
@@ -33,6 +34,9 @@ import { MultiAssetPanel } from "@/components/pattern/MultiAssetPanel";
 import { PatternNarrationPanel } from "@/components/pattern/PatternNarrationPanel";
 import { AddPatternForm } from "@/components/pattern/AddPatternForm";
 import { WaveAnalysisTabs } from "@/components/pattern/WaveAnalysisTabs";
+import { PatternExport } from "@/components/pattern/PatternExport";
+import { PatternAlerts } from "@/components/pattern/PatternAlerts";
+import { RealtimeMultiTimeframe } from "@/components/pattern/RealtimeMultiTimeframe";
 
 // Types and Utils
 import {
@@ -128,6 +132,10 @@ const PatternRecognition = () => {
     setAssetAnalyses((prev) => prev.filter((a) => a.id !== id));
   };
 
+  const handleMultiTimeframeUpdate = (patterns: DetectedPattern[]) => {
+    setAutoPatterns(patterns);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Header */}
@@ -153,6 +161,19 @@ const PatternRecognition = () => {
 
             {/* Price & Connection Panel */}
             <div className="flex flex-wrap items-center gap-3">
+              {/* Export & Alerts */}
+              <PatternExport
+                patterns={allPatterns}
+                manualAnalyses={manualAnalyses}
+                assets={assetAnalyses}
+                instrument={selectedInstrument}
+                timeframe={selectedTimeframe}
+              />
+              <PatternAlerts
+                patterns={allPatterns}
+                instrument={selectedInstrument}
+              />
+
               {/* Connection Status */}
               <div className={`flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium ${
                 isConnected 
@@ -314,6 +335,7 @@ const PatternRecognition = () => {
               <div className="space-y-1">
                 {[
                   { id: "detection", label: "Auto Detection", icon: Zap },
+                  { id: "realtime-mtf", label: "Real-Time MTF", icon: Timer },
                   { id: "manual", label: "Manual Entry", icon: FileText },
                   { id: "multi-asset", label: "Multi-Asset", icon: Layers },
                   { id: "waves", label: "Wave Analysis", icon: LineChart },
@@ -371,11 +393,16 @@ const PatternRecognition = () => {
           {/* Right Content Area */}
           <div className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-4 bg-muted/50 p-1">
+              <TabsList className="grid w-full grid-cols-5 bg-muted/50 p-1">
                 <TabsTrigger value="detection" className="gap-2 text-xs md:text-sm">
                   <Zap className="h-4 w-4" />
                   <span className="hidden md:inline">Auto Detection</span>
                   <span className="md:hidden">Auto</span>
+                </TabsTrigger>
+                <TabsTrigger value="realtime-mtf" className="gap-2 text-xs md:text-sm">
+                  <Timer className="h-4 w-4" />
+                  <span className="hidden md:inline">Real-Time MTF</span>
+                  <span className="md:hidden">MTF</span>
                 </TabsTrigger>
                 <TabsTrigger value="manual" className="gap-2 text-xs md:text-sm">
                   <FileText className="h-4 w-4" />
@@ -407,6 +434,15 @@ const PatternRecognition = () => {
                 
                 {/* Pattern Narration */}
                 <PatternNarrationPanel patterns={allPatterns} />
+              </TabsContent>
+
+              {/* Real-Time Multi-Timeframe Tab */}
+              <TabsContent value="realtime-mtf" className="mt-6">
+                <RealtimeMultiTimeframe
+                  currentPrice={currentPrice}
+                  instrument={selectedInstrument}
+                  onPatternsUpdated={handleMultiTimeframeUpdate}
+                />
               </TabsContent>
 
               {/* Manual Entry Tab */}

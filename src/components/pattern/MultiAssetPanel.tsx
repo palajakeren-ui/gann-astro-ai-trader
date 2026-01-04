@@ -59,7 +59,10 @@ export const MultiAssetPanel = ({
     }
   };
 
-  const popularTimeframes = ["M15", "H1", "H4", "D1", "W1"];
+  const allTimeframes = [
+    "M1", "M2", "M3", "M5", "M10", "M15", "M30", "M45",
+    "H1", "H2", "H3", "H4", "D1", "W1", "MN1", "Y1"
+  ];
 
   return (
     <Card className="overflow-hidden border-border bg-card">
@@ -99,19 +102,21 @@ export const MultiAssetPanel = ({
             </div>
             <div className="space-y-2">
               <Label className="text-sm font-medium">Select Timeframes</Label>
-              <div className="flex flex-wrap gap-1.5">
-                {popularTimeframes.map((tf) => (
-                  <Button
-                    key={tf}
-                    variant={newTimeframes.includes(tf) ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => toggleTimeframe(tf)}
-                    className="text-xs"
-                  >
-                    {tf}
-                  </Button>
-                ))}
-              </div>
+              <ScrollArea className="h-[80px]">
+                <div className="flex flex-wrap gap-1">
+                  {allTimeframes.map((tf) => (
+                    <Button
+                      key={tf}
+                      variant={newTimeframes.includes(tf) ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => toggleTimeframe(tf)}
+                      className="text-xs font-mono h-7 px-2"
+                    >
+                      {tf}
+                    </Button>
+                  ))}
+                </div>
+              </ScrollArea>
             </div>
           </div>
           <div className="mt-4 flex justify-end">
