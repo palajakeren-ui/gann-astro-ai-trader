@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Activity, TrendingUp, TrendingDown, RefreshCw, BarChart3 } from "lucide-react";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart, Area } from "recharts";
+import { Activity, TrendingUp, TrendingDown, RefreshCw, BarChart3, Plus, X, Trash2 } from "lucide-react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ComposedChart } from "recharts";
 
 interface InstrumentData {
   symbol: string;
@@ -30,14 +31,31 @@ interface TimeframeData {
 
 const TIMEFRAMES = ["1M", "5M", "15M", "30M", "1H", "4H", "1D", "1W", "1MO", "1Y"];
 
-const generateMockInstruments = (): InstrumentData[] => [
-  { symbol: "BTCUSDT", name: "Bitcoin", price: 97500, mama: 97400, fama: 97200, fisher: 1.33, cyberCycle: 0.026, bandpass: 0.015, signal: "Bullish", confidence: 88 },
-  { symbol: "ETHUSDT", name: "Ethereum", price: 3450, mama: 3440, fama: 3420, fisher: 1.12, cyberCycle: 0.018, bandpass: 0.012, signal: "Bullish", confidence: 82 },
-  { symbol: "BNBUSDT", name: "BNB", price: 680, mama: 678, fama: 675, fisher: 0.85, cyberCycle: 0.014, bandpass: 0.008, signal: "Neutral", confidence: 65 },
-  { symbol: "XRPUSDT", name: "XRP", price: 2.45, mama: 2.44, fama: 2.42, fisher: -0.45, cyberCycle: -0.012, bandpass: -0.006, signal: "Bearish", confidence: 72 },
-  { symbol: "SOLUSDT", name: "Solana", price: 195, mama: 194, fama: 192, fisher: 1.55, cyberCycle: 0.032, bandpass: 0.022, signal: "Bullish", confidence: 91 },
-  { symbol: "ADAUSDT", name: "Cardano", price: 0.92, mama: 0.91, fama: 0.90, fisher: 0.22, cyberCycle: 0.005, bandpass: 0.003, signal: "Neutral", confidence: 55 },
+const DEFAULT_INSTRUMENTS = [
+  { symbol: "BTCUSDT", name: "Bitcoin" },
+  { symbol: "ETHUSDT", name: "Ethereum" },
+  { symbol: "BNBUSDT", name: "BNB" },
+  { symbol: "XRPUSDT", name: "XRP" },
+  { symbol: "SOLUSDT", name: "Solana" },
+  { symbol: "ADAUSDT", name: "Cardano" },
 ];
+
+const generateInstrumentData = (symbol: string, name: string): InstrumentData => {
+  const basePrice = Math.random() * 50000 + 100;
+  const signal = Math.random() > 0.6 ? "Bullish" : Math.random() > 0.5 ? "Bearish" : "Neutral";
+  return {
+    symbol,
+    name,
+    price: basePrice,
+    mama: basePrice * (0.995 + Math.random() * 0.01),
+    fama: basePrice * (0.99 + Math.random() * 0.01),
+    fisher: (Math.random() * 4 - 2).toFixed(2) as unknown as number,
+    cyberCycle: (Math.random() * 0.1 - 0.05).toFixed(3) as unknown as number,
+    bandpass: (Math.random() * 0.06 - 0.03).toFixed(3) as unknown as number,
+    signal,
+    confidence: Math.floor(Math.random() * 40) + 55,
+  };
+};
 
 const generateTimeframeData = (): TimeframeData[] => TIMEFRAMES.map(tf => ({
   timeframe: tf,
@@ -70,22 +88,53 @@ const generateChartData = () => Array.from({ length: 30 }, (_, i) => ({
 }));
 
 const EhlersDSPPanel = () => {
-  const [instruments, setInstruments] = useState<InstrumentData[]>(generateMockInstruments());
+  const [instrumentsList, setInstrumentsList] = useState(DEFAULT_INSTRUMENTS);
+  const [instruments, setInstruments] = useState<InstrumentData[]>(() =>
+    instrumentsList.map(i => generateInstrumentData(i.symbol, i.name))
+  );
   const [timeframeData, setTimeframeData] = useState<TimeframeData[]>(generateTimeframeData());
   const [correlationMatrix, setCorrelationMatrix] = useState(generateCorrelationMatrix(instruments));
   const [chartData, setChartData] = useState(generateChartData());
   const [selectedInstrument, setSelectedInstrument] = useState("BTCUSDT");
   const [isLive, setIsLive] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newSymbol, setNewSymbol] = useState("");
+  const [newName, setNewName] = useState("");
 
   useEffect(() => {
     if (!isLive) return;
     const interval = setInterval(() => {
-      setInstruments(generateMockInstruments());
+      setInstruments(instrumentsList.map(i => generateInstrumentData(i.symbol, i.name)));
       setTimeframeData(generateTimeframeData());
       setChartData(generateChartData());
     }, 3000);
     return () => clearInterval(interval);
-  }, [isLive]);
+  }, [isLive, instrumentsList]);
+
+  useEffect(() => {
+    setCorrelationMatrix(generateCorrelationMatrix(instruments));
+  }, [instruments]);
+
+  const handleAddInstrument = () => {
+    if (!newSymbol.trim()) return;
+    const newInst = {
+      symbol: newSymbol.toUpperCase(),
+      name: newName.trim() || newSymbol.toUpperCase(),
+    };
+    setInstrumentsList([...instrumentsList, newInst]);
+    setNewSymbol("");
+    setNewName("");
+    setShowAddForm(false);
+  };
+
+  const handleDeleteInstrument = (symbol: string) => {
+    if (instrumentsList.length <= 1) return;
+    const newList = instrumentsList.filter(i => i.symbol !== symbol);
+    setInstrumentsList(newList);
+    if (selectedInstrument === symbol) {
+      setSelectedInstrument(newList[0].symbol);
+    }
+  };
 
   const getSignalBadge = (signal: string, confidence: number) => {
     const colorClass = signal === "Bullish" ? "bg-success text-success-foreground" : 
@@ -115,8 +164,39 @@ const EhlersDSPPanel = () => {
           <Button variant="outline" size="sm" onClick={() => setIsLive(!isLive)}>
             <RefreshCw className={`w-4 h-4 ${isLive ? 'animate-spin' : ''}`} />
           </Button>
+          <Button variant="outline" size="sm" onClick={() => setShowAddForm(!showAddForm)}>
+            <Plus className="w-4 h-4" />
+          </Button>
         </div>
       </div>
+
+      {/* Add Instrument Form */}
+      {showAddForm && (
+        <div className="p-4 mb-4 bg-secondary/30 rounded-lg border border-border">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-sm font-semibold text-foreground">Add Instrument to DSP Analysis</h4>
+            <Button variant="ghost" size="sm" onClick={() => setShowAddForm(false)}>
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <Input
+              placeholder="Symbol (e.g., DOGEUSDT)"
+              value={newSymbol}
+              onChange={(e) => setNewSymbol(e.target.value)}
+            />
+            <Input
+              placeholder="Name (e.g., Dogecoin)"
+              value={newName}
+              onChange={(e) => setNewName(e.target.value)}
+            />
+            <Button onClick={handleAddInstrument} disabled={!newSymbol.trim()}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add to Analysis
+            </Button>
+          </div>
+        </div>
+      )}
 
       <Tabs defaultValue="multi-instrument" className="w-full">
         <TabsList className="grid w-full grid-cols-3 mb-4">
@@ -138,25 +218,37 @@ const EhlersDSPPanel = () => {
                   <th className="text-right p-2 text-muted-foreground">Fisher</th>
                   <th className="text-right p-2 text-muted-foreground">Cyber Cycle</th>
                   <th className="text-center p-2 text-muted-foreground">Signal</th>
+                  <th className="text-center p-2 text-muted-foreground">Action</th>
                 </tr>
               </thead>
               <tbody>
                 {instruments.map((inst, idx) => (
-                  <tr key={idx} className="border-b border-border/50 hover:bg-secondary/30">
+                  <tr key={idx} className="border-b border-border/50 hover:bg-secondary/30 group">
                     <td className="p-2">
                       <div className="font-semibold text-foreground">{inst.symbol}</div>
                       <div className="text-xs text-muted-foreground">{inst.name}</div>
                     </td>
-                    <td className="text-right p-2 font-mono text-foreground">${inst.price.toLocaleString()}</td>
-                    <td className="text-right p-2 font-mono text-primary">{inst.mama.toLocaleString()}</td>
-                    <td className="text-right p-2 font-mono text-accent">{inst.fama.toLocaleString()}</td>
-                    <td className={`text-right p-2 font-mono ${inst.fisher > 0 ? 'text-success' : 'text-destructive'}`}>
-                      {inst.fisher > 0 ? '+' : ''}{inst.fisher.toFixed(2)}
+                    <td className="text-right p-2 font-mono text-foreground">${inst.price.toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td className="text-right p-2 font-mono text-primary">{Number(inst.mama).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td className="text-right p-2 font-mono text-accent">{Number(inst.fama).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td>
+                    <td className={`text-right p-2 font-mono ${Number(inst.fisher) > 0 ? 'text-success' : 'text-destructive'}`}>
+                      {Number(inst.fisher) > 0 ? '+' : ''}{Number(inst.fisher).toFixed(2)}
                     </td>
-                    <td className={`text-right p-2 font-mono ${inst.cyberCycle > 0 ? 'text-success' : 'text-destructive'}`}>
-                      {inst.cyberCycle > 0 ? '+' : ''}{inst.cyberCycle.toFixed(3)}
+                    <td className={`text-right p-2 font-mono ${Number(inst.cyberCycle) > 0 ? 'text-success' : 'text-destructive'}`}>
+                      {Number(inst.cyberCycle) > 0 ? '+' : ''}{Number(inst.cyberCycle).toFixed(3)}
                     </td>
                     <td className="text-center p-2">{getSignalBadge(inst.signal, inst.confidence)}</td>
+                    <td className="text-center p-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="opacity-0 group-hover:opacity-100 transition-opacity hover:bg-destructive/20 hover:text-destructive"
+                        onClick={() => handleDeleteInstrument(inst.symbol)}
+                        disabled={instrumentsList.length <= 1}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
