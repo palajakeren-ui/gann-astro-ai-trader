@@ -23,6 +23,7 @@ import {
   ChevronRight,
   Sparkles,
   Timer,
+  CandlestickChart,
 } from "lucide-react";
 import TradingInstrumentSelector from "@/components/TradingInstrumentSelector";
 import useWebSocketPrice from "@/hooks/useWebSocketPrice";
@@ -37,6 +38,8 @@ import { WaveAnalysisTabs } from "@/components/pattern/WaveAnalysisTabs";
 import { PatternExport } from "@/components/pattern/PatternExport";
 import { PatternAlerts } from "@/components/pattern/PatternAlerts";
 import { RealtimeMultiTimeframe } from "@/components/pattern/RealtimeMultiTimeframe";
+import { InteractiveCandlestickChart } from "@/components/pattern/InteractiveCandlestickChart";
+import { PatternAccuracyTracker } from "@/components/pattern/PatternAccuracyTracker";
 
 // Types and Utils
 import {
@@ -334,8 +337,10 @@ const PatternRecognition = () => {
               </h3>
               <div className="space-y-1">
                 {[
+                  { id: "chart", label: "Live Chart", icon: CandlestickChart },
                   { id: "detection", label: "Auto Detection", icon: Zap },
                   { id: "realtime-mtf", label: "Real-Time MTF", icon: Timer },
+                  { id: "accuracy", label: "Accuracy Track", icon: Target },
                   { id: "manual", label: "Manual Entry", icon: FileText },
                   { id: "multi-asset", label: "Multi-Asset", icon: Layers },
                   { id: "waves", label: "Wave Analysis", icon: LineChart },
@@ -393,33 +398,54 @@ const PatternRecognition = () => {
           {/* Right Content Area */}
           <div className="space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-5 bg-muted/50 p-1">
-                <TabsTrigger value="detection" className="gap-2 text-xs md:text-sm">
-                  <Zap className="h-4 w-4" />
-                  <span className="hidden md:inline">Auto Detection</span>
-                  <span className="md:hidden">Auto</span>
+              <TabsList className="flex w-full flex-wrap bg-muted/50 p-1 h-auto gap-1">
+                <TabsTrigger value="chart" className="gap-1.5 text-xs flex-1 min-w-[80px]">
+                  <CandlestickChart className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Live Chart</span>
+                  <span className="sm:hidden">Chart</span>
                 </TabsTrigger>
-                <TabsTrigger value="realtime-mtf" className="gap-2 text-xs md:text-sm">
-                  <Timer className="h-4 w-4" />
-                  <span className="hidden md:inline">Real-Time MTF</span>
-                  <span className="md:hidden">MTF</span>
+                <TabsTrigger value="detection" className="gap-1.5 text-xs flex-1 min-w-[80px]">
+                  <Zap className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Detection</span>
+                  <span className="sm:hidden">Auto</span>
                 </TabsTrigger>
-                <TabsTrigger value="manual" className="gap-2 text-xs md:text-sm">
-                  <FileText className="h-4 w-4" />
-                  <span className="hidden md:inline">Manual Entry</span>
-                  <span className="md:hidden">Manual</span>
+                <TabsTrigger value="realtime-mtf" className="gap-1.5 text-xs flex-1 min-w-[80px]">
+                  <Timer className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">MTF</span>
+                  <span className="sm:hidden">MTF</span>
                 </TabsTrigger>
-                <TabsTrigger value="multi-asset" className="gap-2 text-xs md:text-sm">
-                  <Layers className="h-4 w-4" />
-                  <span className="hidden md:inline">Multi-Asset</span>
-                  <span className="md:hidden">Assets</span>
+                <TabsTrigger value="accuracy" className="gap-1.5 text-xs flex-1 min-w-[80px]">
+                  <Target className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Accuracy</span>
+                  <span className="sm:hidden">Track</span>
                 </TabsTrigger>
-                <TabsTrigger value="waves" className="gap-2 text-xs md:text-sm">
-                  <LineChart className="h-4 w-4" />
-                  <span className="hidden md:inline">Wave Analysis</span>
-                  <span className="md:hidden">Waves</span>
+                <TabsTrigger value="manual" className="gap-1.5 text-xs flex-1 min-w-[80px]">
+                  <FileText className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Manual</span>
+                  <span className="sm:hidden">Manual</span>
+                </TabsTrigger>
+                <TabsTrigger value="multi-asset" className="gap-1.5 text-xs flex-1 min-w-[80px]">
+                  <Layers className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Assets</span>
+                  <span className="sm:hidden">Assets</span>
+                </TabsTrigger>
+                <TabsTrigger value="waves" className="gap-1.5 text-xs flex-1 min-w-[80px]">
+                  <LineChart className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">Waves</span>
+                  <span className="sm:hidden">Waves</span>
                 </TabsTrigger>
               </TabsList>
+
+              {/* Live Chart Tab */}
+              <TabsContent value="chart" className="mt-6 space-y-6">
+                <InteractiveCandlestickChart
+                  currentPrice={currentPrice}
+                  patterns={allPatterns}
+                  instrument={selectedInstrument}
+                  timeframe={selectedTimeframe}
+                  isLive={isLive}
+                />
+              </TabsContent>
 
               {/* Auto Detection Tab */}
               <TabsContent value="detection" className="mt-6 space-y-6">
@@ -442,6 +468,15 @@ const PatternRecognition = () => {
                   currentPrice={currentPrice}
                   instrument={selectedInstrument}
                   onPatternsUpdated={handleMultiTimeframeUpdate}
+                />
+              </TabsContent>
+
+              {/* Accuracy Tracking Tab */}
+              <TabsContent value="accuracy" className="mt-6">
+                <PatternAccuracyTracker
+                  patterns={allPatterns}
+                  currentPrice={currentPrice}
+                  instrument={selectedInstrument}
                 />
               </TabsContent>
 
