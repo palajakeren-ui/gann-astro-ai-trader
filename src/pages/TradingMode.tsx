@@ -20,9 +20,11 @@ import {
   Pause,
   Layers,
   Download,
-  Upload
+  Upload,
+  Server,
 } from "lucide-react";
 import { toast } from "sonner";
+import BrokerExchangeConfig from "@/components/trading/BrokerExchangeConfig";
 
 // Helper to parse numeric input (supports comma as decimal separator)
 const parseNumericInput = (value: string): number | null => {
@@ -497,11 +499,20 @@ const TradingMode = () => {
       </div>
 
       <Tabs defaultValue="modes" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
+        <TabsList className="grid w-full grid-cols-4 mb-4">
           <TabsTrigger value="modes" className="text-sm">Trading Modes</TabsTrigger>
+          <TabsTrigger value="brokers" className="text-sm gap-1">
+            <Server className="w-3 h-3" />
+            Brokers/Exchanges
+          </TabsTrigger>
           <TabsTrigger value="leverage" className="text-sm">Manual Leverage</TabsTrigger>
           <TabsTrigger value="advanced" className="text-sm">Advanced</TabsTrigger>
         </TabsList>
+
+        {/* Brokers/Exchanges Tab */}
+        <TabsContent value="brokers" className="space-y-4">
+          <BrokerExchangeConfig />
+        </TabsContent>
 
         {/* Trading Modes Tab */}
         <TabsContent value="modes" className="space-y-4">
