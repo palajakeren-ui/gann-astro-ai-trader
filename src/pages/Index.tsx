@@ -16,6 +16,7 @@ import EhlersDSPPanel from "@/components/dashboard/EhlersDSPPanel";
 import AIForecastPanel from "@/components/dashboard/AIForecastPanel";
 import HexagonGeometryChart from "@/components/charts/HexagonGeometryChart";
 import GannFanFullModule from "@/components/charts/GannFanFullModule";
+import ActiveTradingPanel from "@/components/dashboard/ActiveTradingPanel";
 import { Button } from "@/components/ui/button";
 import useWebSocketPrice from "@/hooks/useWebSocketPrice";
 import TradingInstrumentSelector from "@/components/TradingInstrumentSelector";
@@ -222,6 +223,9 @@ const Index = () => {
           </TabsContent>
         </Tabs>
       </Card>
+
+      {/* Active Trading Panel - Buy/Sell & Real-time Data Feeds */}
+      <ActiveTradingPanel />
 
       {/* Trading Instrument Selector */}
       <TradingInstrumentSelector />
