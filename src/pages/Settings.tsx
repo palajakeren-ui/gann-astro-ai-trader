@@ -6,11 +6,12 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight, Plus, Trash2, Wifi, WifiOff, RefreshCw, Loader2, CheckCircle2, XCircle, AlertCircle, RotateCcw, Timer, Zap } from "lucide-react";
+import { Settings as SettingsIcon, Save, Download, Upload, Search, ChevronDown, ChevronRight, Plus, Trash2, Wifi, WifiOff, RefreshCw, Loader2, CheckCircle2, XCircle, AlertCircle, RotateCcw, Timer, Zap, Clock, Star } from "lucide-react";
 import { useState, useRef, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { tradingInstruments as instrumentsData, InstrumentCategory, Instrument } from "@/data/tradingInstruments";
 import AlertAPISettings from "@/components/settings/AlertAPISettings";
+import TimezoneAstrologyConfig from "@/components/settings/TimezoneAstrologyConfig";
 
 const timeframes = [
   { label: "1M", value: "M1", name: "1 Minute" },
@@ -390,6 +391,9 @@ const Settings = () => {
           </div>
         </Card>
       </div>
+
+      {/* Timezone & Astrology Configuration */}
+      <TimezoneAstrologyConfig />
 
       {/* Alert API Settings */}
       <AlertAPISettings />

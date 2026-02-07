@@ -24,6 +24,8 @@ import BackendAPI from "./pages/BackendAPI";
 import PatternRecognition from "./pages/PatternRecognition";
 import HFT from "./pages/HFT";
 import TradingMode from "./pages/TradingMode";
+import Bookmap from "./pages/Bookmap";
+import NewsAnalysis from "./pages/NewsAnalysis";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +59,8 @@ const App = () => (
               <Route path="/backend-api" element={<BackendAPI />} />
               <Route path="/pattern-recognition" element={<PatternRecognition />} />
               <Route path="/hft" element={<HFT />} />
+              <Route path="/bookmap" element={<Bookmap />} />
+              <Route path="/news-analysis" element={<NewsAnalysis />} />
               <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
