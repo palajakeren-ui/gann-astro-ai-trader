@@ -19,6 +19,7 @@ import {
   Waves,
   Layers,
   Newspaper,
+  Users,
 } from "lucide-react";
 
 const navItems = [
@@ -26,7 +27,8 @@ const navItems = [
   { icon: Layers, label: "Trading Mode", path: "/trading-mode" },
   { icon: TrendingUp, label: "Charts", path: "/charts" },
   { icon: BarChart3, label: "Bookmap", path: "/bookmap" },
-  { icon: Newspaper, label: "News Analysis", path: "/news-analysis" },
+  { icon: Newspaper, label: "Open Terminal", path: "/news-analysis" },
+  { icon: Users, label: "Multi-Manager", path: "/multi-manager" },
   { icon: Search, label: "Scanner", path: "/scanner" },
   { icon: Calendar, label: "Forecasting", path: "/forecasting" },
   { icon: Sparkles, label: "Gann Analysis", path: "/gann" },
