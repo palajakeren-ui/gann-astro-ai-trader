@@ -26,6 +26,7 @@ import HFT from "./pages/HFT";
 import TradingMode from "./pages/TradingMode";
 import Bookmap from "./pages/Bookmap";
 import NewsAnalysis from "./pages/NewsAnalysis";
+import MultiManager from "./pages/MultiManager";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -61,6 +62,7 @@ const App = () => (
               <Route path="/hft" element={<HFT />} />
               <Route path="/bookmap" element={<Bookmap />} />
               <Route path="/news-analysis" element={<NewsAnalysis />} />
+              <Route path="/multi-manager" element={<MultiManager />} />
               <Route path="/settings" element={<Settings />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
